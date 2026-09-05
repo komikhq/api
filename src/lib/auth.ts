@@ -5,8 +5,9 @@ import * as schema from "@/db/schema";
 import { sendEmail, type EmailBindings } from "./email";
 import { renderVerificationEmailTemplate } from "./email/templates/verification";
 import { renderResetPasswordEmailTemplate } from "./email/templates/reset-password";
+import { uploadToR2, type StorageEnv } from "./storage";
 
-export interface AuthEnv extends EmailBindings {
+export interface AuthEnv extends EmailBindings, Partial<StorageEnv> {
   DATABASE_URL: string;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL?: string;
@@ -50,6 +51,50 @@ export function getAuth(env: AuthEnv) {
         httpOnly: true,
       },
     },
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => {
+            if (!user.image) return;
+
+            const isExternalAvatar =
+              /googleusercontent\.com|ggpht\.com|google\.com/i.test(user.image) ||
+              (user.image.startsWith("http") &&
+                Boolean(env.USERS_BUCKET_URL) &&
+                !user.image.includes(env.USERS_BUCKET_URL!));
+
+            if (isExternalAvatar && env.USERS_BUCKET) {
+              try {
+                const res = await fetch(user.image);
+                if (res.ok) {
+                  const contentType = res.headers.get("content-type") || "image/jpeg";
+                  const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
+                  const arrayBuffer = await res.arrayBuffer();
+                  const objectKey = `avatars/google-${user.id || Date.now()}.${ext}`;
+
+                  const publicUrl = await uploadToR2(
+                    env as StorageEnv,
+                    "users",
+                    objectKey,
+                    arrayBuffer,
+                    { contentType }
+                  );
+
+                  return {
+                    data: {
+                      ...user,
+                      image: publicUrl,
+                    },
+                  };
+                }
+              } catch (e) {
+                console.error("[Auth] Failed to mirror external Google avatar to R2:", e);
+              }
+            }
+          },
+        },
+      },
+    },
     emailAndPassword: {
       enabled: true,
       sendVerificationEmail: async ({ user, url }: { user: { name?: string | null; email: string }; url: string }) => {
@@ -84,6 +129,12 @@ export function getAuth(env: AuthEnv) {
         enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
         prompt: "select_account consent",
         accessType: "offline",
+        scope: ["openid", "profile", "email"],
+        mapProfileToUser: async (profile) => {
+          return {
+            image: profile.picture || (profile as any).avatar_url || null,
+          };
+        },
       },
     },
   });
