@@ -22,6 +22,10 @@ export async function sendEmail(env: EmailBindings, options: SendEmailOptions): 
   switch (provider.toLowerCase()) {
     case "resend": {
       if (!env.RESEND_API_KEY) {
+        console.error(`[Email Runtime Error] Missing RESEND_API_KEY environment variable. Unable to dispatch email to ${options.to}. Options:`, {
+          to: options.to,
+          subject: options.subject,
+        });
         throw new Error("Missing RESEND_API_KEY environment variable.");
       }
       const res = await fetch("https://api.resend.com/emails", {
@@ -40,8 +44,10 @@ export async function sendEmail(env: EmailBindings, options: SendEmailOptions): 
       });
       if (!res.ok) {
         const errText = await res.text();
+        console.error(`[Email Runtime Error] Resend API returned status ${res.status}: ${errText}`);
         throw new Error(`Resend API dispatch failed: ${errText}`);
       }
+      console.log(`[Email Runtime Success] Email successfully dispatched via Resend to ${options.to}`);
       return true;
     }
 
