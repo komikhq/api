@@ -1,82 +1,78 @@
 # Cloudflare Workers Deployment Guide (`komikhq-api`)
 
-This document outlines the deployment workflow for the Hono API backend (`komikhq-api`) to Cloudflare Workers, environment variable & secret management (Build-time vs Runtime Secrets), and preventing dashboard variable overwrites.
+This document outlines the deployment workflow for the Hono API backend (`komikhq-api`) to Cloudflare Workers using the **Cloudflare Dashboard (UI Web)** & **GitHub Integration**, table-based Environment Variable & Secret management, and resource binding configuration (KV & R2).
 
 ---
 
-## 1. Environment Variables & Secrets Setup
+## 1. Setup Deployment via Cloudflare Dashboard (GitHub Integration)
 
-### A. Non-Sensitive Variables (Public / System Vars)
-Public environment variables or basic configurations can be set via the Cloudflare Dashboard GUI or defined inside `wrangler.jsonc`.
+When importing the `komikhq-api` repository for the first time via **Cloudflare Dashboard > Workers & Pages > Create > Import from Git**:
+
+| Dashboard Form Field | Value / Input | Description |
+| --- | --- | --- |
+| **Project Name** | `komikhq-api` | Worker project name in Cloudflare Dashboard. |
+| **Production Branch** | `main` | Primary branch triggering auto-deployments. |
+| **Build Command** | *(Leave Blank)* or `npm run deploy` | If left blank, Cloudflare automatically parses `wrangler.jsonc`. |
+| **Build Output Directory** | *(Leave Blank)* | Not required for standalone Hono Workers. |
+| **Root Directory** | `/` (or leave blank if at repo root) | Path to the API project directory in the GitHub repository. |
+
+---
+
+## 2. Environment Variables & Secrets Configuration
+
+In Cloudflare Workers, **Runtime Variables & Secrets** are values accessed by the Hono application when processing live HTTP requests.
+
+> [!NOTE]
+> **Dashboard Location**:
+> Navigate to Worker `komikhq-api` > **Settings** > **Variables and secrets**.
+
+### Runtime Variables & Secrets Table
+
+| Variable Name | Dashboard Type | Category | Description / Example Value |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | **Encrypt (Secret)** | Sensitive | Neon PostgreSQL connection string (`postgresql://...`) |
+| `BETTER_AUTH_SECRET` | **Encrypt (Secret)** | Sensitive | Random secret key for Better Auth encryption |
+| `BETTER_AUTH_URL` | **Plaintext (Variable)** | Public | Public API Backend domain (e.g., `https://api.komikhq.com`) |
+| `GOOGLE_CLIENT_ID` | **Plaintext (Variable)** | Public | Google Cloud Console OAuth Client ID |
+| `GOOGLE_CLIENT_SECRET` | **Encrypt (Secret)** | Sensitive | Google Cloud Console OAuth Client Secret |
+| `RESEND_API_KEY` | **Encrypt (Secret)** | Sensitive | Resend email service API key |
+| `BREVO_API_KEY` | **Encrypt (Secret)** | Sensitive | Brevo email service API key |
+| `PUSHER_APP_ID` | **Plaintext (Variable)** | Public | Pusher Channels App ID |
+| `PUSHER_KEY` | **Plaintext (Variable)** | Public | Pusher Channels App Key |
+| `PUSHER_SECRET` | **Encrypt (Secret)** | Sensitive | Pusher Channels App Secret |
+| `PUSHER_CLUSTER` | **Plaintext (Variable)** | Public | Pusher Channels Cluster (e.g., `ap1`) |
 
 > [!IMPORTANT]
-> **Preventing Dashboard Variable Overwrites (`keep_vars = true`)**
-> The `wrangler.jsonc` file in this project is configured with `"keep_vars": true`. This flag ensures that environment variables added or modified manually via the **Cloudflare Dashboard (Settings > Variables and Secrets)** will **NOT be deleted or overwritten** when you run `wrangler deploy`.
-
-### B. Sensitive Secrets (Runtime Secrets)
-Secret variables (such as Database Connection URL, Auth Secret, API Keys) **MUST NEVER** be stored in plaintext inside `wrangler.jsonc`. Add them via Wrangler CLI or Dashboard Secrets:
-
-Run via terminal to store secrets securely in Cloudflare Workers:
-```bash
-# Database URL (Neon PostgreSQL)
-npx wrangler secret put DATABASE_URL
-
-# Better Auth Secret Key
-npx wrangler secret put BETTER_AUTH_SECRET
-
-# Better Auth URL (Production Domain)
-npx wrangler secret put BETTER_AUTH_URL
-
-# Google OAuth Credentials
-npx wrangler secret put GOOGLE_CLIENT_ID
-npx wrangler secret put GOOGLE_CLIENT_SECRET
-
-# Email Provider Key (Resend / Brevo)
-npx wrangler secret put RESEND_API_KEY
-npx wrangler secret put BREVO_API_KEY
-
-# Pusher Realtime Credentials
-npx wrangler secret put PUSHER_APP_ID
-npx wrangler secret put PUSHER_KEY
-npx wrangler secret put PUSHER_SECRET
-npx wrangler secret put PUSHER_CLUSTER
-```
+> **Preventing Dashboard Overwrites (`keep_vars = true`)**
+> The `wrangler.jsonc` file in this project is configured with `"keep_vars": true`. This ensures environment variables and secrets manually added or updated via the **Cloudflare Dashboard** are **NOT deleted or overwritten** when running CLI deployments (`npx wrangler deploy`).
 
 ---
 
-## 2. Build & Deployment Commands
+## 3. Storage & Resource Bindings (KV & R2)
 
-### Step 1: Type Checking & Typegen
-Ensure Cloudflare Workers bindings are correctly generated and check for TypeScript errors:
-```bash
-pnpm run cf-typegen
-pnpm exec tsc --noEmit
-```
+This application uses Cloudflare KV and R2 Storage. Binding names are specified in `wrangler.jsonc` or verified via **Settings > Bindings**:
 
-### Step 2: Deploy to Cloudflare Workers
-Run the deployment command using `pnpm` or `wrangler`:
-```bash
-pnpm run deploy
-# Or directly:
-npx wrangler deploy
-```
+| Variable Binding Name | Resource Type | Cloudflare Target Resource |
+| --- | --- | --- |
+| `KV_KOMIKHQ` | **KV Namespace** | KV Namespace `KV_KOMIKHQ` |
+| `USERS_BUCKET` | **R2 Bucket** | R2 Bucket `komikhq-users` |
+| `MEDIA_BUCKET` | **R2 Bucket** | R2 Bucket `komikhq-media` |
 
 ---
 
-## 3. Custom Domain & Routing Configuration
+## 4. Custom Domain & Route Setup
 
-This project is configured in `wrangler.jsonc` to deploy to:
-- **Workers Dev Domain**: `workers_dev: true` (e.g., `komikhq-api.<your-subdomain>.workers.dev`)
-- **Custom Domain**: `api.komikhq.com`
+To attach a custom domain to this API Worker:
+1. Go to Worker `komikhq-api` > **Settings** > **Domains & Routes**.
+2. Click **Add > Custom Domain**.
+3. Enter `api.komikhq.com` (ensure the DNS zone `komikhq.com` is active under the same Cloudflare account).
 
 ---
 
-## 4. Troubleshooting & Maintenance
+## 5. Inspection & Maintenance
 
-- **Inspect Live Production Logs**:
+- **Live Stream Logs (Realtime Logs)**:
+  Open Worker `komikhq-api` > **Observability** tab > **Logs**, or run via terminal:
   ```bash
   npx wrangler tail
   ```
-- **Ensure Cloudflare KV & R2 Bindings Are Attached**:
-  - KV Namespace: `KV_KOMIKHQ`
-  - R2 Buckets: `USERS_BUCKET`, `MEDIA_BUCKET`
