@@ -38,10 +38,11 @@ export function getAuth(env: AuthEnv) {
     ],
     advanced: {
       cookiePrefix: "komikhq",
+      useSecureCookies: false,
       defaultCookieAttributes: {
         domain: env.BETTER_AUTH_URL?.includes("localhost") ? undefined : ".komikhq.com",
         sameSite: "lax",
-        secure: !env.BETTER_AUTH_URL?.includes("localhost"),
+        secure: true,
         httpOnly: true,
       },
     },
