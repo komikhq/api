@@ -14,7 +14,7 @@ When importing the `komikhq-api` repository for the first time via **Cloudflare 
 | **Production Branch** | `main` | Primary branch triggering auto-deployments. |
 | **Build Command** | *(Leave Blank)* or `npm run deploy` | If left blank, Cloudflare automatically parses `wrangler.jsonc`. |
 | **Build Output Directory** | *(Leave Blank)* | Not required for standalone Hono Workers. |
-| **Root Directory** | `/` (or leave blank if at repo root) | Path to the API project directory in the GitHub repository. |
+| **Root Directory** | `/` (or leave blank if at repo root) | Path to the API project directory in the GitHub repository (`komikhq/api`). |
 
 ---
 
@@ -48,24 +48,31 @@ In Cloudflare Workers, **Runtime Variables & Secrets** are values accessed by th
 
 ---
 
-## 3. Storage & Resource Bindings (KV & R2)
+## 3. Infrastructure & Resource Bindings (`wrangler.jsonc`)
 
-This application uses Cloudflare KV and R2 Storage. Binding names are specified in `wrangler.jsonc` or verified via **Settings > Bindings**:
+> [!IMPORTANT]
+> All resource bindings (KV, R2, Services) **MUST be declared in `wrangler.jsonc`** as part of code configuration. Do not manage bindings via Dashboard UI.
 
-| Variable Binding Name | Resource Type | Cloudflare Target Resource |
+| Variable Binding Name | Resource Type | Target Configuration in `wrangler.jsonc` |
 | --- | --- | --- |
-| `KV_KOMIKHQ` | **KV Namespace** | KV Namespace `KV_KOMIKHQ` |
-| `USERS_BUCKET` | **R2 Bucket** | R2 Bucket `komikhq-users` |
-| `MEDIA_BUCKET` | **R2 Bucket** | R2 Bucket `komikhq-media` |
+| `KV_KOMIKHQ` | **KV Namespace** | `"kv_namespaces": [{ "binding": "KV_KOMIKHQ", "id": "..." }]` |
+| `USERS_BUCKET` | **R2 Bucket** | `"r2_buckets": [{ "binding": "USERS_BUCKET", "bucket_name": "komikhq-users" }]` |
+| `MEDIA_BUCKET` | **R2 Bucket** | `"r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "komikhq-media" }]` |
 
 ---
 
 ## 4. Custom Domain & Route Setup
 
-To attach a custom domain to this API Worker:
-1. Go to Worker `komikhq-api` > **Settings** > **Domains & Routes**.
-2. Click **Add > Custom Domain**.
-3. Enter `api.komikhq.com` (ensure the DNS zone `komikhq.com` is active under the same Cloudflare account).
+Custom domains are declared in `wrangler.jsonc` under `routes`:
+```jsonc
+"routes": [
+  {
+    "pattern": "api.komikhq.com",
+    "custom_domain": true
+  }
+]
+```
+Ensure the DNS zone `komikhq.com` is active under your Cloudflare account.
 
 ---
 

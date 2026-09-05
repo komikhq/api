@@ -7,6 +7,7 @@
     "nodejs_compat"
   ],
   "workers_dev": true,
+  "preview_urls": false,
   "keep_vars": true,
   "routes": [
     {
@@ -44,7 +45,9 @@
   //   "binding": "AI"
   // },
   "triggers": {
-    "crons": ["*/10 * * * *"]
+    "crons": [
+      "*/10 * * * *"
+    ]
   },
   "observability": {
     "enabled": true,
