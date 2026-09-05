@@ -97,7 +97,22 @@ export function getAuth(env: AuthEnv) {
     },
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: true,
+      sendResetPassword: async ({ user, url }: { user: { name?: string | null; email: string }; url: string }) => {
+        const { subject, html, text } = renderResetPasswordEmailTemplate({
+          userName: user.name || "Pembaca KomikHQ",
+          resetUrl: url,
+        });
+        await sendEmail(env, {
+          to: user.email,
+          subject,
+          html,
+          text,
+        });
+      },
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }: { user: { name?: string | null; email: string }; url: string }) => {
         try {
           const { subject, html, text } = renderVerificationEmailTemplate({
@@ -115,18 +130,6 @@ export function getAuth(env: AuthEnv) {
           console.error(`[Auth Error] Failed to send verification email to ${user.email}:`, err);
           throw err;
         }
-      },
-      sendResetPassword: async ({ user, url }: { user: { name?: string | null; email: string }; url: string }) => {
-        const { subject, html, text } = renderResetPasswordEmailTemplate({
-          userName: user.name || "Pembaca KomikHQ",
-          resetUrl: url,
-        });
-        await sendEmail(env, {
-          to: user.email,
-          subject,
-          html,
-          text,
-        });
       },
     },
     socialProviders: {
