@@ -29,6 +29,7 @@ export function getAuth(env: AuthEnv) {
     }),
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL || "https://api.komikhq.com",
+    basePath: "/v1/auth",
     advanced: {
       cookiePrefix: "komikhq",
       defaultCookieAttributes: {
