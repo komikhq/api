@@ -39,6 +39,10 @@ export function getAuth(env: AuthEnv) {
     advanced: {
       cookiePrefix: "komikhq",
       useSecureCookies: false,
+      crossSubDomainCookies: {
+        enabled: true,
+        domain: env.BETTER_AUTH_URL?.includes("localhost") ? undefined : ".komikhq.com",
+      },
       defaultCookieAttributes: {
         domain: env.BETTER_AUTH_URL?.includes("localhost") ? undefined : ".komikhq.com",
         sameSite: "lax",
