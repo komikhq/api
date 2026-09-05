@@ -97,17 +97,24 @@ export function getAuth(env: AuthEnv) {
     },
     emailAndPassword: {
       enabled: true,
+      requireEmailVerification: true,
       sendVerificationEmail: async ({ user, url }: { user: { name?: string | null; email: string }; url: string }) => {
-        const { subject, html, text } = renderVerificationEmailTemplate({
-          userName: user.name || "Pembaca KomikHQ",
-          verificationUrl: url,
-        });
-        await sendEmail(env, {
-          to: user.email,
-          subject,
-          html,
-          text,
-        });
+        try {
+          const { subject, html, text } = renderVerificationEmailTemplate({
+            userName: user.name || "Pembaca KomikHQ",
+            verificationUrl: url,
+          });
+          await sendEmail(env, {
+            to: user.email,
+            subject,
+            html,
+            text,
+          });
+          console.log(`[Auth] Verification email successfully sent to ${user.email}`);
+        } catch (err) {
+          console.error(`[Auth Error] Failed to send verification email to ${user.email}:`, err);
+          throw err;
+        }
       },
       sendResetPassword: async ({ user, url }: { user: { name?: string | null; email: string }; url: string }) => {
         const { subject, html, text } = renderResetPasswordEmailTemplate({
