@@ -32,9 +32,9 @@ export function getAuth(env: AuthEnv) {
     advanced: {
       cookiePrefix: "komikhq",
       defaultCookieAttributes: {
-        domain: process.env.NODE_ENV === "production" ? ".komikhq.com" : undefined,
+        domain: env.BETTER_AUTH_URL?.includes("localhost") ? undefined : ".komikhq.com",
         sameSite: "lax",
-        secure: true,
+        secure: !env.BETTER_AUTH_URL?.includes("localhost"),
         httpOnly: true,
       },
     },
