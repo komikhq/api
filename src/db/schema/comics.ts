@@ -10,6 +10,7 @@ export const comics = pgTable("comics", {
   status: varchar("status", { length: 20 }).notNull().default("ongoing"),
   accessTier: varchar("access_tier", { length: 20 }).notNull().default("free"),
   totalChapters: integer("total_chapters").notNull().default(0),
+  totalViews: integer("total_views").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
