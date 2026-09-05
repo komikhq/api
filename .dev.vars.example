@@ -1,11 +1,11 @@
-# KomikHQ API - Local Development Environment Variables
-DATABASE_URL="postgresql://owner:pass@ep-branch.neon.tech/komikhq?sslmode=require"
+# KomikHQ API - Local Development Environment Variables Template
+DATABASE_URL="postgresql://user:password@ep-branch-name.c-4.ap-southeast-1.aws.neon.tech/komikhq?sslmode=require"
 
 # Auth Credentials
-BETTER_AUTH_SECRET="your-32-byte-secret-string"
+BETTER_AUTH_SECRET="your-32-byte-secret-string-here"
 BETTER_AUTH_URL="http://localhost:8787"
-GOOGLE_CLIENT_ID="google-client-id.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="GOCSPX-google-client-secret"
+GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="GOCSPX-your-google-client-secret"
 
 # R2 Public Storage Domains (CDN URLs)
 USERS_BUCKET_URL="https://cdn-01.komikhq.com"
@@ -14,11 +14,11 @@ MEDIA_BUCKET_URL="https://cdn-02.komikhq.com"
 # Email Configuration (resend | brevo | cloudflare)
 EMAIL_PROVIDER="resend"
 EMAIL_FROM="KomikHQ <no-reply@komikhq.com>"
-RESEND_API_KEY="re_123456789"
-BREVO_API_KEY="xkeysib-123456789"
+RESEND_API_KEY="re_123456789_example"
+BREVO_API_KEY="xkeysib-123456789_example"
 
 # Pusher Realtime Service
-PUSHER_APP_ID="2191952"
-PUSHER_KEY="7157057bb5292c898900"
-PUSHER_SECRET="f5e13d58f87d17f51b00"
+PUSHER_APP_ID="your_pusher_app_id"
+PUSHER_KEY="your_pusher_key"
+PUSHER_SECRET="your_pusher_secret"
 PUSHER_CLUSTER="ap1"
