@@ -16,6 +16,8 @@ export interface AppEnv {
     KV_KOMIKHQ: KVNamespace;
     USERS_BUCKET: R2Bucket;
     MEDIA_BUCKET: R2Bucket;
+    USERS_BUCKET_URL?: string;
+    MEDIA_BUCKET_URL?: string;
     DATABASE_URL: string;
     BETTER_AUTH_SECRET: string;
     BETTER_AUTH_URL?: string;

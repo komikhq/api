@@ -7,19 +7,21 @@ export interface StorageEnv {
   MEDIA_BUCKET_URL?: string;
 }
 
-const PUBLIC_DOMAINS: Record<BucketKey, string> = {
-  users: "https://cdn-01.komikhq.com",
-  media: "https://cdn-02.komikhq.com",
-};
-
 export function getPublicStorageUrl(
   bucketKey: BucketKey,
   objectKey: string,
-  env?: Partial<StorageEnv>
+  env: Partial<StorageEnv>
 ): string {
-  const customUrl =
-    bucketKey === "users" ? env?.USERS_BUCKET_URL : env?.MEDIA_BUCKET_URL;
-  const baseUrl = (customUrl || PUBLIC_DOMAINS[bucketKey]).replace(/\/$/, "");
+  const domain =
+    bucketKey === "users" ? env.USERS_BUCKET_URL : env.MEDIA_BUCKET_URL;
+
+  if (!domain) {
+    throw new Error(
+      `Public domain URL for bucket '${bucketKey}' is missing. Ensure ${bucketKey.toUpperCase()}_BUCKET_URL is configured in environment variables.`
+    );
+  }
+
+  const baseUrl = domain.replace(/\/$/, "");
   const cleanKey = objectKey.replace(/^\//, "");
   return `${baseUrl}/${cleanKey}`;
 }
