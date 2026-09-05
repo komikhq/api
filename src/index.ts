@@ -10,16 +10,17 @@ import { bookmarkRoutes } from "./routes/bookmarks";
 import { historyRoutes } from "./routes/history";
 import { commentRoutes } from "./routes/comments";
 import { ratingRoutes } from "./routes/ratings";
+import { healthRoutes } from "./routes/health";
 import { processBatchViews } from "./cron/batch-views";
 
 const app = new Hono<AppEnv>();
 
+// Open Public Route (Unconstrained by CORS & Auth)
+app.route("/", healthRoutes);
+
 // Global Middlewares
 app.use("*", corsMiddleware());
 app.use("*", authMiddleware());
-
-// Health Check
-app.get("/", (c) => c.text("KomikHQ API Worker - Online"));
 
 // Clean Subdomain Route Mounting (No /api Prefix!)
 app.route("/v1/auth", authRoutes);
