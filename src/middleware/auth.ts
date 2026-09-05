@@ -14,12 +14,17 @@ export interface UserSessionPayload {
 export interface AppEnv {
   Bindings: {
     KV_KOMIKHQ: KVNamespace;
+    USERS_BUCKET: R2Bucket;
+    MEDIA_BUCKET: R2Bucket;
     DATABASE_URL: string;
     BETTER_AUTH_SECRET: string;
     BETTER_AUTH_URL?: string;
     GOOGLE_CLIENT_ID?: string;
     GOOGLE_CLIENT_SECRET?: string;
     RESEND_API_KEY?: string;
+    BREVO_API_KEY?: string;
+    EMAIL_PROVIDER?: string;
+    EMAIL_FROM?: string;
     PUSHER_APP_ID: string;
     PUSHER_KEY: string;
     PUSHER_SECRET: string;

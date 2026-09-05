@@ -15,12 +15,16 @@
       "id": "ca3191228ad543db961efc9fed4b0576"
     }
   ],
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "my-bucket"
-  //   }
-  // ],
+  "r2_buckets": [
+    {
+      "binding": "USERS_BUCKET",
+      "bucket_name": "komikhq-users"
+    },
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "komikhq-media"
+    }
+  ],
   // "d1_databases": [
   //   {
   //     "binding": "MY_DB",
