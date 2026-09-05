@@ -43,8 +43,8 @@ export function authMiddleware(): MiddlewareHandler<AppEnv> {
     const publicPaths = [
       "/v1/auth",
       "/v1/view",
-      "/v1/comics/trending",
-      "/v1/comics/browse",
+      "/v1/comics",
+      "/v1/realtime",
     ];
 
     if (publicPaths.some((path) => c.req.path.startsWith(path))) {
