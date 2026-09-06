@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv } from "@/middleware/auth";
 import { ComicService } from "@/services/comic.service";
+import { ChapterService } from "@/services/chapter.service";
 import { successResponse, errorResponse } from "@/utils/response";
 
 export const comicRoutes = new Hono<AppEnv>();
@@ -47,6 +48,21 @@ comicRoutes.get("/browse", async (c) => {
   }
 });
 
+// GET /v1/comics/:slug/chapters/:chapterSlug - Public chapter detail & reader pages
+comicRoutes.get("/:slug/chapters/:chapterSlug", async (c) => {
+  try {
+    const comicSlug = c.req.param("slug");
+    const chapterSlug = c.req.param("chapterSlug");
+
+    const chapterService = new ChapterService(c.env.DATABASE_URL, c.env);
+    const data = await chapterService.getPublicChapterBySlugs(comicSlug, chapterSlug);
+
+    return successResponse(c, data);
+  } catch (err: any) {
+    return errorResponse(c, err.message || "Chapter tidak ditemukan.", 404);
+  }
+});
+
 // GET /v1/comics/:slug - Get single comic details by slug
 comicRoutes.get("/:slug", async (c) => {
   try {
@@ -59,4 +75,5 @@ comicRoutes.get("/:slug", async (c) => {
     return errorResponse(c, err.message || "Komik tidak ditemukan.", 404);
   }
 });
+
 

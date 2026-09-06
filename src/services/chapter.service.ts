@@ -41,6 +41,14 @@ export class ChapterService {
     return data;
   }
 
+  async getPublicChapterBySlugs(comicSlug: string, chapterSlug: string) {
+    const data = await this.chapterRepo.findByComicSlugAndChapterSlug(comicSlug, chapterSlug);
+    if (!data) {
+      throw new Error("Chapter tidak ditemukan.");
+    }
+    return data;
+  }
+
   async createChapter(dto: CreateChapterDto) {
     const comicData = await this.comicRepo.findById(dto.comicId);
     if (!comicData) {
