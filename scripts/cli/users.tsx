@@ -71,6 +71,7 @@ export function UsersCliApp() {
       try {
         const newRole = await cliService.toggleRole(selectedUser.id, selectedUser.role);
         setStatusMsg(`[SUKSES] Role ${selectedUser.name} diubah menjadi: ${newRole.toUpperCase()}`);
+        setSelectedUser({ ...selectedUser, role: newRole });
         setMode("ACTIONS");
         fetchUsers();
       } catch (err: any) {

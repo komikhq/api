@@ -28,6 +28,20 @@ export function getAuth(env: AuthEnv) {
         verification: schema.verifications,
       },
     }),
+    user: {
+      additionalFields: {
+        role: {
+          type: "string",
+          defaultValue: "user",
+          input: false,
+        },
+        username: {
+          type: "string",
+          required: false,
+          input: false,
+        },
+      },
+    },
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL || "https://api.komikhq.com",
     basePath: "/v1/auth",

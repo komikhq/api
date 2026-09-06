@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { AppEnv } from "@/middleware/auth";
+import type { AppEnv, UserSessionPayload } from "@/middleware/auth";
 import { requireAdmin } from "@/middleware/admin";
 import { createDbClient, users, accounts } from "@/db";
 import { eq, like, or, count, desc } from "drizzle-orm";
@@ -113,6 +113,19 @@ adminRoutes.put("/users/:id", async (c) => {
 
   await db.update(users).set(updateData).where(eq(users.id, userId));
 
+  // Invalidate any active KV sessions for this user so role updates take effect immediately
+  try {
+    const list = await c.env.KV_KOMIKHQ.list({ prefix: "session:" });
+    for (const key of list.keys) {
+      const sess = await c.env.KV_KOMIKHQ.get<UserSessionPayload>(key.name, "json");
+      if (sess && sess.userId === userId) {
+        await c.env.KV_KOMIKHQ.delete(key.name);
+      }
+    }
+  } catch (e) {
+    console.error("[Admin API] Failed to purge user KV session cache:", e);
+  }
+
   if (password && password.trim().length > 0) {
     const auth = getAuth(c.env as any);
     try {
@@ -141,7 +154,7 @@ adminRoutes.put("/users/:id", async (c) => {
   return c.json({ success: true, user: updatedUser });
 });
 
-// DELETE /v1/admin/users/:id - Remove user permanently
+// DELETE /v1/admin/users/:id - Remove user permanently (full-clean)
 adminRoutes.delete("/users/:id", async (c) => {
   const userId = c.req.param("id");
   const currentUser = c.get("user");
@@ -157,6 +170,33 @@ adminRoutes.delete("/users/:id", async (c) => {
     return c.json({ error: "User not found" }, 404);
   }
 
+  // 1. Purge all KV session caches for this user
+  try {
+    const list = await c.env.KV_KOMIKHQ.list({ prefix: "session:" });
+    for (const key of list.keys) {
+      const sess = await c.env.KV_KOMIKHQ.get<UserSessionPayload>(key.name, "json");
+      if (sess && sess.userId === userId) {
+        await c.env.KV_KOMIKHQ.delete(key.name);
+      }
+    }
+  } catch (e) {
+    console.error("[Admin API] Failed to purge KV sessions for deleted user:", e);
+  }
+
+  // 2. Delete R2 avatar if stored in our bucket
+  if (existingUser.image && c.env.USERS_BUCKET) {
+    try {
+      const url = new URL(existingUser.image);
+      const objectKey = url.pathname.replace(/^\//, "");
+      if (objectKey.startsWith("avatars/")) {
+        await c.env.USERS_BUCKET.delete(objectKey);
+      }
+    } catch (e) {
+      console.error("[Admin API] Failed to delete R2 avatar for user:", e);
+    }
+  }
+
+  // 3. Delete user from DB (cascades to accounts, sessions, bookmarks, reading-histories, etc.)
   await db.delete(users).where(eq(users.id, userId));
 
   return c.json({ success: true, message: `User ${existingUser.name} (${existingUser.email}) deleted successfully.` });
