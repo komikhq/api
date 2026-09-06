@@ -15,6 +15,7 @@ import { adminRoutes } from "./routes/admin";
 import { adminGenreRoutes } from "./routes/admin-genres";
 import { adminComicRoutes } from "./routes/admin-comics";
 import { adminChapterRoutes } from "./routes/admin-chapters";
+import { genreRoutes } from "./routes/genres";
 import { processBatchViews } from "./cron/batch-views";
 
 const app = new Hono<AppEnv>();
@@ -33,6 +34,7 @@ app.route("/v1/admin", adminRoutes);
 app.route("/v1/admin", adminGenreRoutes);
 app.route("/v1/admin", adminComicRoutes);
 app.route("/v1/admin", adminChapterRoutes);
+app.route("/v1/genres", genreRoutes);
 app.route("/v1/bookmarks", bookmarkRoutes);
 app.route("/v1/history", historyRoutes);
 app.route("/v1/comments", commentRoutes);
