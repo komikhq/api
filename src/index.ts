@@ -11,6 +11,7 @@ import { historyRoutes } from "./routes/history";
 import { commentRoutes } from "./routes/comments";
 import { ratingRoutes } from "./routes/ratings";
 import { healthRoutes } from "./routes/health";
+import { adminRoutes } from "./routes/admin";
 import { processBatchViews } from "./cron/batch-views";
 
 const app = new Hono<AppEnv>();
@@ -25,6 +26,7 @@ app.use("*", authMiddleware());
 // Clean Subdomain Route Mounting (No /api Prefix!)
 app.route("/v1/auth", authRoutes);
 app.route("/v1/user", userRoutes);
+app.route("/v1/admin", adminRoutes);
 app.route("/v1/bookmarks", bookmarkRoutes);
 app.route("/v1/history", historyRoutes);
 app.route("/v1/comments", commentRoutes);

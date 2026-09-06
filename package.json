@@ -3,7 +3,9 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "users": "tsx --tsconfig scripts/cli/tsconfig.json scripts/cli/users.tsx",
     "deploy": "wrangler deploy --minify",
+    "typecheck": "tsc --noEmit",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
@@ -16,7 +18,13 @@
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
+    "@types/react": "^19.2.18",
     "drizzle-kit": "^0.31.10",
+    "ink": "^7.1.1",
+    "ink-select-input": "^6.2.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^19.2.8",
+    "tsx": "^4.23.13",
     "typescript": "^7.0.2",
     "wrangler": "^4.110.0"
   }
