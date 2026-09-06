@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { AppEnv } from "@/middleware/auth";
 import { requireAdmin } from "@/middleware/admin";
 import { createDbClient, comics, comicGenres, genres, creators, comicCreators } from "@/db";
-import { eq, like, or, count, desc, inArray } from "drizzle-orm";
+import { eq, like, or, and, count, desc, inArray } from "drizzle-orm";
 import { uploadToR2, deleteFromR2, type StorageEnv } from "@/lib/storage";
 
 export const adminComicRoutes = new Hono<AppEnv>();
@@ -20,80 +20,91 @@ function slugify(text: string): string {
 
 // GET /v1/admin/comics - List comics with pagination, search, status filter
 adminComicRoutes.get("/comics", async (c) => {
-  const db = createDbClient(c.env.DATABASE_URL);
-  const q = c.req.query("q") || "";
-  const status = c.req.query("status") || "";
-  const page = parseInt(c.req.query("page") || "1", 10);
-  const limit = parseInt(c.req.query("limit") || "15", 10);
-  const offset = (page - 1) * limit;
+  try {
+    const db = createDbClient(c.env.DATABASE_URL);
+    const q = c.req.query("q") || "";
+    const status = c.req.query("status") || "";
+    const page = parseInt(c.req.query("page") || "1", 10);
+    const limit = parseInt(c.req.query("limit") || "15", 10);
+    const offset = (page - 1) * limit;
 
-  let whereConditions: any = undefined;
-  if (q && status) {
-    whereConditions = or(like(comics.title, `%${q}%`), like(comics.slug, `%${q}%`));
-    // Drizzle AND logic if status provided
-  } else if (q) {
-    whereConditions = or(like(comics.title, `%${q}%`), like(comics.slug, `%${q}%`));
-  } else if (status) {
-    whereConditions = eq(comics.status, status);
-  }
-
-  const [totalRes] = await db
-    .select({ count: count() })
-    .from(comics)
-    .where(whereConditions);
-
-  const comicList = await db
-    .select()
-    .from(comics)
-    .where(whereConditions)
-    .orderBy(desc(comics.createdAt))
-    .limit(limit)
-    .offset(offset);
-
-  // Attach linked genres and creators for each comic
-  const comicIds = comicList.map((c) => c.id);
-  let comicGenresMap: Record<string, { id: string; name: string }[]> = {};
-  let comicCreatorsMap: Record<string, string[]> = {};
-
-  if (comicIds.length > 0) {
-    const cgList = await db
-      .select({ comicId: comicGenres.comicId, genreId: genres.id, genreName: genres.name })
-      .from(comicGenres)
-      .innerJoin(genres, eq(comicGenres.genreId, genres.id))
-      .where(inArray(comicGenres.comicId, comicIds));
-
-    for (const item of cgList) {
-      if (!comicGenresMap[item.comicId]) comicGenresMap[item.comicId] = [];
-      comicGenresMap[item.comicId].push({ id: item.genreId, name: item.genreName });
+    let whereConditions: any = undefined;
+    if (q && status && status !== "all") {
+      whereConditions = and(or(like(comics.title, `%${q}%`), like(comics.slug, `%${q}%`)), eq(comics.status, status));
+    } else if (q) {
+      whereConditions = or(like(comics.title, `%${q}%`), like(comics.slug, `%${q}%`));
+    } else if (status && status !== "all") {
+      whereConditions = eq(comics.status, status);
     }
 
-    const ccList = await db
-      .select({ comicId: comicCreators.comicId, creatorName: creators.name })
-      .from(comicCreators)
-      .innerJoin(creators, eq(comicCreators.creatorId, creators.id))
-      .where(inArray(comicCreators.comicId, comicIds));
+    const [totalRes] = await db
+      .select({ count: count() })
+      .from(comics)
+      .where(whereConditions);
 
-    for (const item of ccList) {
-      if (!comicCreatorsMap[item.comicId]) comicCreatorsMap[item.comicId] = [];
-      comicCreatorsMap[item.comicId].push(item.creatorName);
+    const comicList = await db
+      .select()
+      .from(comics)
+      .where(whereConditions)
+      .orderBy(desc(comics.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    // Attach linked genres and creators for each comic
+    const comicIds = comicList.map((item) => item.id);
+    let comicGenresMap: Record<string, { id: string; name: string }[]> = {};
+    let comicCreatorsMap: Record<string, string[]> = {};
+
+    if (comicIds.length > 0) {
+      const cgList = await db
+        .select({ comicId: comicGenres.comicId, genreId: genres.id, genreName: genres.name })
+        .from(comicGenres)
+        .innerJoin(genres, eq(comicGenres.genreId, genres.id))
+        .where(inArray(comicGenres.comicId, comicIds));
+
+      for (const item of cgList) {
+        if (!comicGenresMap[item.comicId]) comicGenresMap[item.comicId] = [];
+        comicGenresMap[item.comicId].push({ id: item.genreId, name: item.genreName });
+      }
+
+      const ccList = await db
+        .select({ comicId: comicCreators.comicId, creatorName: creators.name })
+        .from(comicCreators)
+        .innerJoin(creators, eq(comicCreators.creatorId, creators.id))
+        .where(inArray(comicCreators.comicId, comicIds));
+
+      for (const item of ccList) {
+        if (!comicCreatorsMap[item.comicId]) comicCreatorsMap[item.comicId] = [];
+        comicCreatorsMap[item.comicId].push(item.creatorName);
+      }
     }
+
+    const enrichedComics = comicList.map((item) => ({
+      ...item,
+      genres: comicGenresMap[item.id] || [],
+      creators: comicCreatorsMap[item.id] || [],
+    }));
+
+    return c.json({
+      comics: enrichedComics,
+      pagination: {
+        page,
+        limit,
+        total: totalRes?.count || 0,
+        totalPages: Math.ceil((totalRes?.count || 0) / limit),
+      },
+    });
+  } catch (err: any) {
+    console.error("[Admin API] Failed to list comics:", err);
+    return c.json(
+      {
+        error: err.message || "Gagal mengambil katalog komik dari database.",
+        comics: [],
+        pagination: { page: 1, limit: 15, total: 0, totalPages: 1 },
+      },
+      500
+    );
   }
-
-  const enrichedComics = comicList.map((item) => ({
-    ...item,
-    genres: comicGenresMap[item.id] || [],
-    creators: comicCreatorsMap[item.id] || [],
-  }));
-
-  return c.json({
-    comics: enrichedComics,
-    pagination: {
-      page,
-      limit,
-      total: totalRes?.count || 0,
-      totalPages: Math.ceil((totalRes?.count || 0) / limit),
-    },
-  });
 });
 
 // POST /v1/admin/comics - Create comic with cover/banner R2 upload
@@ -197,31 +208,35 @@ adminComicRoutes.post("/comics", async (c) => {
 
 // GET /v1/admin/comics/:id - Get single comic details
 adminComicRoutes.get("/comics/:id", async (c) => {
-  const comicId = c.req.param("id");
-  const db = createDbClient(c.env.DATABASE_URL);
+  try {
+    const comicId = c.req.param("id");
+    const db = createDbClient(c.env.DATABASE_URL);
 
-  const [comic] = await db.select().from(comics).where(eq(comics.id, comicId));
-  if (!comic) {
-    return c.json({ error: "Komik tidak ditemukan." }, 404);
+    const [comic] = await db.select().from(comics).where(eq(comics.id, comicId));
+    if (!comic) {
+      return c.json({ error: "Komik tidak ditemukan." }, 404);
+    }
+
+    const linkedGenres = await db
+      .select({ id: genres.id, name: genres.name, slug: genres.slug })
+      .from(comicGenres)
+      .innerJoin(genres, eq(comicGenres.genreId, genres.id))
+      .where(eq(comicGenres.comicId, comicId));
+
+    const linkedCreators = await db
+      .select({ id: creators.id, name: creators.name, role: comicCreators.role })
+      .from(comicCreators)
+      .innerJoin(creators, eq(comicCreators.creatorId, creators.id))
+      .where(eq(comicCreators.comicId, comicId));
+
+    return c.json({
+      comic,
+      genres: linkedGenres,
+      creators: linkedCreators,
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || "Gagal memuat detail komik." }, 500);
   }
-
-  const linkedGenres = await db
-    .select({ id: genres.id, name: genres.name, slug: genres.slug })
-    .from(comicGenres)
-    .innerJoin(genres, eq(comicGenres.genreId, genres.id))
-    .where(eq(comicGenres.comicId, comicId));
-
-  const linkedCreators = await db
-    .select({ id: creators.id, name: creators.name, role: comicCreators.role })
-    .from(comicCreators)
-    .innerJoin(creators, eq(comicCreators.creatorId, creators.id))
-    .where(eq(comicCreators.comicId, comicId));
-
-  return c.json({
-    comic,
-    genres: linkedGenres,
-    creators: linkedCreators,
-  });
 });
 
 // PUT /v1/admin/comics/:id - Update comic
