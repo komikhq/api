@@ -13,7 +13,6 @@ healthRoutes.get("/", async (c) => {
   let cacheStatus = "ok";
   let storageStatus = "ok";
 
-  // 1. Probe Database Connection Live Status
   try {
     const db = createDbClient(c.env.DATABASE_URL);
     await db.execute(sql`SELECT 1`);
@@ -21,20 +20,14 @@ healthRoutes.get("/", async (c) => {
     dbStatus = "error";
   }
 
-  // 2. Probe Cache Availability Live Status
   try {
-    if (!c.env.KV_KOMIKHQ) {
-      cacheStatus = "error";
-    }
+    if (!c.env.KV_KOMIKHQ) cacheStatus = "error";
   } catch (err) {
     cacheStatus = "error";
   }
 
-  // 3. Probe Storage Availability Live Status
   try {
-    if (!c.env.MEDIA_BUCKET) {
-      storageStatus = "error";
-    }
+    if (!c.env.MEDIA_BUCKET) storageStatus = "error";
   } catch (err) {
     storageStatus = "error";
   }
