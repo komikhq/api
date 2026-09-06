@@ -6,7 +6,11 @@
     "users": "tsx --tsconfig scripts/cli/tsconfig.json scripts/cli/users.tsx",
     "deploy": "wrangler deploy --minify",
     "typecheck": "tsc --noEmit",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:drop": "tsx scripts/drop-tables.ts",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.2",
