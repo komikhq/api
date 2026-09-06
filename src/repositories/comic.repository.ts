@@ -1,9 +1,10 @@
-import { createDbClient, comics, comicGenres, genres, creators, comicCreators } from "@/db";
+import { createDbClient, comics, comicGenres, genres, creators, comicCreators, chapters } from "@/db";
 import type { DbClient } from "@/db";
-import { eq, like, or, and, count, desc, inArray } from "drizzle-orm";
+import { eq, like, or, and, count, desc, asc, inArray } from "drizzle-orm";
 
 export interface ListComicsParams {
   q?: string;
+  genre?: string;
   status?: string;
   page: number;
   limit: number;
@@ -17,17 +18,42 @@ export class ComicRepository {
   }
 
   async findManyWithPagination(params: ListComicsParams) {
-    const { q, status, page, limit } = params;
+    const { q, genre, status, page, limit } = params;
     const offset = (page - 1) * limit;
 
-    let whereConditions: any = undefined;
-    if (q && status && status !== "all") {
-      whereConditions = and(or(like(comics.title, `%${q}%`), like(comics.slug, `%${q}%`)), eq(comics.status, status));
-    } else if (q) {
-      whereConditions = or(like(comics.title, `%${q}%`), like(comics.slug, `%${q}%`));
-    } else if (status && status !== "all") {
-      whereConditions = eq(comics.status, status);
+    let genreComicIds: string[] | null = null;
+    if (genre && genre !== "all") {
+      const matched = await this.db
+        .select({ comicId: comicGenres.comicId })
+        .from(comicGenres)
+        .innerJoin(genres, eq(comicGenres.genreId, genres.id))
+        .where(
+          or(
+            eq(genres.slug, genre),
+            eq(genres.id, genre),
+            like(genres.name, `%${genre}%`)
+          )
+        );
+
+      genreComicIds = Array.from(new Set(matched.map((m) => m.comicId)));
+      if (genreComicIds.length === 0) {
+        return { comics: [], total: 0 };
+      }
     }
+
+    const conditions: any[] = [];
+
+    if (q) {
+      conditions.push(or(like(comics.title, `%${q}%`), like(comics.slug, `%${q}%`)));
+    }
+    if (status && status !== "all") {
+      conditions.push(eq(comics.status, status));
+    }
+    if (genreComicIds !== null) {
+      conditions.push(inArray(comics.id, genreComicIds));
+    }
+
+    const whereConditions = conditions.length > 0 ? and(...conditions) : undefined;
 
     const [totalRes] = await this.db
       .select({ count: count() })
@@ -43,19 +69,19 @@ export class ComicRepository {
       .offset(offset);
 
     const comicIds = comicList.map((item) => item.id);
-    let comicGenresMap: Record<string, { id: string; name: string }[]> = {};
+    let comicGenresMap: Record<string, { id: string; name: string; slug: string }[]> = {};
     let comicCreatorsMap: Record<string, string[]> = {};
 
     if (comicIds.length > 0) {
       const cgList = await this.db
-        .select({ comicId: comicGenres.comicId, genreId: genres.id, genreName: genres.name })
+        .select({ comicId: comicGenres.comicId, genreId: genres.id, genreName: genres.name, genreSlug: genres.slug })
         .from(comicGenres)
         .innerJoin(genres, eq(comicGenres.genreId, genres.id))
         .where(inArray(comicGenres.comicId, comicIds));
 
       for (const item of cgList) {
         if (!comicGenresMap[item.comicId]) comicGenresMap[item.comicId] = [];
-        comicGenresMap[item.comicId].push({ id: item.genreId, name: item.genreName });
+        comicGenresMap[item.comicId].push({ id: item.genreId, name: item.genreName, slug: item.genreSlug });
       }
 
       const ccList = await this.db
@@ -95,13 +121,43 @@ export class ComicRepository {
     const linkedCreators = await this.db
       .select({ id: creators.id, name: creators.name, role: comicCreators.role })
       .from(comicCreators)
-      .innerJoin(creators, eq(comicCreators.creatorId, id))
+      .innerJoin(creators, eq(comicCreators.creatorId, creators.id))
       .where(eq(comicCreators.comicId, id));
 
     return {
       comic,
       genres: linkedGenres,
       creators: linkedCreators,
+    };
+  }
+
+  async findBySlug(slug: string) {
+    const [comic] = await this.db.select().from(comics).where(eq(comics.slug, slug));
+    if (!comic) return null;
+
+    const linkedGenres = await this.db
+      .select({ id: genres.id, name: genres.name, slug: genres.slug })
+      .from(comicGenres)
+      .innerJoin(genres, eq(comicGenres.genreId, genres.id))
+      .where(eq(comicGenres.comicId, comic.id));
+
+    const linkedCreators = await this.db
+      .select({ id: creators.id, name: creators.name, role: comicCreators.role })
+      .from(comicCreators)
+      .innerJoin(creators, eq(comicCreators.creatorId, creators.id))
+      .where(eq(comicCreators.comicId, comic.id));
+
+    const comicChapters = await this.db
+      .select()
+      .from(chapters)
+      .where(eq(chapters.comicId, comic.id))
+      .orderBy(asc(chapters.chapterNumber));
+
+    return {
+      comic,
+      genres: linkedGenres,
+      creators: linkedCreators,
+      chapters: comicChapters,
     };
   }
 
@@ -158,3 +214,4 @@ export class ComicRepository {
     }
   }
 }
+

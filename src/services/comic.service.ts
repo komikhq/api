@@ -54,6 +54,14 @@ export class ComicService {
     return comicData;
   }
 
+  async getComicBySlug(slug: string) {
+    const comicData = await this.comicRepo.findBySlug(slug);
+    if (!comicData) {
+      throw new Error("Komik tidak ditemukan.");
+    }
+    return comicData;
+  }
+
   async createComic(dto: CreateComicDto) {
     if (!dto.title) {
       throw new Error("Judul komik wajib diisi.");
