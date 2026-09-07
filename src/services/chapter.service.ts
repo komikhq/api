@@ -1,6 +1,6 @@
 import { ChapterRepository } from "@/repositories/chapter.repository";
 import { ComicRepository } from "@/repositories/comic.repository";
-import { uploadToR2, type StorageEnv } from "@/lib/storage";
+import { uploadToR2, deleteFromR2, getPublicStorageUrl, type StorageEnv } from "@/lib/storage";
 
 export interface CreateChapterDto {
   comicId: string;
@@ -104,8 +104,54 @@ export class ChapterService {
       contentType: file.type || "image/webp",
     });
 
-    const pageRecord = await this.chapterRepo.createPageRecord(chapterId, pageNumber, imageUrl);
-    return pageRecord;
+    try {
+      const pageRecord = await this.chapterRepo.createPageRecord(chapterId, pageNumber, imageUrl);
+      return pageRecord;
+    } catch (dbErr: any) {
+      await deleteFromR2(this.env as StorageEnv, "media", objectKey).catch(() => {});
+      throw dbErr;
+    }
+  }
+
+  async purgeOrphanImages() {
+    const activeUrls = await this.chapterRepo.getAllActiveImageUrls();
+    const bucket = this.env.MEDIA_BUCKET as R2Bucket;
+
+    if (!bucket) {
+      throw new Error("R2 Bucket binding MEDIA_BUCKET tidak ditemukan.");
+    }
+
+    let truncated = true;
+    let cursor: string | undefined = undefined;
+    let purgedCount = 0;
+    let totalSizeBytes = 0;
+
+    const oneHourAgo = Date.now() - 3600 * 1000;
+
+    while (truncated) {
+      const listRes: R2Objects = await bucket.list({ prefix: "comics/", cursor });
+      truncated = listRes.truncated;
+      cursor = listRes.truncated ? listRes.cursor : undefined;
+
+      for (const obj of listRes.objects) {
+        if (obj.uploaded.getTime() > oneHourAgo) {
+          continue;
+        }
+
+        const publicUrl = getPublicStorageUrl("media", obj.key, this.env as StorageEnv);
+        if (!activeUrls.has(publicUrl)) {
+          await bucket.delete(obj.key);
+          purgedCount++;
+          totalSizeBytes += obj.size;
+        }
+      }
+    }
+
+    return {
+      purgedCount,
+      totalSizeBytes,
+      totalSizeMB: (totalSizeBytes / (1024 * 1024)).toFixed(2),
+    };
   }
 
   async finalizeChapter(comicId: string, chapterId: string, totalPages: number) {

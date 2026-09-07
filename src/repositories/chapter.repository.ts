@@ -102,4 +102,19 @@ export class ChapterRepository {
   async delete(chapterId: string) {
     await this.db.delete(chapters).where(eq(chapters.id, chapterId));
   }
+
+  async getAllActiveImageUrls(): Promise<Set<string>> {
+    const pages = await this.db.select({ imageUrl: chapterPages.imageUrl }).from(chapterPages);
+    const comicCovers = await this.db.select({ coverUrl: comics.coverUrl, bannerUrl: comics.bannerUrl }).from(comics);
+
+    const urls = new Set<string>();
+    for (const p of pages) {
+      if (p.imageUrl) urls.add(p.imageUrl);
+    }
+    for (const c of comicCovers) {
+      if (c.coverUrl) urls.add(c.coverUrl);
+      if (c.bannerUrl) urls.add(c.bannerUrl);
+    }
+    return urls;
+  }
 }
