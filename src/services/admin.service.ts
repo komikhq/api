@@ -141,4 +141,16 @@ export class AdminService {
   async getStats() {
     return this.userRepo.getSystemStats();
   }
+
+  async listReports(page = 1, limit = 20, status?: string) {
+    const { CommentRepository } = await import("@/repositories/comment.repository");
+    const repo = new CommentRepository(this.env.DATABASE_URL);
+    return repo.listReports(page, limit, status);
+  }
+
+  async resolveReport(reportId: string, action: "delete_comment" | "dismiss") {
+    const { CommentRepository } = await import("@/repositories/comment.repository");
+    const repo = new CommentRepository(this.env.DATABASE_URL);
+    return repo.resolveReport(reportId, action);
+  }
 }

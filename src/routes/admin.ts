@@ -79,3 +79,33 @@ adminRoutes.get("/stats", async (c) => {
     return errorResponse(c, err.message || "Gagal mengambil statistik sistem.", 500);
   }
 });
+
+// GET /v1/admin/reports - Get moderation reports
+adminRoutes.get("/reports", async (c) => {
+  try {
+    const page = parseInt(c.req.query("page") || "1", 10);
+    const limit = parseInt(c.req.query("limit") || "20", 10);
+    const status = c.req.query("status") || undefined;
+
+    const service = new AdminService(c.env.DATABASE_URL, c.env);
+    const result = await service.listReports(page, limit, status);
+
+    return successResponse(c, result);
+  } catch (err: any) {
+    return errorResponse(c, err.message || "Gagal mengambil daftar laporan.", 500);
+  }
+});
+
+// POST /v1/admin/reports/:id/action - Take action on moderation report
+adminRoutes.post("/reports/:id/action", async (c) => {
+  try {
+    const reportId = c.req.param("id");
+    const body = await c.req.json();
+    const service = new AdminService(c.env.DATABASE_URL, c.env);
+
+    const result = await service.resolveReport(reportId, body.action);
+    return successResponse(c, { success: true, report: result });
+  } catch (err: any) {
+    return errorResponse(c, err.message || "Gagal memproses laporan.", 400);
+  }
+});

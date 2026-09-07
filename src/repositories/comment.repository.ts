@@ -1,4 +1,4 @@
-import { createDbClient, comments, commentLikes, commentMentions, users } from "@/db";
+import { createDbClient, comments, commentLikes, commentMentions, commentReports, users } from "@/db";
 import type { DbClient } from "@/db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -182,5 +182,106 @@ export class CommentRepository {
 
     return { liked: true };
   }
-}
 
+  async softDelete(commentId: string, userId?: string | null, isAdmin?: boolean) {
+    const comment = await this.findById(commentId);
+    if (!comment) throw new Error("Comment not found");
+
+    if (!isAdmin && comment.userId !== userId) {
+      throw new Error("Unauthorized to delete this comment");
+    }
+
+    const [updated] = await this.db
+      .update(comments)
+      .set({ isDeleted: true, content: "[Komentar ini telah dihapus]" })
+      .where(eq(comments.id, commentId))
+      .returning();
+
+    return updated;
+  }
+
+  async createReport(data: {
+    commentId: string;
+    reporterUserId?: string | null;
+    reporterGuestName?: string | null;
+    reporterGuestEmail?: string | null;
+    reason: string;
+    details?: string | null;
+  }) {
+    const comment = await this.findById(data.commentId);
+    if (!comment) throw new Error("Comment not found");
+
+    const [inserted] = await this.db
+      .insert(commentReports)
+      .values({
+        commentId: data.commentId,
+        reporterUserId: data.reporterUserId || null,
+        reporterGuestName: data.reporterGuestName || null,
+        reporterGuestEmail: data.reporterGuestEmail || null,
+        reason: data.reason,
+        details: data.details || null,
+        status: "PENDING",
+      })
+      .returning();
+
+    return inserted;
+  }
+
+  async listReports(page = 1, limit = 20, status?: string) {
+    const offset = (page - 1) * limit;
+    const condition = status ? eq(commentReports.status, status) : undefined;
+
+    const items = await this.db
+      .select({
+        id: commentReports.id,
+        commentId: commentReports.commentId,
+        reason: commentReports.reason,
+        details: commentReports.details,
+        status: commentReports.status,
+        createdAt: commentReports.createdAt,
+        reporterName: sql<string>`COALESCE(${users.name}, ${commentReports.reporterGuestName}, 'Guest')`,
+        commentContent: comments.content,
+        commentIsDeleted: comments.isDeleted,
+      })
+      .from(commentReports)
+      .leftJoin(comments, eq(commentReports.commentId, comments.id))
+      .leftJoin(users, eq(commentReports.reporterUserId, users.id))
+      .where(condition)
+      .orderBy(desc(commentReports.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    const [totalCount] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(commentReports)
+      .where(condition);
+
+    return {
+      reports: items,
+      total: Number(totalCount?.count || 0),
+      page,
+      limit,
+    };
+  }
+
+  async resolveReport(reportId: string, action: "delete_comment" | "dismiss") {
+    const [report] = await this.db
+      .select()
+      .from(commentReports)
+      .where(eq(commentReports.id, reportId));
+
+    if (!report) throw new Error("Report not found");
+
+    if (action === "delete_comment") {
+      await this.softDelete(report.commentId, null, true);
+    }
+
+    const [updated] = await this.db
+      .update(commentReports)
+      .set({ status: action === "delete_comment" ? "RESOLVED" : "DISMISSED" })
+      .where(eq(commentReports.id, reportId))
+      .returning();
+
+    return updated;
+  }
+}

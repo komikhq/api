@@ -54,4 +54,20 @@ export class CommentService {
   async toggleLike(userId: string, commentId: string) {
     return this.repo.toggleLike(userId, commentId);
   }
+
+  async deleteComment(commentId: string, userId?: string | null, isAdmin?: boolean) {
+    return this.repo.softDelete(commentId, userId, isAdmin);
+  }
+
+  async reportComment(data: {
+    commentId: string;
+    reporterUserId?: string | null;
+    reporterGuestName?: string | null;
+    reporterGuestEmail?: string | null;
+    reason: string;
+    details?: string | null;
+  }) {
+    if (!data.reason) throw new Error("Report reason is required");
+    return this.repo.createReport(data);
+  }
 }

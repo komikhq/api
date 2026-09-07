@@ -64,3 +64,41 @@ commentRoutes.post("/:commentId/like", async (c) => {
     return errorResponse(c, err.message || "Failed to toggle comment like", 400);
   }
 });
+
+commentRoutes.delete("/:commentId", async (c) => {
+  try {
+    const user = c.get("user");
+    if (!user) return errorResponse(c, "Unauthorized", 401);
+
+    const commentId = c.req.param("commentId");
+    const service = new CommentService(c.env.DATABASE_URL);
+    const isAdmin = user.role === "admin";
+
+    const result = await service.deleteComment(commentId, user.userId, isAdmin);
+    return successResponse(c, { success: true, comment: result });
+  } catch (err: any) {
+    return errorResponse(c, err.message || "Failed to delete comment", 400);
+  }
+});
+
+commentRoutes.post("/:commentId/report", async (c) => {
+  try {
+    const user = c.get("user");
+    const commentId = c.req.param("commentId");
+    const body = await c.req.json();
+    const service = new CommentService(c.env.DATABASE_URL);
+
+    const result = await service.reportComment({
+      commentId,
+      reporterUserId: user?.userId || null,
+      reporterGuestName: body.guestName || null,
+      reporterGuestEmail: body.guestEmail || null,
+      reason: body.reason,
+      details: body.details || null,
+    });
+
+    return successResponse(c, { success: true, report: result }, 201);
+  } catch (err: any) {
+    return errorResponse(c, err.message || "Failed to submit report", 400);
+  }
+});
