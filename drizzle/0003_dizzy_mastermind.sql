@@ -1,0 +1,1 @@
+ALTER TABLE "comics" ADD COLUMN "type" varchar(20) DEFAULT 'manga' NOT NULL;
