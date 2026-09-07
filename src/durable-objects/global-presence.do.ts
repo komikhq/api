@@ -2,10 +2,13 @@ import { DurableObject } from "cloudflare:workers";
 
 export class GlobalPresenceDO extends DurableObject {
   async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const visitorId = url.searchParams.get("visitorId") || `visitor_${Date.now()}_${crypto.randomUUID()}`;
+
     const webSocketPair = new WebSocketPair();
     const [client, server] = Object.values(webSocketPair);
 
-    this.ctx.acceptWebSocket(server);
+    this.ctx.acceptWebSocket(server, [visitorId]);
     this.broadcastOnlineCount();
 
     return new Response(null, {
@@ -15,7 +18,6 @@ export class GlobalPresenceDO extends DurableObject {
   }
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
-    // Ping / Pong handling
     if (message === "ping") {
       ws.send("pong");
     }
@@ -31,7 +33,19 @@ export class GlobalPresenceDO extends DurableObject {
 
   private broadcastOnlineCount(): void {
     const sockets = this.ctx.getWebSockets();
-    const count = sockets.length;
+    const uniqueVisitorIds = new Set<string>();
+
+    for (const ws of sockets) {
+      const tags = this.ctx.getTags(ws);
+      if (tags && tags.length > 0 && tags[0]) {
+        uniqueVisitorIds.add(tags[0]);
+      } else {
+        // Fallback for sockets without tags
+        uniqueVisitorIds.add(Math.random().toString());
+      }
+    }
+
+    const count = uniqueVisitorIds.size;
     const payload = JSON.stringify({ event: "online_count", count });
 
     for (const ws of sockets) {
