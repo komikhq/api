@@ -6,18 +6,25 @@ import { successResponse, errorResponse } from "@/utils/response";
 
 export const comicRoutes = new Hono<AppEnv>();
 
-// GET /v1/comics/trending - Get trending / featured comics from database
+// GET /v1/comics/trending - Get trending / featured comics (period: daily, weekly, popular)
 comicRoutes.get("/trending", async (c) => {
   try {
+    const periodParam = c.req.query("period") || "daily";
+    const period = (["daily", "weekly", "popular"].includes(periodParam)
+      ? periodParam
+      : "daily") as "daily" | "weekly" | "popular";
+    const limit = parseInt(c.req.query("limit") || "10", 10);
+
     const service = new ComicService(c.env.DATABASE_URL, c.env);
-    const result = await service.getComicsList({ page: 1, limit: 10 });
+    const result = await service.getTrendingComics(period, limit);
     return successResponse(c, {
+      period,
       comics: result.comics,
-      total: result.pagination.total,
+      total: result.total,
     });
   } catch (err: any) {
     console.error("[Public API] Failed to fetch trending comics:", err);
-    return successResponse(c, { comics: [], total: 0 });
+    return successResponse(c, { period: "daily", comics: [], total: 0 });
   }
 });
 

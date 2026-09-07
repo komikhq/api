@@ -5,17 +5,24 @@ export class ViewService {
     this.env = env;
   }
 
-  async recordView(comicId: string, chapterId: string) {
+  async recordView(comicId: string, chapterId: string, userId?: string | null) {
     if (!comicId || !chapterId) {
       throw new Error("comicId and chapterId are required");
     }
 
-    const key = `view:${comicId}:${chapterId}`;
-    const currentStr = await this.env.KV_KOMIKHQ.get(key);
-    const current = parseInt(currentStr || "0", 10);
-    const nextVal = current + 1;
-    await this.env.KV_KOMIKHQ.put(key, nextVal.toString());
+    const timestamp = new Date().toISOString();
+    const key = `view_log:${Date.now()}:${Math.random().toString(36).substring(2, 9)}`;
+    const payload = JSON.stringify({
+      comicId,
+      chapterId,
+      userId: userId || null,
+      viewedAt: timestamp,
+    });
 
-    return { bufferedViews: nextVal };
+    // Store in KV with 24-hour TTL expiration fallback
+    await this.env.KV_KOMIKHQ.put(key, payload, { expirationTtl: 86400 });
+
+    return { buffered: true, timestamp };
   }
 }
+

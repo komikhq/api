@@ -9,9 +9,10 @@ viewRoutes.post("/", async (c) => {
   try {
     const body = await c.req.json();
     const { comicId, chapterId } = body;
+    const user = c.get("user");
 
     const service = new ViewService(c.env);
-    const result = await service.recordView(comicId, chapterId);
+    const result = await service.recordView(comicId, chapterId, user?.userId || null);
 
     return successResponse(c, { success: true, ...result });
   } catch (err: any) {

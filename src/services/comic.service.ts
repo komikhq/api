@@ -49,6 +49,10 @@ export class ComicService {
     };
   }
 
+  async getTrendingComics(period: "daily" | "weekly" | "popular" = "daily", limit: number = 10) {
+    return this.comicRepo.findTrending(period, limit);
+  }
+
   async getComicById(id: string) {
     const comicData = await this.comicRepo.findById(id);
     if (!comicData) {

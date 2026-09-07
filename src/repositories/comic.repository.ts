@@ -1,6 +1,6 @@
-import { createDbClient, comics, comicGenres, genres, creators, comicCreators, chapters } from "@/db";
+import { createDbClient, comics, comicGenres, genres, creators, comicCreators, chapters, comicViewLogs } from "@/db";
 import type { DbClient } from "@/db";
-import { eq, like, or, and, count, desc, asc, inArray } from "drizzle-orm";
+import { eq, like, or, and, count, desc, asc, inArray, notInArray, gte } from "drizzle-orm";
 
 export interface ListComicsParams {
   q?: string;
@@ -212,6 +212,105 @@ export class ComicRepository {
         role: "author",
       });
     }
+  }
+
+  async findTrending(period: "daily" | "weekly" | "popular" = "daily", limit: number = 10) {
+    let comicIds: string[] = [];
+
+    if (period === "popular") {
+      const popularComics = await this.db
+        .select({ id: comics.id })
+        .from(comics)
+        .orderBy(desc(comics.totalViews), desc(comics.createdAt))
+        .limit(limit);
+
+      comicIds = popularComics.map((c) => c.id);
+    } else {
+      const hoursAgo = period === "daily" ? 24 : 168; // 24h vs 7d (168h)
+      const cutoff = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
+
+      const trendingLogs = await this.db
+        .select({
+          comicId: comicViewLogs.comicId,
+          viewCount: count(comicViewLogs.id),
+        })
+        .from(comicViewLogs)
+        .where(gte(comicViewLogs.viewedAt, cutoff))
+        .groupBy(comicViewLogs.comicId)
+        .orderBy(desc(count(comicViewLogs.id)))
+        .limit(limit);
+
+      comicIds = trendingLogs.map((l) => l.comicId);
+
+      // Fallback: If view logs in cutoff period are less than limit, backfill with top totalViews comics
+      if (comicIds.length < limit) {
+        const remainingLimit = limit - comicIds.length;
+        const fallbackComics = await this.db
+          .select({ id: comics.id })
+          .from(comics)
+          .where(comicIds.length > 0 ? notInArray(comics.id, comicIds) : undefined)
+          .orderBy(desc(comics.totalViews))
+          .limit(remainingLimit);
+
+        comicIds = [...comicIds, ...fallbackComics.map((c) => c.id)];
+      }
+    }
+
+    if (comicIds.length === 0) {
+      return { comics: [], total: 0 };
+    }
+
+    // Fetch full comic objects preserving order of comicIds
+    const comicList = await this.db
+      .select()
+      .from(comics)
+      .where(inArray(comics.id, comicIds));
+
+    // Sort comicList to match comicIds order
+    const comicMap = new Map(comicList.map((c) => [c.id, c]));
+    const sortedComics = comicIds
+      .map((id) => comicMap.get(id))
+      .filter((c): c is typeof comics.$inferSelect => Boolean(c));
+
+    // Enrich with genres & creators
+    let comicGenresMap: Record<string, { id: string; name: string; slug: string }[]> = {};
+    let comicCreatorsMap: Record<string, string[]> = {};
+
+    const fetchedIds = sortedComics.map((c) => c.id);
+    if (fetchedIds.length > 0) {
+      const cgList = await this.db
+        .select({ comicId: comicGenres.comicId, genreId: genres.id, genreName: genres.name, genreSlug: genres.slug })
+        .from(comicGenres)
+        .innerJoin(genres, eq(comicGenres.genreId, genres.id))
+        .where(inArray(comicGenres.comicId, fetchedIds));
+
+      for (const item of cgList) {
+        if (!comicGenresMap[item.comicId]) comicGenresMap[item.comicId] = [];
+        comicGenresMap[item.comicId].push({ id: item.genreId, name: item.genreName, slug: item.genreSlug });
+      }
+
+      const ccList = await this.db
+        .select({ comicId: comicCreators.comicId, creatorName: creators.name })
+        .from(comicCreators)
+        .innerJoin(creators, eq(comicCreators.creatorId, creators.id))
+        .where(inArray(comicCreators.comicId, fetchedIds));
+
+      for (const item of ccList) {
+        if (!comicCreatorsMap[item.comicId]) comicCreatorsMap[item.comicId] = [];
+        comicCreatorsMap[item.comicId].push(item.creatorName);
+      }
+    }
+
+    const enrichedComics = sortedComics.map((item) => ({
+      ...item,
+      genres: comicGenresMap[item.id] || [],
+      creators: comicCreatorsMap[item.id] || [],
+    }));
+
+    return {
+      comics: enrichedComics,
+      total: enrichedComics.length,
+    };
   }
 }
 
