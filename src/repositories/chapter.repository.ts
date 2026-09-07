@@ -17,6 +17,14 @@ export class ChapterRepository {
       .orderBy(asc(chapters.chapterNumber));
   }
 
+  async findByComicIdAndNumber(comicId: string, chapterNumber: string) {
+    const [chapter] = await this.db
+      .select()
+      .from(chapters)
+      .where(and(eq(chapters.comicId, comicId), eq(chapters.chapterNumber, chapterNumber)));
+    return chapter || null;
+  }
+
   async findById(chapterId: string) {
     const [chapter] = await this.db.select().from(chapters).where(eq(chapters.id, chapterId));
     if (!chapter) return null;

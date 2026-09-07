@@ -69,6 +69,14 @@ export class ChapterService {
     const chapterNumber = parseFloat(dto.chapterNumberStr);
     const chapterSlug = `ch-${dto.chapterNumberStr}`;
 
+    const existingChapter = await this.chapterRepo.findByComicIdAndNumber(
+      dto.comicId,
+      chapterNumber.toString()
+    );
+    if (existingChapter) {
+      throw new Error(`Chapter ${dto.chapterNumberStr} sudah ada untuk komik ini. Gunakan nomor chapter yang berbeda.`);
+    }
+
     const newChapter = await this.chapterRepo.createChapter({
       comicId: dto.comicId,
       chapterNumber: chapterNumber.toString(),
