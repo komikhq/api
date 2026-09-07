@@ -51,9 +51,7 @@ export function authMiddleware(): MiddlewareHandler<AppEnv> {
       "/v1/realtime",
     ];
 
-    if (publicPaths.some((path) => c.req.path.startsWith(path))) {
-      return next();
-    }
+    const isPublic = publicPaths.some((path) => c.req.path.startsWith(path));
 
     const token =
       getCookie(c, "komikhq.session_token") ||
@@ -61,6 +59,7 @@ export function authMiddleware(): MiddlewareHandler<AppEnv> {
       c.req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {
+      if (isPublic) return next();
       return c.json({ error: "Unauthorized" }, 401);
     }
 
@@ -83,6 +82,7 @@ export function authMiddleware(): MiddlewareHandler<AppEnv> {
       });
 
       if (!sessionData || !sessionData.user) {
+        if (isPublic) return next();
         return c.json({ error: "Session expired or invalid" }, 401);
       }
 
@@ -106,6 +106,7 @@ export function authMiddleware(): MiddlewareHandler<AppEnv> {
       c.set("session", sessionData.session);
       return next();
     } catch (err) {
+      if (isPublic) return next();
       return c.json({ error: "Authentication failed" }, 401);
     }
   };

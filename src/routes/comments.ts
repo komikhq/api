@@ -4,9 +4,6 @@ import { CommentService } from "@/services/comment.service";
 import { RealtimeBroadcaster } from "@/services/realtime-broadcaster";
 import { successResponse, errorResponse } from "@/utils/response";
 
-import { getAuth } from "@/lib/auth";
-import { getCookie } from "hono/cookie";
-
 export const commentRoutes = new Hono<AppEnv>();
 
 commentRoutes.get("/", async (c) => {
@@ -25,41 +22,7 @@ commentRoutes.get("/", async (c) => {
 
 commentRoutes.post("/", async (c) => {
   try {
-    let user = c.get("user");
-
-    // If authMiddleware skipped public path, attempt manual session resolution for comments
-    if (!user) {
-      const token =
-        getCookie(c, "komikhq.session_token") ||
-        getCookie(c, "better-auth.session_token") ||
-        c.req.header("Authorization")?.replace("Bearer ", "");
-
-      if (token) {
-        const cached = await c.env.KV_KOMIKHQ.get<any>(`session:${token}`, "json");
-        if (cached) {
-          user = cached;
-        } else {
-          try {
-            const auth = getAuth(c.env);
-            const sessionData = await auth.api.getSession({ headers: c.req.raw.headers });
-            if (sessionData?.user) {
-              user = {
-                id: sessionData.user.id,
-                userId: sessionData.user.id,
-                email: sessionData.user.email,
-                name: sessionData.user.name,
-                role: (sessionData.user as any).role || "user",
-                image: sessionData.user.image,
-              };
-              await c.env.KV_KOMIKHQ.put(`session:${token}`, JSON.stringify(user), { expirationTtl: 900 });
-            }
-          } catch {
-            // Ignore auth lookup failure for public route fallback
-          }
-        }
-      }
-    }
-
+    const user = c.get("user");
     const body = await c.req.json();
 
     if (!user && (!body.guestName || !body.guestEmail)) {
