@@ -6,6 +6,7 @@ import { slugify } from "@/utils/slugify";
 export interface CreateComicDto {
   title: string;
   synopsis?: string;
+  type?: string;
   status?: string;
   accessTier?: string;
   genreIdsRaw?: string;
@@ -17,6 +18,7 @@ export interface CreateComicDto {
 export interface UpdateComicDto {
   title?: string;
   synopsis?: string;
+  type?: string;
   status?: string;
   accessTier?: string;
   genreIdsRaw?: string;
@@ -104,6 +106,7 @@ export class ComicService {
       synopsis: dto.synopsis || "",
       coverUrl,
       bannerUrl,
+      type: dto.type || "manga",
       status: dto.status || "ongoing",
       accessTier: dto.accessTier || "free",
     });
@@ -141,6 +144,7 @@ export class ComicService {
 
     if (dto.title) updateData.title = dto.title;
     if (dto.synopsis !== undefined) updateData.synopsis = dto.synopsis;
+    if (dto.type) updateData.type = dto.type;
     if (dto.status) updateData.status = dto.status;
     if (dto.accessTier) updateData.accessTier = dto.accessTier;
 

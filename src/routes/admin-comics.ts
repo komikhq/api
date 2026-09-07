@@ -42,6 +42,7 @@ adminComicRoutes.post("/comics", async (c) => {
     const comic = await service.createComic({
       title: formData.get("title")?.toString().trim() || "",
       synopsis: formData.get("synopsis")?.toString().trim() || "",
+      type: formData.get("type")?.toString().trim() || "manga",
       status: formData.get("status")?.toString().trim() || "ongoing",
       accessTier: formData.get("accessTier")?.toString().trim() || "free",
       genreIdsRaw: formData.get("genreIds")?.toString(),
@@ -79,6 +80,7 @@ adminComicRoutes.put("/comics/:id", async (c) => {
     const updatedComic = await service.updateComic(comicId, {
       title: formData.get("title")?.toString().trim(),
       synopsis: formData.get("synopsis")?.toString().trim(),
+      type: formData.get("type")?.toString().trim(),
       status: formData.get("status")?.toString().trim(),
       accessTier: formData.get("accessTier")?.toString().trim(),
       genreIdsRaw: formData.get("genreIds")?.toString(),
