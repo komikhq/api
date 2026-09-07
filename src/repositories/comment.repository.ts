@@ -50,6 +50,43 @@ export class CommentRepository {
       .orderBy(desc(comments.createdAt));
   }
 
+  async findFormattedById(id: string) {
+    const replyUsers = alias(users, "reply_users");
+
+    const [formatted] = await this.db
+      .select({
+        id: comments.id,
+        comicId: comments.comicId,
+        chapterId: comments.chapterId,
+        rootId: comments.rootId,
+        parentId: comments.parentId,
+        depth: comments.depth,
+        content: comments.content,
+        isSpoiler: comments.isSpoiler,
+        likeCount: comments.likeCount,
+        replyCount: comments.replyCount,
+        isEdited: comments.isEdited,
+        isDeleted: comments.isDeleted,
+        createdAt: comments.createdAt,
+        author: {
+          id: users.id,
+          name: sql<string>`COALESCE(${users.name}, ${comments.guestName}, 'Guest')`,
+          image: users.image,
+          isGuest: sql<boolean>`${comments.userId} IS NULL`,
+        },
+        replyToUser: {
+          id: replyUsers.id,
+          name: replyUsers.name,
+        },
+      })
+      .from(comments)
+      .leftJoin(users, eq(comments.userId, users.id))
+      .leftJoin(replyUsers, eq(comments.replyToUserId, replyUsers.id))
+      .where(eq(comments.id, id));
+
+    return formatted || null;
+  }
+
   async findById(id: string) {
     const [comment] = await this.db.select().from(comments).where(eq(comments.id, id));
     return comment || null;

@@ -14,6 +14,10 @@ export class CommentService {
     return this.repo.findByTarget(comicId, chapterId);
   }
 
+  async getFormattedCommentById(id: string) {
+    return this.repo.findFormattedById(id);
+  }
+
   async postComment(
     userId: string | null,
     data: {

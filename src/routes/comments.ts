@@ -34,12 +34,13 @@ commentRoutes.post("/", async (c) => {
 
     const comment = await service.postComment(userId, body);
 
-    // Broadcast to live listeners via RealtimeBroadcaster
+    // Broadcast to live listeners via RealtimeBroadcaster using formatted comment
     const targetId = body.chapterId || body.comicId;
     if (targetId) {
+      const formattedComment = await service.getFormattedCommentById(comment.id);
       const broadcaster = new RealtimeBroadcaster(c.env);
       c.executionCtx.waitUntil(
-        broadcaster.broadcastComment(`comment_stream:${targetId}`, comment)
+        broadcaster.broadcastComment(`comment_stream:${targetId}`, formattedComment || comment)
       );
     }
 
