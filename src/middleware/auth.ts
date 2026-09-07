@@ -27,6 +27,9 @@ export interface AppEnv {
     BREVO_API_KEY?: string;
     EMAIL_PROVIDER?: string;
     EMAIL_FROM?: string;
+    REALTIME_PROVIDER?: string;
+    GLOBAL_PRESENCE_DO?: DurableObjectNamespace;
+    COMMENT_STREAM_DO?: DurableObjectNamespace;
     PUSHER_APP_ID: string;
     PUSHER_KEY: string;
     PUSHER_SECRET: string;

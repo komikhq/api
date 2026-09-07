@@ -29,3 +29,26 @@ realtimeRoutes.post("/auth", async (c) => {
     return errorResponse(c, err.message || "Failed to authorize channel", 400);
   }
 });
+
+realtimeRoutes.get("/ws", async (c) => {
+  const channel = c.req.query("channel") || "global_presence";
+  const upgradeHeader = c.req.header("Upgrade");
+
+  if (upgradeHeader !== "websocket") {
+    return errorResponse(c, "Expected Upgrade: websocket", 400);
+  }
+
+  if (channel === "global_presence" && c.env.GLOBAL_PRESENCE_DO) {
+    const id = c.env.GLOBAL_PRESENCE_DO.idFromName("global_presence");
+    const stub = c.env.GLOBAL_PRESENCE_DO.get(id);
+    return stub.fetch(c.req.raw);
+  }
+
+  if (channel.startsWith("comment_stream:") && c.env.COMMENT_STREAM_DO) {
+    const id = c.env.COMMENT_STREAM_DO.idFromName(channel);
+    const stub = c.env.COMMENT_STREAM_DO.get(id);
+    return stub.fetch(c.req.raw);
+  }
+
+  return errorResponse(c, "Invalid channel or Durable Object binding missing", 400);
+});

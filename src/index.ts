@@ -43,6 +43,11 @@ app.route("/v1/view", viewRoutes);
 app.route("/v1/comics", comicRoutes);
 app.route("/v1/realtime", realtimeRoutes);
 
+import { GlobalPresenceDO } from "./durable-objects/global-presence.do";
+import { CommentStreamDO } from "./durable-objects/comment-stream.do";
+
+export { GlobalPresenceDO, CommentStreamDO };
+
 export default {
   fetch: app.fetch,
   async scheduled(event: ScheduledEvent, env: AppEnv["Bindings"], ctx: ExecutionContext) {

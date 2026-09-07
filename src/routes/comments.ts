@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv } from "@/middleware/auth";
 import { CommentService } from "@/services/comment.service";
+import { RealtimeBroadcaster } from "@/services/realtime-broadcaster";
 import { successResponse, errorResponse } from "@/utils/response";
 
 export const commentRoutes = new Hono<AppEnv>();
@@ -28,6 +29,16 @@ commentRoutes.post("/", async (c) => {
     const service = new CommentService(c.env.DATABASE_URL);
 
     const comment = await service.postComment(user.userId, body);
+
+    // Broadcast to live listeners via RealtimeBroadcaster
+    const targetId = body.chapterId || body.comicId;
+    if (targetId) {
+      const broadcaster = new RealtimeBroadcaster(c.env);
+      c.executionCtx.waitUntil(
+        broadcaster.broadcastComment(`comment_stream:${targetId}`, comment)
+      );
+    }
+
     return successResponse(c, { success: true, comment }, 201);
   } catch (err: any) {
     return errorResponse(c, err.message || "Failed to post comment", 400);

@@ -49,6 +49,27 @@
       "*/10 * * * *"
     ]
   },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GLOBAL_PRESENCE_DO",
+        "class_name": "GlobalPresenceDO"
+      },
+      {
+        "name": "COMMENT_STREAM_DO",
+        "class_name": "CommentStreamDO"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": [
+        "GlobalPresenceDO",
+        "CommentStreamDO"
+      ]
+    }
+  ],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
