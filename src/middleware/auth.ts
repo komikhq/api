@@ -47,6 +47,7 @@ export function authMiddleware(): MiddlewareHandler<AppEnv> {
       "/v1/auth",
       "/v1/view",
       "/v1/comics",
+      "/v1/comments",
       "/v1/realtime",
     ];
 

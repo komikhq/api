@@ -12,8 +12,10 @@ export const comments = pgTable("comments", {
     .notNull()
     .references(() => comics.id, { onDelete: "cascade" }),
   userId: text("user_id")
-    .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  guestName: text("guest_name"),
+  guestEmail: text("guest_email"),
+  isSpoiler: boolean("is_spoiler").notNull().default(false),
   rootId: uuid("root_id").references((): AnyPgColumn => comments.id, { onDelete: "cascade" }),
   parentId: uuid("parent_id").references((): AnyPgColumn => comments.id, { onDelete: "cascade" }),
   replyToUserId: text("reply_to_user_id").references(() => users.id, { onDelete: "set null" }),

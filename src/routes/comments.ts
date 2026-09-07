@@ -23,12 +23,16 @@ commentRoutes.get("/", async (c) => {
 commentRoutes.post("/", async (c) => {
   try {
     const user = c.get("user");
-    if (!user) return errorResponse(c, "Unauthorized", 401);
-
     const body = await c.req.json();
-    const service = new CommentService(c.env.DATABASE_URL);
 
-    const comment = await service.postComment(user.userId, body);
+    if (!user && (!body.guestName || !body.guestEmail)) {
+      return errorResponse(c, "Unauthorized or guest details missing", 401);
+    }
+
+    const service = new CommentService(c.env.DATABASE_URL);
+    const userId = user ? user.userId : null;
+
+    const comment = await service.postComment(userId, body);
 
     // Broadcast to live listeners via RealtimeBroadcaster
     const targetId = body.chapterId || body.comicId;

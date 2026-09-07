@@ -26,6 +26,7 @@ export class CommentRepository {
         parentId: comments.parentId,
         depth: comments.depth,
         content: comments.content,
+        isSpoiler: comments.isSpoiler,
         likeCount: comments.likeCount,
         replyCount: comments.replyCount,
         isEdited: comments.isEdited,
@@ -33,8 +34,9 @@ export class CommentRepository {
         createdAt: comments.createdAt,
         author: {
           id: users.id,
-          name: users.name,
+          name: sql<string>`COALESCE(${users.name}, ${comments.guestName}, 'Guest')`,
           image: users.image,
+          isGuest: sql<boolean>`${comments.userId} IS NULL`,
         },
         replyToUser: {
           id: replyUsers.id,
@@ -42,7 +44,7 @@ export class CommentRepository {
         },
       })
       .from(comments)
-      .innerJoin(users, eq(comments.userId, users.id))
+      .leftJoin(users, eq(comments.userId, users.id))
       .leftJoin(replyUsers, eq(comments.replyToUserId, replyUsers.id))
       .where(condition)
       .orderBy(desc(comments.createdAt));
@@ -54,7 +56,10 @@ export class CommentRepository {
   }
 
   async create(data: {
-    userId: string;
+    userId?: string | null;
+    guestName?: string | null;
+    guestEmail?: string | null;
+    isSpoiler?: boolean;
     comicId?: string | null;
     chapterId?: string | null;
     parentId?: string | null;
@@ -75,7 +80,10 @@ export class CommentRepository {
     }
 
     const insertValues: typeof comments.$inferInsert = {
-      userId: data.userId,
+      userId: data.userId || null,
+      guestName: data.guestName || null,
+      guestEmail: data.guestEmail || null,
+      isSpoiler: data.isSpoiler ?? false,
       comicId: data.comicId || "",
       chapterId: data.chapterId || "",
       content: data.content,

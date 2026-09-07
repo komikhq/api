@@ -14,12 +14,31 @@ export class CommentService {
     return this.repo.findByTarget(comicId, chapterId);
   }
 
-  async postComment(userId: string, data: { comicId?: string; chapterId?: string; parentId?: string; content: string; mentionedUserIds?: string[] }) {
+  async postComment(
+    userId: string | null,
+    data: {
+      comicId?: string;
+      chapterId?: string;
+      parentId?: string;
+      content: string;
+      guestName?: string;
+      guestEmail?: string;
+      isSpoiler?: boolean;
+      mentionedUserIds?: string[];
+    }
+  ) {
     if (!data.content || (!data.comicId && !data.chapterId)) {
       throw new Error("Content and target comicId or chapterId required");
     }
+    if (!userId && (!data.guestName || !data.guestEmail)) {
+      throw new Error("Guest name and email are required for guest comments");
+    }
+
     return this.repo.create({
       userId,
+      guestName: data.guestName || null,
+      guestEmail: data.guestEmail || null,
+      isSpoiler: data.isSpoiler ?? false,
       comicId: data.comicId || null,
       chapterId: data.chapterId || null,
       parentId: data.parentId || null,
