@@ -14,7 +14,7 @@ export class CommentService {
     return this.repo.findByTarget(comicId, chapterId);
   }
 
-  async postComment(userId: string, data: { comicId?: string; chapterId?: string; parentId?: string; content: string }) {
+  async postComment(userId: string, data: { comicId?: string; chapterId?: string; parentId?: string; content: string; mentionedUserIds?: string[] }) {
     if (!data.content || (!data.comicId && !data.chapterId)) {
       throw new Error("Content and target comicId or chapterId required");
     }
@@ -24,6 +24,7 @@ export class CommentService {
       chapterId: data.chapterId || null,
       parentId: data.parentId || null,
       content: data.content,
+      mentionedUserIds: data.mentionedUserIds,
     });
   }
 
