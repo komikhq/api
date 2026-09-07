@@ -49,6 +49,80 @@ export class ChapterService {
     return data;
   }
 
+  async initChapter(dto: {
+    comicId: string;
+    chapterNumberStr?: string;
+    title?: string;
+    accessTier?: string;
+    isEarlyAccess?: boolean;
+    totalPages?: number;
+  }) {
+    const comicData = await this.comicRepo.findById(dto.comicId);
+    if (!comicData) {
+      throw new Error("Komik tidak ditemukan.");
+    }
+
+    if (!dto.chapterNumberStr) {
+      throw new Error("Nomor chapter wajib diisi.");
+    }
+
+    const chapterNumber = parseFloat(dto.chapterNumberStr);
+    const chapterSlug = `ch-${dto.chapterNumberStr}`;
+
+    const newChapter = await this.chapterRepo.createChapter({
+      comicId: dto.comicId,
+      chapterNumber: chapterNumber.toString(),
+      title: dto.title || `Chapter ${dto.chapterNumberStr}`,
+      slug: chapterSlug,
+      totalPages: dto.totalPages || 0,
+      accessTier: dto.accessTier || "free",
+      isEarlyAccess: dto.isEarlyAccess || false,
+    });
+
+    return {
+      chapter: newChapter,
+      comicSlug: comicData.comic.slug,
+    };
+  }
+
+  async uploadSinglePage(chapterId: string, pageNumber: number, file: File) {
+    const existing = await this.chapterRepo.findById(chapterId);
+    if (!existing) {
+      throw new Error("Chapter tidak ditemukan.");
+    }
+
+    const comicData = await this.comicRepo.findById(existing.chapter.comicId);
+    if (!comicData) {
+      throw new Error("Komik tidak ditemukan.");
+    }
+
+    const ext = file.name.split(".").pop() || "webp";
+    const objectKey = `comics/${comicData.comic.slug}/ch-${existing.chapter.chapterNumber}/page-${pageNumber}-${Date.now()}.${ext}`;
+
+    const buffer = await file.arrayBuffer();
+    const imageUrl = await uploadToR2(this.env as StorageEnv, "media", objectKey, buffer, {
+      contentType: file.type || "image/webp",
+    });
+
+    const pageRecord = await this.chapterRepo.createPageRecord(chapterId, pageNumber, imageUrl);
+    return pageRecord;
+  }
+
+  async finalizeChapter(comicId: string, chapterId: string, totalPages: number) {
+    const existing = await this.chapterRepo.findById(chapterId);
+    if (!existing) {
+      throw new Error("Chapter tidak ditemukan.");
+    }
+
+    const updated = await this.chapterRepo.update(chapterId, {
+      totalPages,
+      updatedAt: new Date(),
+    });
+
+    await this.chapterRepo.updateComicTotalChapters(comicId);
+    return updated;
+  }
+
   async createChapter(dto: CreateChapterDto) {
     const comicData = await this.comicRepo.findById(dto.comicId);
     if (!comicData) {
