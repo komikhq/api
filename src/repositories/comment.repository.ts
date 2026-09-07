@@ -1,6 +1,6 @@
 import { createDbClient, comments, commentLikes, commentMentions, commentReports, users } from "@/db";
 import type { DbClient } from "@/db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, or, isNull, desc, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 export class CommentRepository {
@@ -11,9 +11,14 @@ export class CommentRepository {
   }
 
   async findByTarget(comicId?: string, chapterId?: string) {
-    const condition = comicId
-      ? eq(comments.comicId, comicId)
-      : eq(comments.chapterId, chapterId!);
+    const condition = chapterId
+      ? eq(comments.chapterId, chapterId)
+      : comicId
+      ? and(
+          eq(comments.comicId, comicId),
+          or(eq(comments.chapterId, ""), isNull(comments.chapterId))
+        )
+      : eq(comments.comicId, "");
 
     const replyUsers = alias(users, "reply_users");
 
