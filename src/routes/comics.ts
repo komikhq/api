@@ -13,7 +13,7 @@ comicRoutes.get("/trending", async (c) => {
     const period = (["daily", "weekly", "popular"].includes(periodParam)
       ? periodParam
       : "daily") as "daily" | "weekly" | "popular";
-    const limit = parseInt(c.req.query("limit") || "10", 10);
+    const limit = parseInt(c.req.query("limit") || "20", 10);
 
     const service = new ComicService(c.env.DATABASE_URL, c.env);
     const result = await service.getTrendingComics(period, limit);
