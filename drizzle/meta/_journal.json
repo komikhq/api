@@ -29,6 +29,13 @@
       "when": 1788758604435,
       "tag": "0003_dizzy_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788763660870,
+      "tag": "0004_brown_puck",
+      "breakpoints": true
     }
   ]
 }

@@ -14,10 +14,7 @@ export class CommentRepository {
     const condition = chapterId
       ? eq(comments.chapterId, chapterId)
       : comicId
-      ? and(
-          eq(comments.comicId, comicId),
-          or(eq(comments.chapterId, ""), isNull(comments.chapterId))
-        )
+      ? and(eq(comments.comicId, comicId), isNull(comments.chapterId))
       : eq(comments.comicId, "");
 
     const replyUsers = alias(users, "reply_users");

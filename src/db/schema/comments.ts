@@ -6,7 +6,6 @@ import { chapters } from "./chapters";
 export const comments = pgTable("comments", {
   id: uuid("id").primaryKey().defaultRandom(),
   chapterId: uuid("chapter_id")
-    .notNull()
     .references(() => chapters.id, { onDelete: "cascade" }),
   comicId: uuid("comic_id")
     .notNull()

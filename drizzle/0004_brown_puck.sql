@@ -1,0 +1,1 @@
+ALTER TABLE "comments" ALTER COLUMN "chapter_id" DROP NOT NULL;
