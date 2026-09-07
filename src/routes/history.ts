@@ -27,7 +27,7 @@ historyRoutes.post("/", async (c) => {
     const { comicId, chapterId, lastReadPage = 1, snapshotTotalPages = 1 } = await c.req.json();
     const service = new HistoryService(c.env.DATABASE_URL);
 
-    const result = await service.recordHistory(user.userId, comicId, chapterId, lastReadPage, snapshotTotalPages);
+    const result = await service.recordHistory(user.userId, comicId, chapterId, lastReadPage, snapshotTotalPages, c.env.KV_KOMIKHQ);
     return successResponse(c, { success: true, message: `Reading history ${result.action}` });
   } catch (err: any) {
     return errorResponse(c, err.message || "Failed to record reading history", 400);
