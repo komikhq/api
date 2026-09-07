@@ -7,6 +7,7 @@ export const comics = pgTable("comics", {
   synopsis: text("synopsis"),
   coverUrl: text("cover_url").notNull(),
   bannerUrl: text("banner_url"),
+  type: varchar("type", { length: 20 }).notNull().default("manga"),
   status: varchar("status", { length: 20 }).notNull().default("ongoing"),
   accessTier: varchar("access_tier", { length: 20 }).notNull().default("free"),
   totalChapters: integer("total_chapters").notNull().default(0),

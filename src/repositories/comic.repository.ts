@@ -6,6 +6,8 @@ export interface ListComicsParams {
   q?: string;
   genre?: string;
   status?: string;
+  type?: string;
+  sort?: string;
   page: number;
   limit: number;
 }
@@ -18,7 +20,7 @@ export class ComicRepository {
   }
 
   async findManyWithPagination(params: ListComicsParams) {
-    const { q, genre, status, page, limit } = params;
+    const { q, genre, status, type, sort, page, limit } = params;
     const offset = (page - 1) * limit;
 
     let genreComicIds: string[] | null = null;
@@ -49,6 +51,9 @@ export class ComicRepository {
     if (status && status !== "all") {
       conditions.push(eq(comics.status, status));
     }
+    if (type && type !== "all") {
+      conditions.push(eq(comics.type, type));
+    }
     if (genreComicIds !== null) {
       conditions.push(inArray(comics.id, genreComicIds));
     }
@@ -60,17 +65,25 @@ export class ComicRepository {
       .from(comics)
       .where(whereConditions);
 
+    let orderByClause = desc(comics.createdAt);
+    if (sort === "popular") {
+      orderByClause = desc(comics.totalViews);
+    } else if (sort === "updated") {
+      orderByClause = desc(comics.updatedAt);
+    }
+
     const comicList = await this.db
       .select()
       .from(comics)
       .where(whereConditions)
-      .orderBy(desc(comics.createdAt))
+      .orderBy(orderByClause)
       .limit(limit)
       .offset(offset);
 
     const comicIds = comicList.map((item) => item.id);
     let comicGenresMap: Record<string, { id: string; name: string; slug: string }[]> = {};
     let comicCreatorsMap: Record<string, string[]> = {};
+    let comicLatestChapterMap: Record<string, { chapterNumber: string; slug: string; title: string | null; publishedAt: Date }> = {};
 
     if (comicIds.length > 0) {
       const cgList = await this.db
@@ -94,12 +107,31 @@ export class ComicRepository {
         if (!comicCreatorsMap[item.comicId]) comicCreatorsMap[item.comicId] = [];
         comicCreatorsMap[item.comicId].push(item.creatorName);
       }
+
+      const chList = await this.db
+        .select({
+          comicId: chapters.comicId,
+          chapterNumber: chapters.chapterNumber,
+          slug: chapters.slug,
+          title: chapters.title,
+          publishedAt: chapters.publishedAt,
+        })
+        .from(chapters)
+        .where(inArray(chapters.comicId, comicIds))
+        .orderBy(desc(chapters.publishedAt), desc(chapters.chapterNumber));
+
+      for (const ch of chList) {
+        if (!comicLatestChapterMap[ch.comicId]) {
+          comicLatestChapterMap[ch.comicId] = ch;
+        }
+      }
     }
 
     const enrichedComics = comicList.map((item) => ({
       ...item,
       genres: comicGenresMap[item.id] || [],
       creators: comicCreatorsMap[item.id] || [],
+      latestChapter: comicLatestChapterMap[item.id] || null,
     }));
 
     return {

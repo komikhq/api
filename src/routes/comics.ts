@@ -34,14 +34,16 @@ comicRoutes.get("/browse", async (c) => {
     const search = c.req.query("search") || c.req.query("q") || "";
     const genre = c.req.query("genre") || "";
     const status = c.req.query("status") || "";
+    const type = c.req.query("type") || "";
+    const sort = c.req.query("sort") || "";
     const page = parseInt(c.req.query("page") || "1", 10);
     const limit = parseInt(c.req.query("limit") || "20", 10);
 
     const service = new ComicService(c.env.DATABASE_URL, c.env);
-    const result = await service.getComicsList({ q: search, genre, status, page, limit });
+    const result = await service.getComicsList({ q: search, genre, status, type, sort, page, limit });
 
     return successResponse(c, {
-      query: { search, genre, status },
+      query: { search, genre, status, type, sort },
       comics: result.comics,
       pagination: result.pagination,
     });
