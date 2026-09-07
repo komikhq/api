@@ -1,5 +1,6 @@
 import { ComicRepository, type ListComicsParams } from "@/repositories/comic.repository";
-import { uploadToR2, type StorageEnv } from "@/lib/storage";
+import { ChapterRepository } from "@/repositories/chapter.repository";
+import { uploadToR2, deleteFromR2, type StorageEnv } from "@/lib/storage";
 import { slugify } from "@/utils/slugify";
 
 export interface CreateComicDto {
@@ -26,10 +27,12 @@ export interface UpdateComicDto {
 
 export class ComicService {
   private comicRepo: ComicRepository;
+  private databaseUrl: string;
   private env: any;
 
   constructor(databaseUrl: string, env: any) {
     this.comicRepo = new ComicRepository(databaseUrl);
+    this.databaseUrl = databaseUrl;
     this.env = env;
   }
 
@@ -178,6 +181,39 @@ export class ComicService {
     if (!existing) {
       throw new Error("Komik tidak ditemukan.");
     }
+
+    // Auto cleanup R2 media (cover, banner, chapter pages)
+    const chapterRepo = new ChapterRepository(this.databaseUrl);
+    const comicChapters = await chapterRepo.findByComicId(id);
+
+    for (const ch of comicChapters) {
+      const chDetail = await chapterRepo.findById(ch.id);
+      if (chDetail?.pages) {
+        for (const p of chDetail.pages) {
+          if (p.imageUrl) {
+            try {
+              const urlPath = new URL(p.imageUrl).pathname.replace(/^\//, "");
+              await deleteFromR2(this.env as StorageEnv, "media", urlPath).catch(() => {});
+            } catch {}
+          }
+        }
+      }
+    }
+
+    if (existing.comic.coverUrl) {
+      try {
+        const coverPath = new URL(existing.comic.coverUrl).pathname.replace(/^\//, "");
+        await deleteFromR2(this.env as StorageEnv, "media", coverPath).catch(() => {});
+      } catch {}
+    }
+
+    if (existing.comic.bannerUrl) {
+      try {
+        const bannerPath = new URL(existing.comic.bannerUrl).pathname.replace(/^\//, "");
+        await deleteFromR2(this.env as StorageEnv, "media", bannerPath).catch(() => {});
+      } catch {}
+    }
+
     await this.comicRepo.delete(id);
     return existing.comic.title;
   }

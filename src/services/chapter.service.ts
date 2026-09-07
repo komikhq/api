@@ -248,6 +248,19 @@ export class ChapterService {
       throw new Error("Chapter tidak ditemukan.");
     }
 
+    if (existing.pages && existing.pages.length > 0) {
+      for (const p of existing.pages) {
+        if (p.imageUrl) {
+          try {
+            const urlPath = new URL(p.imageUrl).pathname.replace(/^\//, "");
+            await deleteFromR2(this.env as StorageEnv, "media", urlPath).catch(() => {});
+          } catch {
+            // Ignore URL parse errors
+          }
+        }
+      }
+    }
+
     await this.chapterRepo.delete(chapterId);
     await this.chapterRepo.updateComicTotalChapters(comicId);
 
