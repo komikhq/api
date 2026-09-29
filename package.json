@@ -22,6 +22,8 @@
     "dev": "wrangler dev",
     "users": "tsx --tsconfig scripts/cli/tsconfig.json scripts/cli/users.tsx",
     "deploy": "wrangler deploy --minify",
+    "test": "node --import tsx --test \"tests/**/*.test.ts\"",
+    "test:watch": "node --import tsx --test --watch \"tests/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "db:generate": "drizzle-kit generate",

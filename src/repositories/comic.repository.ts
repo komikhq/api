@@ -12,6 +12,18 @@ export interface ListComicsParams {
   limit: number;
 }
 
+export function attachPeriodViews<T extends { id: string }>(
+  rankedComics: T[],
+  periodViewCounts: Map<string, number> | null,
+) {
+  return rankedComics.map((comic) => ({
+    ...comic,
+    ...(periodViewCounts
+      ? { periodViews: periodViewCounts.get(comic.id) ?? 0 }
+      : {}),
+  }));
+}
+
 export class ComicRepository {
   private db: DbClient;
 
@@ -248,6 +260,7 @@ export class ComicRepository {
 
   async findTrending(period: "daily" | "weekly" | "popular" = "daily", limit: number = 10) {
     let comicIds: string[] = [];
+    let periodViewCounts: Map<string, number> | null = null;
 
     if (period === "popular") {
       const popularComics = await this.db
@@ -277,6 +290,7 @@ export class ComicRepository {
         .limit(limit);
 
       comicIds = trendingLogs.map((l) => l.comicId);
+      periodViewCounts = new Map(trendingLogs.map((log) => [log.comicId, log.viewCount]));
     }
 
     if (comicIds.length === 0) {
@@ -324,7 +338,9 @@ export class ComicRepository {
       }
     }
 
-    const enrichedComics = sortedComics.map((item) => ({
+    const comicsWithPeriodViews = attachPeriodViews(sortedComics, periodViewCounts);
+
+    const enrichedComics = comicsWithPeriodViews.map((item) => ({
       ...item,
       genres: comicGenresMap[item.id] || [],
       creators: comicCreatorsMap[item.id] || [],
