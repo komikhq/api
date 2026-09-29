@@ -1,6 +1,44 @@
 import { createDbClient, genres } from "@/db";
 import type { DbClient } from "@/db";
-import { eq, desc } from "drizzle-orm";
+import type { Genre } from "@/db/schema/genres";
+import { eq } from "drizzle-orm";
+
+const genreNameCollator = new Intl.Collator("en", {
+  numeric: true,
+  sensitivity: "base",
+  ignorePunctuation: false,
+});
+
+function compareCodePointStrings(left: string, right: string) {
+  const leftPoints = Array.from(left, (character) => character.codePointAt(0)!);
+  const rightPoints = Array.from(right, (character) => character.codePointAt(0)!);
+  const sharedLength = Math.min(leftPoints.length, rightPoints.length);
+
+  for (let index = 0; index < sharedLength; index += 1) {
+    if (leftPoints[index] !== rightPoints[index]) {
+      return leftPoints[index] - rightPoints[index];
+    }
+  }
+
+  return leftPoints.length - rightPoints.length;
+}
+
+export function compareGenreNames(
+  left: Pick<Genre, "id" | "name" | "slug">,
+  right: Pick<Genre, "id" | "name" | "slug">,
+) {
+  return (
+    genreNameCollator.compare(left.name, right.name) ||
+    compareCodePointStrings(left.name.normalize("NFKC"), right.name.normalize("NFKC")) ||
+    compareCodePointStrings(left.name, right.name) ||
+    compareCodePointStrings(left.slug, right.slug) ||
+    compareCodePointStrings(left.id, right.id)
+  );
+}
+
+export function sortGenres<T extends Pick<Genre, "id" | "name" | "slug">>(genreList: T[]) {
+  return [...genreList].sort(compareGenreNames);
+}
 
 export class GenreRepository {
   private db: DbClient;
@@ -10,7 +48,8 @@ export class GenreRepository {
   }
 
   async findAll() {
-    return this.db.select().from(genres).orderBy(desc(genres.createdAt));
+    const genreList = await this.db.select().from(genres);
+    return sortGenres(genreList);
   }
 
   async findById(id: string) {
