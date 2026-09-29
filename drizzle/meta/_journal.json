@@ -36,6 +36,13 @@
       "when": 1788763660870,
       "tag": "0004_brown_puck",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790694954790,
+      "tag": "0005_add_comic_alternate_titles",
+      "breakpoints": true
     }
   ]
 }

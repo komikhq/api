@@ -45,6 +45,7 @@ adminComicRoutes.post("/comics", async (c) => {
       type: formData.get("type")?.toString().trim() || "manga",
       status: formData.get("status")?.toString().trim() || "ongoing",
       accessTier: formData.get("accessTier")?.toString().trim() || "free",
+      alternateTitles: formData.getAll("alternateTitles").map((value) => value.toString().trim()).filter(Boolean),
       genreIdsRaw: formData.get("genreIds")?.toString(),
       creatorName: formData.get("creator")?.toString().trim(),
       coverFile: formData.get("cover") as File,
@@ -83,6 +84,9 @@ adminComicRoutes.put("/comics/:id", async (c) => {
       type: formData.get("type")?.toString().trim(),
       status: formData.get("status")?.toString().trim(),
       accessTier: formData.get("accessTier")?.toString().trim(),
+      ...(formData.has("alternateTitles")
+        ? { alternateTitles: formData.getAll("alternateTitles").map((value) => value.toString().trim()).filter(Boolean) }
+        : {}),
       genreIdsRaw: formData.get("genreIds")?.toString(),
       creatorName: formData.get("creator")?.toString().trim(),
       coverFile: formData.get("cover") as File | null,

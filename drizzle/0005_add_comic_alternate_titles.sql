@@ -1,0 +1,1 @@
+ALTER TABLE "comics" ADD COLUMN IF NOT EXISTS "alternate_titles" text[] DEFAULT ARRAY[]::text[] NOT NULL;

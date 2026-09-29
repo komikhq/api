@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { pgTable, uuid, varchar, text, integer, timestamp } from "drizzle-orm/pg-core";
 
 export const comics = pgTable("comics", {
@@ -7,6 +8,7 @@ export const comics = pgTable("comics", {
   synopsis: text("synopsis"),
   coverUrl: text("cover_url").notNull(),
   bannerUrl: text("banner_url"),
+  alternateTitles: text("alternate_titles").array().notNull().default(sql`ARRAY[]::text[]`),
   type: varchar("type", { length: 20 }).notNull().default("manga"),
   status: varchar("status", { length: 20 }).notNull().default("ongoing"),
   accessTier: varchar("access_tier", { length: 20 }).notNull().default("free"),

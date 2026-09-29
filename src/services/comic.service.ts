@@ -11,6 +11,7 @@ export interface CreateComicDto {
   accessTier?: string;
   genreIdsRaw?: string;
   creatorName?: string;
+  alternateTitles?: string[];
   coverFile: File;
   bannerFile?: File | null;
 }
@@ -23,6 +24,7 @@ export interface UpdateComicDto {
   accessTier?: string;
   genreIdsRaw?: string;
   creatorName?: string;
+  alternateTitles?: string[];
   coverFile?: File | null;
   bannerFile?: File | null;
 }
@@ -106,6 +108,7 @@ export class ComicService {
       synopsis: dto.synopsis || "",
       coverUrl,
       bannerUrl,
+      alternateTitles: dto.alternateTitles ?? [],
       type: dto.type || "manga",
       status: dto.status || "ongoing",
       accessTier: dto.accessTier || "free",
@@ -147,6 +150,9 @@ export class ComicService {
     if (dto.type) updateData.type = dto.type;
     if (dto.status) updateData.status = dto.status;
     if (dto.accessTier) updateData.accessTier = dto.accessTier;
+    if (dto.alternateTitles !== undefined) {
+      updateData.alternateTitles = dto.alternateTitles.map((title) => title.trim()).filter(Boolean);
+    }
 
     if (dto.coverFile && dto.coverFile.size > 0) {
       const coverBuffer = await dto.coverFile.arrayBuffer();
