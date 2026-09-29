@@ -1,6 +1,6 @@
 import { createDbClient, comics, comicGenres, genres, creators, comicCreators, chapters, comicViewLogs } from "@/db";
 import type { DbClient } from "@/db";
-import { eq, like, or, and, count, desc, asc, inArray, notInArray, gte } from "drizzle-orm";
+import { eq, like, or, and, count, desc, asc, inArray, gte, lte } from "drizzle-orm";
 
 export interface ListComicsParams {
   q?: string;
@@ -258,8 +258,9 @@ export class ComicRepository {
 
       comicIds = popularComics.map((c) => c.id);
     } else {
-      const hoursAgo = period === "daily" ? 24 : 168; // 24h vs 7d (168h)
-      const cutoff = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
+      const windowHours = period === "daily" ? 24 : 168;
+      const now = new Date();
+      const windowStart = new Date(now.getTime() - windowHours * 60 * 60 * 1000);
 
       const trendingLogs = await this.db
         .select({
@@ -267,25 +268,15 @@ export class ComicRepository {
           viewCount: count(comicViewLogs.id),
         })
         .from(comicViewLogs)
-        .where(gte(comicViewLogs.viewedAt, cutoff))
+        .where(and(
+          gte(comicViewLogs.viewedAt, windowStart),
+          lte(comicViewLogs.viewedAt, now),
+        ))
         .groupBy(comicViewLogs.comicId)
         .orderBy(desc(count(comicViewLogs.id)))
         .limit(limit);
 
       comicIds = trendingLogs.map((l) => l.comicId);
-
-      // Fallback: If view logs in cutoff period are less than limit, backfill with top totalViews comics
-      if (comicIds.length < limit) {
-        const remainingLimit = limit - comicIds.length;
-        const fallbackComics = await this.db
-          .select({ id: comics.id })
-          .from(comics)
-          .where(comicIds.length > 0 ? notInArray(comics.id, comicIds) : undefined)
-          .orderBy(desc(comics.totalViews))
-          .limit(remainingLimit);
-
-        comicIds = [...comicIds, ...fallbackComics.map((c) => c.id)];
-      }
     }
 
     if (comicIds.length === 0) {
