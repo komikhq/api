@@ -12,7 +12,8 @@ When importing the `komikhq-api` repository for the first time via **Cloudflare 
 | --- | --- | --- |
 | **Project Name** | `komikhq-api` | Worker project name in Cloudflare Dashboard. |
 | **Production Branch** | `main` | Primary branch triggering auto-deployments. |
-| **Build Command** | *(Leave Blank)* or `npm run deploy` | If left blank, Cloudflare automatically parses `wrangler.jsonc`. |
+| **Build Command** | *(Leave Blank)* | Cloudflare automatically parses `wrangler.jsonc`. |
+| **Deploy Command** | `pnpm run deploy` | Runs the package script (`wrangler deploy --minify`). Use `pnpm run deploy`, not `pnpm deploy`; the latter is pnpm's built-in deploy command and requires a target directory. |
 | **Build Output Directory** | *(Leave Blank)* | Not required for standalone Hono Workers. |
 | **Root Directory** | `/` (or leave blank if at repo root) | Path to the API project directory in the GitHub repository (`komikhq/api`). |
 
