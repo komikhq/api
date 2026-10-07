@@ -11,7 +11,7 @@
   "keep_vars": true,
   "routes": [
     {
-      "pattern": "api.komikhq.com",
+      "pattern": "api.komikhq.dyzulk.com",
       "custom_domain": true
     }
   ],
