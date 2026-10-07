@@ -6,12 +6,12 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "workers_dev": false,
+  "workers_dev": true,
   "preview_urls": false,
   "keep_vars": true,
   "routes": [
     {
-      "pattern": "api.komikhq.dyzulk.com",
+      "pattern": "api.komikhq.com",
       "custom_domain": true
     }
   ],
