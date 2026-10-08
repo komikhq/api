@@ -55,7 +55,7 @@ export class UserService {
 
     if (hasPassword) {
       if (!body.password) {
-        throw new Error("Kata sandi konfirmasi wajib diisi.");
+        throw new Error("Confirmation password is required.");
       }
 
       try {
@@ -66,14 +66,14 @@ export class UserService {
         });
 
         if (!isValid) {
-          throw new Error("Kata sandi konfirmasi tidak sesuai.");
+          throw new Error("Incorrect confirmation password.");
         }
       } catch (e: any) {
-        throw new Error(e.message || "Kata sandi yang Anda masukkan tidak valid.");
+        throw new Error(e.message || "Invalid password entered.");
       }
     } else {
       if (!body.email || body.email.toLowerCase().trim() !== userEmail.toLowerCase().trim()) {
-        throw new Error("Alamat email konfirmasi tidak sesuai.");
+        throw new Error("Confirmation email does not match.");
       }
     }
 

@@ -21,7 +21,7 @@ adminRoutes.get("/users", async (c) => {
 
     return successResponse(c, result);
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal mengambil daftar pengguna.", 500);
+    return errorResponse(c, err.message || "Failed to fetch users.", 500);
   }
 });
 
@@ -76,7 +76,7 @@ adminRoutes.get("/stats", async (c) => {
     const stats = await service.getStats();
     return successResponse(c, stats);
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal mengambil statistik sistem.", 500);
+    return errorResponse(c, err.message || "Failed to fetch system statistics.", 500);
   }
 });
 
@@ -92,7 +92,7 @@ adminRoutes.get("/reports", async (c) => {
 
     return successResponse(c, result);
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal mengambil daftar laporan.", 500);
+    return errorResponse(c, err.message || "Failed to fetch reports.", 500);
   }
 });
 
@@ -106,6 +106,6 @@ adminRoutes.post("/reports/:id/action", async (c) => {
     const result = await service.resolveReport(reportId, body.action);
     return successResponse(c, { success: true, report: result });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal memproses laporan.", 400);
+    return errorResponse(c, err.message || "Failed to process report.", 400);
   }
 });

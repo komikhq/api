@@ -29,7 +29,7 @@ export function createSearchRoutes(
       return successResponse(c, { query, suggestions: [] });
     }
     if (queryLength > MAX_QUERY_LENGTH) {
-      return errorResponse(c, "Query maksimal 80 karakter.", 400);
+      return errorResponse(c, "Query must not exceed 80 characters.", 400);
     }
 
     const rawLimit = c.req.query("limit");
@@ -63,7 +63,7 @@ export function createSearchRoutes(
       return successResponse(c, { query, suggestions });
     } catch (err) {
       console.error("[Search API] Failed to fetch suggestions:", err);
-      return errorResponse(c, "Gagal mencari komik.", 500);
+      return errorResponse(c, "Failed to search comics.", 500);
     }
   });
 

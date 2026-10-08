@@ -17,11 +17,11 @@ adminChapterRoutes.get("/comics/:comicId/chapters", async (c) => {
     const chapterList = await service.getChaptersByComicId(comicId);
     return successResponse(c, { chapters: chapterList });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal mengambil daftar chapter.", 500);
+    return errorResponse(c, err.message || "Failed to fetch chapter list.", 500);
   }
 });
 
-// POST /v1/admin/comics/:comicId/chapters/init - Inisialisasi chapter baru
+// POST /v1/admin/comics/:comicId/chapters/init - Initialize new chapter
 adminChapterRoutes.post("/comics/:comicId/chapters/init", async (c) => {
   try {
     const comicId = c.req.param("comicId");
@@ -39,11 +39,11 @@ adminChapterRoutes.post("/comics/:comicId/chapters/init", async (c) => {
 
     return successResponse(c, { success: true, ...result }, 201);
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal menginisialisasi chapter baru.", 400);
+    return errorResponse(c, err.message || "Failed to initialize new chapter.", 400);
   }
 });
 
-// POST /v1/admin/comics/:comicId/chapters/:id/pages/upload - Upload 1 file gambar halaman
+// POST /v1/admin/comics/:comicId/chapters/:id/pages/upload - Upload single page image
 adminChapterRoutes.post("/comics/:comicId/chapters/:id/pages/upload", async (c) => {
   try {
     const chapterId = c.req.param("id");
@@ -54,17 +54,17 @@ adminChapterRoutes.post("/comics/:comicId/chapters/:id/pages/upload", async (c) 
     const file = formData.get("file") as File;
 
     if (!file || typeof file !== "object" || file.size === 0) {
-      return errorResponse(c, "File gambar halaman tidak valid.", 400);
+      return errorResponse(c, "Invalid page image file.", 400);
     }
 
     const pageRecord = await service.uploadSinglePage(chapterId, pageNumber, file);
     return successResponse(c, { success: true, page: pageRecord }, 201);
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal mengunggah gambar halaman.", 400);
+    return errorResponse(c, err.message || "Failed to upload page image.", 400);
   }
 });
 
-// POST /v1/admin/comics/:comicId/chapters/:id/finalize - Finalisasi jumlah halaman chapter
+// POST /v1/admin/comics/:comicId/chapters/:id/finalize - Finalize chapter total pages
 adminChapterRoutes.post("/comics/:comicId/chapters/:id/finalize", async (c) => {
   try {
     const comicId = c.req.param("comicId");
@@ -77,7 +77,7 @@ adminChapterRoutes.post("/comics/:comicId/chapters/:id/finalize", async (c) => {
 
     return successResponse(c, { success: true, chapter: updated });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal memfinalisasi chapter.", 400);
+    return errorResponse(c, err.message || "Failed to finalize chapter.", 400);
   }
 });
 
@@ -107,7 +107,7 @@ adminChapterRoutes.post("/comics/:comicId/chapters", async (c) => {
 
     return successResponse(c, { success: true, ...result }, 201);
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal membuat chapter baru.", 400);
+    return errorResponse(c, err.message || "Failed to create new chapter.", 400);
   }
 });
 
@@ -120,7 +120,7 @@ adminChapterRoutes.get("/comics/:comicId/chapters/:id", async (c) => {
     const result = await service.getChapterById(chapterId);
     return successResponse(c, result);
   } catch (err: any) {
-    return errorResponse(c, err.message || "Chapter tidak ditemukan.", 404);
+    return errorResponse(c, err.message || "Chapter not found.", 404);
   }
 });
 
@@ -134,7 +134,7 @@ adminChapterRoutes.put("/comics/:comicId/chapters/:id", async (c) => {
     const updated = await service.updateChapter(chapterId, body);
     return successResponse(c, { success: true, chapter: updated });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal memperbarui metadata chapter.", 400);
+    return errorResponse(c, err.message || "Failed to update chapter metadata.", 400);
   }
 });
 
@@ -146,8 +146,8 @@ adminChapterRoutes.delete("/comics/:comicId/chapters/:id", async (c) => {
     const service = new ChapterService(c.env.DATABASE_URL, c.env);
 
     const chNum = await service.deleteChapter(comicId, chapterId);
-    return successResponse(c, { success: true, message: `Chapter ${chNum} berhasil dihapus.` });
+    return successResponse(c, { success: true, message: `Chapter ${chNum} deleted successfully.` });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal menghapus chapter.", 400);
+    return errorResponse(c, err.message || "Failed to delete chapter.", 400);
   }
 });

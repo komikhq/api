@@ -24,7 +24,7 @@ export class GenreService {
 
   async createGenre(dto: CreateGenreDto) {
     if (!dto.name || typeof dto.name !== "string" || !dto.name.trim()) {
-      throw new Error("Nama genre wajib diisi.");
+      throw new Error("Genre name is required.");
     }
 
     const name = dto.name.trim();
@@ -32,7 +32,7 @@ export class GenreService {
 
     const existing = await this.genreRepo.findBySlug(slug);
     if (existing) {
-      throw new Error(`Genre dengan nama atau slug "${name}" sudah ada.`);
+      throw new Error(`Genre with name or slug "${name}" already exists.`);
     }
 
     return this.genreRepo.create({
@@ -45,7 +45,7 @@ export class GenreService {
   async updateGenre(id: string, dto: UpdateGenreDto) {
     const existing = await this.genreRepo.findById(id);
     if (!existing) {
-      throw new Error("Genre tidak ditemukan.");
+      throw new Error("Genre not found.");
     }
 
     const updateData: any = {
@@ -67,7 +67,7 @@ export class GenreService {
   async deleteGenre(id: string) {
     const existing = await this.genreRepo.findById(id);
     if (!existing) {
-      throw new Error("Genre tidak ditemukan.");
+      throw new Error("Genre not found.");
     }
 
     await this.genreRepo.delete(id);

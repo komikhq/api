@@ -8,7 +8,7 @@ export const adminStorageRoutes = new Hono<AppEnv>();
 
 adminStorageRoutes.use("*", requireAdmin());
 
-// POST /v1/admin/storage/purge-orphans - Hapus file gambar orphan di R2 yang tidak terdaftar di DB
+// POST /v1/admin/storage/purge-orphans - Purge orphan image files in R2 not registered in DB
 adminStorageRoutes.post("/storage/purge-orphans", async (c) => {
   try {
     const service = new ChapterService(c.env.DATABASE_URL, c.env);
@@ -16,10 +16,10 @@ adminStorageRoutes.post("/storage/purge-orphans", async (c) => {
 
     return successResponse(c, {
       success: true,
-      message: `Pembersihan berhasil! ${result.purgedCount} file sampah (${result.totalSizeMB} MB) dihapus dari R2.`,
+      message: `Cleanup successful! ${result.purgedCount} orphan files (${result.totalSizeMB} MB) deleted from R2.`,
       ...result,
     });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal membersihkan file gambar sampah.", 500);
+    return errorResponse(c, err.message || "Failed to purge orphan images.", 500);
   }
 });

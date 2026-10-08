@@ -68,7 +68,7 @@ comicRoutes.get("/:slug/chapters/:chapterSlug", async (c) => {
 
     return successResponse(c, data);
   } catch (err: any) {
-    return errorResponse(c, err.message || "Chapter tidak ditemukan.", 404);
+    return errorResponse(c, err.message || "Chapter not found.", 404);
   }
 });
 
@@ -81,7 +81,7 @@ comicRoutes.get("/:slug", async (c) => {
 
     return successResponse(c, comicData);
   } catch (err: any) {
-    return errorResponse(c, err.message || "Komik tidak ditemukan.", 404);
+    return errorResponse(c, err.message || "Comic not found.", 404);
   }
 });
 

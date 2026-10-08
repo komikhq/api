@@ -18,7 +18,7 @@ export function createGenreRoutes(
       return successResponse(c, { genres: genreList });
     } catch (err: any) {
       console.error("[Public API] Failed to fetch genres:", err);
-      return errorResponse(c, err.message || "Gagal mengambil daftar genre.", 500);
+      return errorResponse(c, err.message || "Failed to fetch genres.", 500);
     }
   });
 

@@ -53,8 +53,8 @@ userRoutes.delete("/profile", async (c) => {
     const service = new UserService(c.env.DATABASE_URL, c.env);
     await service.deleteOwnAccount(user.userId, user.email, body, c.req.raw.headers);
 
-    return successResponse(c, { success: true, message: "Akun berhasil dihapus permanen." });
+    return successResponse(c, { success: true, message: "Account deleted permanently." });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal menghapus akun.", 400);
+    return errorResponse(c, err.message || "Failed to delete account.", 400);
   }
 });

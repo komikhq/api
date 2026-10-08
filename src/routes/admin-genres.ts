@@ -15,7 +15,7 @@ adminGenreRoutes.get("/genres", async (c) => {
     const genreList = await service.getAllGenres();
     return successResponse(c, { genres: genreList });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal mengambil daftar genre.", 500);
+    return errorResponse(c, err.message || "Failed to fetch genres.", 500);
   }
 });
 
@@ -28,7 +28,7 @@ adminGenreRoutes.post("/genres", async (c) => {
     const newGenre = await service.createGenre(body);
     return successResponse(c, { success: true, genre: newGenre }, 201);
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal membuat genre.", 400);
+    return errorResponse(c, err.message || "Failed to create genre.", 400);
   }
 });
 
@@ -42,7 +42,7 @@ adminGenreRoutes.put("/genres/:id", async (c) => {
     const updated = await service.updateGenre(genreId, body);
     return successResponse(c, { success: true, genre: updated });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal memperbarui genre.", 400);
+    return errorResponse(c, err.message || "Failed to update genre.", 400);
   }
 });
 
@@ -53,8 +53,8 @@ adminGenreRoutes.delete("/genres/:id", async (c) => {
     const service = new GenreService(c.env.DATABASE_URL);
 
     const name = await service.deleteGenre(genreId);
-    return successResponse(c, { success: true, message: `Genre "${name}" berhasil dihapus.` });
+    return successResponse(c, { success: true, message: `Genre "${name}" deleted successfully.` });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal menghapus genre.", 400);
+    return errorResponse(c, err.message || "Failed to delete genre.", 400);
   }
 });

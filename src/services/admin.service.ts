@@ -103,7 +103,7 @@ export class AdminService {
 
   async deleteUser(userId: string, currentUserId?: string) {
     if (userId === currentUserId) {
-      throw new Error("Anda tidak dapat menghapus akun Anda sendiri dari admin panel.");
+      throw new Error("You cannot delete your own account from the admin panel.");
     }
 
     const existingUser = await this.userRepo.findById(userId);

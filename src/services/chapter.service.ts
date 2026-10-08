@@ -44,7 +44,7 @@ export class ChapterService {
   async getChapterById(chapterId: string) {
     const data = await this.chapterRepo.findById(chapterId);
     if (!data) {
-      throw new Error("Chapter tidak ditemukan.");
+      throw new Error("Chapter not found.");
     }
     return {
       ...data,
@@ -55,7 +55,7 @@ export class ChapterService {
   async getPublicChapterBySlugs(comicSlug: string, chapterSlug: string) {
     const data = await this.chapterRepo.findByComicSlugAndChapterSlug(comicSlug, chapterSlug);
     if (!data) {
-      throw new Error("Chapter tidak ditemukan.");
+      throw new Error("Chapter not found.");
     }
     return {
       ...data,
@@ -73,11 +73,11 @@ export class ChapterService {
   }) {
     const comicData = await this.comicRepo.findById(dto.comicId);
     if (!comicData) {
-      throw new Error("Komik tidak ditemukan.");
+      throw new Error("Comic not found.");
     }
 
     if (!dto.chapterNumberStr) {
-      throw new Error("Nomor chapter wajib diisi.");
+      throw new Error("Chapter number is required.");
     }
 
     const chapterNumber = parseFloat(dto.chapterNumberStr);
@@ -88,7 +88,7 @@ export class ChapterService {
       chapterNumber.toString()
     );
     if (existingChapter) {
-      throw new Error(`Chapter ${dto.chapterNumberStr} sudah ada untuk komik ini. Gunakan nomor chapter yang berbeda.`);
+      throw new Error(`Chapter ${dto.chapterNumberStr} already exists for this comic. Please use a different chapter number.`);
     }
 
     const newChapter = await this.chapterRepo.createChapter({
@@ -110,12 +110,12 @@ export class ChapterService {
   async uploadSinglePage(chapterId: string, pageNumber: number, file: File) {
     const existing = await this.chapterRepo.findById(chapterId);
     if (!existing) {
-      throw new Error("Chapter tidak ditemukan.");
+      throw new Error("Chapter not found.");
     }
 
     const comicData = await this.comicRepo.findById(existing.chapter.comicId);
     if (!comicData) {
-      throw new Error("Komik tidak ditemukan.");
+      throw new Error("Comic not found.");
     }
 
     const ext = file.name.split(".").pop() || "webp";
@@ -141,7 +141,7 @@ export class ChapterService {
     const bucket = (this.env.BUCKET_MEDIA || this.env.MEDIA_BUCKET) as R2Bucket;
 
     if (!bucket) {
-      throw new Error("R2 Bucket binding BUCKET_MEDIA / MEDIA_BUCKET tidak ditemukan.");
+      throw new Error("R2 bucket binding BUCKET_MEDIA / MEDIA_BUCKET not found.");
     }
 
     // Normalize stored values to object keys for comparison
@@ -186,7 +186,7 @@ export class ChapterService {
   async finalizeChapter(comicId: string, chapterId: string, totalPages: number) {
     const existing = await this.chapterRepo.findById(chapterId);
     if (!existing) {
-      throw new Error("Chapter tidak ditemukan.");
+      throw new Error("Chapter not found.");
     }
 
     const updated = await this.chapterRepo.update(chapterId, {
@@ -201,11 +201,11 @@ export class ChapterService {
   async createChapter(dto: CreateChapterDto) {
     const comicData = await this.comicRepo.findById(dto.comicId);
     if (!comicData) {
-      throw new Error("Komik tidak ditemukan.");
+      throw new Error("Comic not found.");
     }
 
     if (!dto.chapterNumberStr) {
-      throw new Error("Nomor chapter wajib diisi.");
+      throw new Error("Chapter number is required.");
     }
 
     const chapterNumber = parseFloat(dto.chapterNumberStr);
@@ -249,7 +249,7 @@ export class ChapterService {
   async updateChapter(chapterId: string, dto: UpdateChapterDto) {
     const existing = await this.chapterRepo.findById(chapterId);
     if (!existing) {
-      throw new Error("Chapter tidak ditemukan.");
+      throw new Error("Chapter not found.");
     }
 
     const updateData: any = {
@@ -267,7 +267,7 @@ export class ChapterService {
   async deleteChapter(comicId: string, chapterId: string) {
     const existing = await this.chapterRepo.findById(chapterId);
     if (!existing) {
-      throw new Error("Chapter tidak ditemukan.");
+      throw new Error("Chapter not found.");
     }
 
     if (existing.pages && existing.pages.length > 0) {

@@ -24,7 +24,7 @@ adminComicRoutes.get("/comics", async (c) => {
     console.error("[Admin API] Failed to list comics:", err);
     return c.json(
       {
-        error: err.message || "Gagal mengambil katalog komik dari database.",
+        error: err.message || "Failed to fetch comic catalog from database.",
         comics: [],
         pagination: { page: 1, limit: 15, total: 0, totalPages: 1 },
       },
@@ -54,7 +54,7 @@ adminComicRoutes.post("/comics", async (c) => {
 
     return successResponse(c, { success: true, comic }, 201);
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal menambahkan komik baru.", 400);
+    return errorResponse(c, err.message || "Failed to add new comic.", 400);
   }
 });
 
@@ -67,7 +67,7 @@ adminComicRoutes.get("/comics/:id", async (c) => {
     const comicData = await service.getComicById(comicId);
     return successResponse(c, comicData);
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal memuat detail komik.", 404);
+    return errorResponse(c, err.message || "Failed to load comic details.", 404);
   }
 });
 
@@ -95,7 +95,7 @@ adminComicRoutes.put("/comics/:id", async (c) => {
 
     return successResponse(c, { success: true, comic: updatedComic });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal mengedit data komik.", 400);
+    return errorResponse(c, err.message || "Failed to update comic.", 400);
   }
 });
 
@@ -106,8 +106,8 @@ adminComicRoutes.delete("/comics/:id", async (c) => {
     const service = new ComicService(c.env.DATABASE_URL, c.env);
 
     const title = await service.deleteComic(comicId);
-    return successResponse(c, { success: true, message: `Komik "${title}" berhasil dihapus.` });
+    return successResponse(c, { success: true, message: `Comic "${title}" deleted successfully.` });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Gagal menghapus komik.", 400);
+    return errorResponse(c, err.message || "Failed to delete comic.", 400);
   }
 });

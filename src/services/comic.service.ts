@@ -73,7 +73,7 @@ export class ComicService {
   async getComicById(id: string) {
     const comicData = await this.comicRepo.findById(id);
     if (!comicData) {
-      throw new Error("Komik tidak ditemukan.");
+      throw new Error("Comic not found.");
     }
     return { ...comicData, comic: this.resolveComicUrls(comicData.comic) };
   }
@@ -81,17 +81,17 @@ export class ComicService {
   async getComicBySlug(slug: string) {
     const comicData = await this.comicRepo.findBySlug(slug);
     if (!comicData) {
-      throw new Error("Komik tidak ditemukan.");
+      throw new Error("Comic not found.");
     }
     return { ...comicData, comic: this.resolveComicUrls(comicData.comic) };
   }
 
   async createComic(dto: CreateComicDto) {
     if (!dto.title) {
-      throw new Error("Judul komik wajib diisi.");
+      throw new Error("Comic title is required.");
     }
     if (!dto.coverFile) {
-      throw new Error("Gambar cover komik wajib diunggah.");
+      throw new Error("Comic cover image is required.");
     }
 
     const slug = slugify(dto.title) + "-" + Date.now().toString().slice(-4);
@@ -150,7 +150,7 @@ export class ComicService {
   async updateComic(id: string, dto: UpdateComicDto) {
     const existing = await this.comicRepo.findById(id);
     if (!existing) {
-      throw new Error("Komik tidak ditemukan.");
+      throw new Error("Comic not found.");
     }
 
     const existingComic = existing.comic;
@@ -206,7 +206,7 @@ export class ComicService {
   async deleteComic(id: string) {
     const existing = await this.comicRepo.findById(id);
     if (!existing) {
-      throw new Error("Komik tidak ditemukan.");
+      throw new Error("Comic not found.");
     }
 
     // Auto cleanup R2 media (cover, banner, chapter pages)
