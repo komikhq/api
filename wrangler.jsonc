@@ -7,7 +7,7 @@
     "nodejs_compat"
   ],
   "workers_dev": true,
-  "preview_urls": false,
+  "preview_urls": true,
   "keep_vars": true,
   "routes": [
     {
