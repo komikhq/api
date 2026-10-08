@@ -12,17 +12,16 @@ adminSystemRoutes.use("*", requireAdmin());
 // GET /v1/admin/system/maintenance-status - Get live metrics for KV queues & storage
 adminSystemRoutes.get("/system/maintenance-status", async (c) => {
   try {
-    let pendingViewsCount = 0;
     let cachedSearchKeysCount = 0;
     let kvHealthy = true;
+    let kvViewsHealthy = true;
+    let aeHealthy = Boolean(c.env.AE_COMIC_VIEWS);
     let r2Healthy = true;
+    let lastSyncedAt: string | null = null;
+    let cachedRankingsCount = 0;
 
     if (c.env.KV_KOMIKHQ) {
       try {
-        const viewLogs = await c.env.KV_KOMIKHQ.list({ prefix: "view_log:" });
-        const legacyViews = await c.env.KV_KOMIKHQ.list({ prefix: "view:" });
-        pendingViewsCount = viewLogs.keys.length + legacyViews.keys.length;
-
         const searchKeys = await c.env.KV_KOMIKHQ.list({ prefix: "comic-search:suggestions:" });
         cachedSearchKeysCount = searchKeys.keys.length;
       } catch {
@@ -32,15 +31,30 @@ adminSystemRoutes.get("/system/maintenance-status", async (c) => {
       kvHealthy = false;
     }
 
+    if (c.env.KV_VIEWS) {
+      try {
+        lastSyncedAt = await c.env.KV_VIEWS.get("views_sync:last_synced_at");
+        const rankingKeys = await c.env.KV_VIEWS.list({ prefix: "ranking:" });
+        cachedRankingsCount = rankingKeys.keys.length;
+      } catch {
+        kvViewsHealthy = false;
+      }
+    } else {
+      kvViewsHealthy = false;
+    }
+
     const bucket = c.env.BUCKET_MEDIA || c.env.MEDIA_BUCKET;
     if (!bucket) {
       r2Healthy = false;
     }
 
     return successResponse(c, {
-      "pending-views-count": pendingViewsCount,
       "cached-search-keys-count": cachedSearchKeysCount,
       "kv-healthy": kvHealthy,
+      "kv-views-healthy": kvViewsHealthy,
+      "ae-healthy": aeHealthy,
+      "last-synced-at": lastSyncedAt,
+      "cached-rankings-count": cachedRankingsCount,
       "r2-healthy": r2Healthy,
       timestamp: new Date().toISOString(),
     });
