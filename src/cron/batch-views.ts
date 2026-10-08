@@ -2,10 +2,12 @@ import { createDbClient, comics, comicViewLogs } from "../db";
 import { sql } from "drizzle-orm";
 import type { AppEnv } from "../middleware/auth";
 
-export async function processBatchViews(env: AppEnv["Bindings"]) {
-  if (!env.DATABASE_URL) return;
+export async function processBatchViews(env: AppEnv["Bindings"]): Promise<{ syncedLogs: number; affectedComics: number }> {
+  if (!env.DATABASE_URL) return { syncedLogs: 0, affectedComics: 0 };
 
   const db = createDbClient(env.DATABASE_URL);
+  let syncedLogs = 0;
+  let affectedComics = 0;
 
   // 1. Process timestamped view log entries (view_log:*)
   const listResult = await env.KV_KOMIKHQ.list({ prefix: "view_log:" });
@@ -58,6 +60,9 @@ export async function processBatchViews(env: AppEnv["Bindings"]) {
       }
     }
 
+    syncedLogs += logsToInsert.length;
+    affectedComics += Object.keys(comicCountsMap).length;
+
     // Update totalViews for comics
     for (const [comicId, viewsToAdd] of Object.entries(comicCountsMap)) {
       await db
@@ -88,10 +93,12 @@ export async function processBatchViews(env: AppEnv["Bindings"]) {
             .update(comics)
             .set({ totalViews: sql`${comics.totalViews} + ${viewsToAdd}` })
             .where(sql`${comics.id} = ${comicId}`);
+          affectedComics += 1;
         }
       }
       await env.KV_KOMIKHQ.delete(key);
     }
   }
-}
 
+  return { syncedLogs, affectedComics };
+}

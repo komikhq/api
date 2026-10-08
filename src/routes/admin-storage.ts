@@ -17,6 +17,8 @@ adminStorageRoutes.post("/storage/purge-orphans", async (c) => {
     return successResponse(c, {
       success: true,
       message: `Cleanup successful! ${result.purgedCount} orphan files (${result.totalSizeMB} MB) deleted from R2.`,
+      "purged-count": result.purgedCount,
+      "total-size-mb": result.totalSizeMB,
       ...result,
     });
   } catch (err: any) {
