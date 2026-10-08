@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 import { getCookie } from "hono/cookie";
 import { getAuth } from "@/lib/auth";
+import { toPublicUrl } from "@/lib/storage";
 
 export interface UserSessionPayload {
   id: string;
@@ -14,8 +15,12 @@ export interface UserSessionPayload {
 export interface AppEnv {
   Bindings: {
     KV_KOMIKHQ: KVNamespace;
-    USERS_BUCKET: R2Bucket;
-    MEDIA_BUCKET: R2Bucket;
+    BUCKET_USERS?: R2Bucket;
+    BUCKET_MEDIA?: R2Bucket;
+    USERS_BUCKET?: R2Bucket;
+    MEDIA_BUCKET?: R2Bucket;
+    BUCKET_URL_USERS?: string;
+    BUCKET_URL_MEDIA?: string;
     USERS_BUCKET_URL?: string;
     MEDIA_BUCKET_URL?: string;
     DATABASE_URL: string;
@@ -94,7 +99,7 @@ export function authMiddleware(): MiddlewareHandler<AppEnv> {
         email: sessionData.user.email,
         name: sessionData.user.name,
         role: (sessionData.user as any).role || "user",
-        image: sessionData.user.image,
+        image: toPublicUrl(sessionData.user.image, "users", c.env) ?? sessionData.user.image,
       };
 
       // Store in KV cache for 15 minutes (900 seconds)

@@ -1,5 +1,5 @@
 import { UserRepository } from "@/repositories/user.repository";
-import { uploadToR2 } from "@/lib/storage";
+import { uploadToR2, toPublicUrl, type StorageEnv } from "@/lib/storage";
 import { getAuth } from "@/lib/auth";
 
 export class UserService {
@@ -19,7 +19,10 @@ export class UserService {
 
     const hasPassword = await this.userRepo.hasCredentialPassword(userId);
     return {
-      user: profile,
+      user: {
+        ...profile,
+        image: toPublicUrl(profile.image, "users", this.env) ?? profile.image,
+      },
       hasPassword,
     };
   }
@@ -29,8 +32,9 @@ export class UserService {
     const objectKey = `avatars/${userId}-${Date.now()}.${fileExt}`;
     const buffer = await file.arrayBuffer();
 
-    const publicUrl = await uploadToR2(
-      this.env,
+    // uploadToR2 returns relative object key for DB storage
+    const imageKey = await uploadToR2(
+      this.env as StorageEnv,
       "users",
       objectKey,
       buffer,
@@ -38,11 +42,12 @@ export class UserService {
     );
 
     await this.userRepo.updateUser(userId, {
-      image: publicUrl,
+      image: imageKey,
       updatedAt: new Date(),
     });
 
-    return publicUrl;
+    // Return full public URL to the client
+    return toPublicUrl(imageKey, "users", this.env) ?? imageKey;
   }
 
   async deleteOwnAccount(userId: string, userEmail: string, body: { password?: string; email?: string }, rawHeaders: Headers) {

@@ -8,8 +8,8 @@ GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="GOCSPX-your-google-client-secret"
 
 # R2 Public Storage Domains (CDN URLs)
-USERS_BUCKET_URL="https://cdn-01.komikhq.com"
-MEDIA_BUCKET_URL="https://cdn-02.komikhq.com"
+BUCKET_URL_USERS="https://cdn-01.komikhq.com"
+BUCKET_URL_MEDIA="https://cdn-02.komikhq.com"
 
 # Email Configuration (resend | brevo | cloudflare)
 EMAIL_PROVIDER="resend"

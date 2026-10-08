@@ -1,6 +1,6 @@
 import { ChapterRepository } from "@/repositories/chapter.repository";
 import { ComicRepository } from "@/repositories/comic.repository";
-import { uploadToR2, deleteFromR2, getPublicStorageUrl, type StorageEnv } from "@/lib/storage";
+import { uploadToR2, deleteFromR2, toPublicUrl, toObjectKey, type StorageEnv } from "@/lib/storage";
 
 export interface CreateChapterDto {
   comicId: string;
@@ -29,6 +29,14 @@ export class ChapterService {
     this.env = env;
   }
 
+  /** Resolve page image URLs to full public URLs */
+  private resolvePageUrls(pages: any[]): any[] {
+    return pages.map((p) => ({
+      ...p,
+      imageUrl: toPublicUrl(p.imageUrl, "media", this.env) ?? p.imageUrl,
+    }));
+  }
+
   async getChaptersByComicId(comicId: string) {
     return this.chapterRepo.findByComicId(comicId);
   }
@@ -38,7 +46,10 @@ export class ChapterService {
     if (!data) {
       throw new Error("Chapter tidak ditemukan.");
     }
-    return data;
+    return {
+      ...data,
+      pages: data.pages ? this.resolvePageUrls(data.pages) : [],
+    };
   }
 
   async getPublicChapterBySlugs(comicSlug: string, chapterSlug: string) {
@@ -46,7 +57,10 @@ export class ChapterService {
     if (!data) {
       throw new Error("Chapter tidak ditemukan.");
     }
-    return data;
+    return {
+      ...data,
+      pages: data.pages ? this.resolvePageUrls(data.pages) : [],
+    };
   }
 
   async initChapter(dto: {
@@ -108,12 +122,13 @@ export class ChapterService {
     const objectKey = `comics/${comicData.comic.slug}/ch-${existing.chapter.chapterNumber}/page-${pageNumber}-${Date.now()}.${ext}`;
 
     const buffer = await file.arrayBuffer();
-    const imageUrl = await uploadToR2(this.env as StorageEnv, "media", objectKey, buffer, {
+    // uploadToR2 now returns the relative object key
+    const imageKey = await uploadToR2(this.env as StorageEnv, "media", objectKey, buffer, {
       contentType: file.type || "image/webp",
     });
 
     try {
-      const pageRecord = await this.chapterRepo.createPageRecord(chapterId, pageNumber, imageUrl);
+      const pageRecord = await this.chapterRepo.createPageRecord(chapterId, pageNumber, imageKey);
       return pageRecord;
     } catch (dbErr: any) {
       await deleteFromR2(this.env as StorageEnv, "media", objectKey).catch(() => {});
@@ -122,11 +137,17 @@ export class ChapterService {
   }
 
   async purgeOrphanImages() {
-    const activeUrls = await this.chapterRepo.getAllActiveImageUrls();
-    const bucket = this.env.MEDIA_BUCKET as R2Bucket;
+    const activeKeys = await this.chapterRepo.getAllActiveImageUrls();
+    const bucket = (this.env.BUCKET_MEDIA || this.env.MEDIA_BUCKET) as R2Bucket;
 
     if (!bucket) {
-      throw new Error("R2 Bucket binding MEDIA_BUCKET tidak ditemukan.");
+      throw new Error("R2 Bucket binding BUCKET_MEDIA / MEDIA_BUCKET tidak ditemukan.");
+    }
+
+    // Normalize stored values to object keys for comparison
+    const normalizedKeys = new Set<string>();
+    for (const urlOrKey of activeKeys) {
+      normalizedKeys.add(toObjectKey(urlOrKey));
     }
 
     let truncated = true;
@@ -146,8 +167,8 @@ export class ChapterService {
           continue;
         }
 
-        const publicUrl = getPublicStorageUrl("media", obj.key, this.env as StorageEnv);
-        if (!activeUrls.has(publicUrl)) {
+        // Compare R2 object key directly against normalized DB keys
+        if (!normalizedKeys.has(obj.key)) {
           await bucket.delete(obj.key);
           purgedCount++;
           totalSizeBytes += obj.size;
@@ -208,11 +229,12 @@ export class ChapterService {
       const objectKey = `comics/${comicData.comic.slug}/ch-${dto.chapterNumberStr}/page-${pageNum}-${Date.now()}.${ext}`;
 
       const buffer = await file.arrayBuffer();
-      const imageUrl = await uploadToR2(this.env as StorageEnv, "media", objectKey, buffer, {
+      // uploadToR2 returns relative object key
+      const imageKey = await uploadToR2(this.env as StorageEnv, "media", objectKey, buffer, {
         contentType: file.type || "image/webp",
       });
 
-      const pageRecord = await this.chapterRepo.createPageRecord(newChapter.id, pageNum, imageUrl);
+      const pageRecord = await this.chapterRepo.createPageRecord(newChapter.id, pageNum, imageKey);
       insertedPages.push(pageRecord);
     }
 
@@ -251,12 +273,8 @@ export class ChapterService {
     if (existing.pages && existing.pages.length > 0) {
       for (const p of existing.pages) {
         if (p.imageUrl) {
-          try {
-            const urlPath = new URL(p.imageUrl).pathname.replace(/^\//, "");
-            await deleteFromR2(this.env as StorageEnv, "media", urlPath).catch(() => {});
-          } catch {
-            // Ignore URL parse errors
-          }
+          // deleteFromR2 handles both relative keys and legacy full URLs
+          await deleteFromR2(this.env as StorageEnv, "media", p.imageUrl).catch(() => {});
         }
       }
     }

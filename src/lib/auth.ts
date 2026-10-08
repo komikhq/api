@@ -13,6 +13,7 @@ export interface AuthEnv extends EmailBindings, Partial<StorageEnv> {
   BETTER_AUTH_URL?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
+  BUCKET_URL_USERS?: string;
 }
 
 export function getAuth(env: AuthEnv) {
@@ -74,10 +75,10 @@ export function getAuth(env: AuthEnv) {
             const isExternalAvatar =
               /googleusercontent\.com|ggpht\.com|google\.com/i.test(user.image) ||
               (user.image.startsWith("http") &&
-                Boolean(env.USERS_BUCKET_URL) &&
-                !user.image.includes(env.USERS_BUCKET_URL!));
+                Boolean(env.BUCKET_URL_USERS || env.USERS_BUCKET_URL) &&
+                !user.image.includes((env.BUCKET_URL_USERS || env.USERS_BUCKET_URL)!));
 
-            if (isExternalAvatar && env.USERS_BUCKET) {
+            if (isExternalAvatar && (env.BUCKET_USERS || env.USERS_BUCKET)) {
               try {
                 const res = await fetch(user.image);
                 if (res.ok) {
@@ -86,7 +87,8 @@ export function getAuth(env: AuthEnv) {
                   const arrayBuffer = await res.arrayBuffer();
                   const objectKey = `avatars/google-${user.id || Date.now()}.${ext}`;
 
-                  const publicUrl = await uploadToR2(
+                  // uploadToR2 returns relative object key
+                  const imageKey = await uploadToR2(
                     env as StorageEnv,
                     "users",
                     objectKey,
@@ -97,7 +99,7 @@ export function getAuth(env: AuthEnv) {
                   return {
                     data: {
                       ...user,
-                      image: publicUrl,
+                      image: imageKey,
                     },
                   };
                 }

@@ -29,6 +29,7 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:drop": "tsx scripts/drop-tables.ts",
+    "db:migrate-relative-urls": "tsx scripts/migrate-relative-urls.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

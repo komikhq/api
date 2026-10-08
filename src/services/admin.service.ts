@@ -1,6 +1,7 @@
 import { UserRepository, type ListUsersParams } from "@/repositories/user.repository";
 import { getAuth } from "@/lib/auth";
 import type { UserSessionPayload } from "@/middleware/auth";
+import { toPublicUrl, deleteFromR2 } from "@/lib/storage";
 
 export class AdminService {
   private userRepo: UserRepository;
@@ -13,8 +14,12 @@ export class AdminService {
 
   async listUsers(params: ListUsersParams) {
     const { users, total } = await this.userRepo.findUsersPaginated(params);
+    const resolvedUsers = users.map((u: any) => ({
+      ...u,
+      image: toPublicUrl(u.image, "users", this.env) ?? u.image,
+    }));
     return {
-      users,
+      users: resolvedUsers,
       pagination: {
         page: params.page,
         limit: params.limit,
@@ -122,13 +127,9 @@ export class AdminService {
     }
 
     // Delete R2 Avatar
-    if (existingUser.image && this.env.USERS_BUCKET) {
+    if (existingUser.image && (this.env.BUCKET_USERS || this.env.USERS_BUCKET)) {
       try {
-        const url = new URL(existingUser.image);
-        const objectKey = url.pathname.replace(/^\//, "");
-        if (objectKey.startsWith("avatars/")) {
-          await this.env.USERS_BUCKET.delete(objectKey);
-        }
+        await deleteFromR2(this.env, "users", existingUser.image);
       } catch (e) {
         console.error("[AdminService] Failed to delete R2 avatar:", e);
       }

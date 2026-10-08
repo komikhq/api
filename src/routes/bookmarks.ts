@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { AppEnv } from "@/middleware/auth";
 import { BookmarkService } from "@/services/bookmark.service";
 import { successResponse, errorResponse } from "@/utils/response";
+import { toPublicUrl } from "@/lib/storage";
 
 export const bookmarkRoutes = new Hono<AppEnv>();
 
@@ -13,7 +14,17 @@ bookmarkRoutes.get("/", async (c) => {
     const service = new BookmarkService(c.env.DATABASE_URL);
     const list = await service.getUserBookmarks(user.userId);
 
-    return successResponse(c, { bookmarks: list });
+    // Resolve relative storage paths to full public URLs
+    const resolved = list.map((b: any) => ({
+      ...b,
+      comic: b.comic ? {
+        ...b.comic,
+        coverUrl: toPublicUrl(b.comic.coverUrl, "media", c.env) ?? b.comic.coverUrl,
+        bannerUrl: toPublicUrl(b.comic.bannerUrl, "media", c.env),
+      } : b.comic,
+    }));
+
+    return successResponse(c, { bookmarks: resolved });
   } catch (err: any) {
     return errorResponse(c, err.message || "Failed to get bookmarks", 500);
   }

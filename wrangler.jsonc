@@ -26,11 +26,11 @@
   ],
   "r2_buckets": [
     {
-      "binding": "USERS_BUCKET",
+      "binding": "BUCKET_USERS",
       "bucket_name": "komikhq-users"
     },
     {
-      "binding": "MEDIA_BUCKET",
+      "binding": "BUCKET_MEDIA",
       "bucket_name": "komikhq-media"
     }
   ],

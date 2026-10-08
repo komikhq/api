@@ -13,11 +13,12 @@ type SuggestionLoader = (
   databaseUrl: string,
   query: string,
   limit: number,
+  env?: any,
 ) => Promise<ComicSuggestion[]>;
 
 export function createSearchRoutes(
-  loadSuggestions: SuggestionLoader = (databaseUrl, query, limit) =>
-    new ComicSearchService(databaseUrl).getSuggestions(query, limit),
+  loadSuggestions: SuggestionLoader = (databaseUrl, query, limit, env) =>
+    new ComicSearchService(databaseUrl, env).getSuggestions(query, limit),
 ) {
   const routes = new Hono<AppEnv>();
 
@@ -48,7 +49,7 @@ export function createSearchRoutes(
 
     try {
       if (!suggestions) {
-        suggestions = await loadSuggestions(c.env.DATABASE_URL, query, limit);
+        suggestions = await loadSuggestions(c.env.DATABASE_URL, query, limit, c.env);
         const cacheWrite = c.env.KV_KOMIKHQ
           .put(cacheKey, JSON.stringify(suggestions), { expirationTtl: CACHE_TTL_SECONDS })
           .catch((err) => console.warn("[Search API] Suggestion cache write failed:", err));

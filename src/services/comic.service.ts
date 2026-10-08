@@ -1,6 +1,6 @@
 import { ComicRepository, type ListComicsParams } from "@/repositories/comic.repository";
 import { ChapterRepository } from "@/repositories/chapter.repository";
-import { uploadToR2, deleteFromR2, type StorageEnv } from "@/lib/storage";
+import { uploadToR2, deleteFromR2, toPublicUrl, toObjectKey, type StorageEnv } from "@/lib/storage";
 import { slugify } from "@/utils/slugify";
 
 export interface CreateComicDto {
@@ -40,10 +40,19 @@ export class ComicService {
     this.env = env;
   }
 
+  /** Resolve relative cover/banner paths to full public URLs */
+  private resolveComicUrls<T extends { coverUrl?: string | null; bannerUrl?: string | null }>(comic: T): T {
+    return {
+      ...comic,
+      coverUrl: toPublicUrl(comic.coverUrl, "media", this.env) ?? comic.coverUrl,
+      bannerUrl: toPublicUrl(comic.bannerUrl, "media", this.env),
+    };
+  }
+
   async getComicsList(params: ListComicsParams) {
     const { comics, total } = await this.comicRepo.findManyWithPagination(params);
     return {
-      comics,
+      comics: comics.map((c: any) => this.resolveComicUrls(c)),
       pagination: {
         page: params.page,
         limit: params.limit,
@@ -54,7 +63,11 @@ export class ComicService {
   }
 
   async getTrendingComics(period: "daily" | "weekly" | "popular" = "daily", limit: number = 10) {
-    return this.comicRepo.findTrending(period, limit);
+    const result = await this.comicRepo.findTrending(period, limit);
+    return {
+      ...result,
+      comics: result.comics.map((c: any) => this.resolveComicUrls(c)),
+    };
   }
 
   async getComicById(id: string) {
@@ -62,7 +75,7 @@ export class ComicService {
     if (!comicData) {
       throw new Error("Komik tidak ditemukan.");
     }
-    return comicData;
+    return { ...comicData, comic: this.resolveComicUrls(comicData.comic) };
   }
 
   async getComicBySlug(slug: string) {
@@ -70,7 +83,7 @@ export class ComicService {
     if (!comicData) {
       throw new Error("Komik tidak ditemukan.");
     }
-    return comicData;
+    return { ...comicData, comic: this.resolveComicUrls(comicData.comic) };
   }
 
   async createComic(dto: CreateComicDto) {
@@ -83,7 +96,7 @@ export class ComicService {
 
     const slug = slugify(dto.title) + "-" + Date.now().toString().slice(-4);
 
-    // Upload Cover
+    // Upload Cover — uploadToR2 now returns the relative object key
     const coverBuffer = await dto.coverFile.arrayBuffer();
     const coverExt = dto.coverFile.name.split(".").pop() || "webp";
     const coverKey = `comics/${slug}/cover-${Date.now()}.${coverExt}`;
@@ -205,27 +218,18 @@ export class ComicService {
       if (chDetail?.pages) {
         for (const p of chDetail.pages) {
           if (p.imageUrl) {
-            try {
-              const urlPath = new URL(p.imageUrl).pathname.replace(/^\//, "");
-              await deleteFromR2(this.env as StorageEnv, "media", urlPath).catch(() => {});
-            } catch {}
+            await deleteFromR2(this.env as StorageEnv, "media", p.imageUrl).catch(() => {});
           }
         }
       }
     }
 
     if (existing.comic.coverUrl) {
-      try {
-        const coverPath = new URL(existing.comic.coverUrl).pathname.replace(/^\//, "");
-        await deleteFromR2(this.env as StorageEnv, "media", coverPath).catch(() => {});
-      } catch {}
+      await deleteFromR2(this.env as StorageEnv, "media", existing.comic.coverUrl).catch(() => {});
     }
 
     if (existing.comic.bannerUrl) {
-      try {
-        const bannerPath = new URL(existing.comic.bannerUrl).pathname.replace(/^\//, "");
-        await deleteFromR2(this.env as StorageEnv, "media", bannerPath).catch(() => {});
-      } catch {}
+      await deleteFromR2(this.env as StorageEnv, "media", existing.comic.bannerUrl).catch(() => {});
     }
 
     await this.comicRepo.delete(id);

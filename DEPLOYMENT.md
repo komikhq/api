@@ -37,7 +37,8 @@ In Cloudflare Workers, **Runtime Variables & Secrets** are values accessed by th
 | `GOOGLE_CLIENT_ID` | **Plaintext (Variable)** | Public | Google Cloud Console OAuth Client ID |
 | `GOOGLE_CLIENT_SECRET` | **Encrypt (Secret)** | Sensitive | Google Cloud Console OAuth Client Secret |
 | `RESEND_API_KEY` | **Encrypt (Secret)** | Sensitive | Resend email service API key |
-| `BREVO_API_KEY` | **Encrypt (Secret)** | Sensitive | Brevo email service API key |
+| `BUCKET_URL_USERS` | **Plaintext (Variable)** | Public | R2 Public CDN domain for users/avatars (e.g., `https://cdn-01.komikhq.dpdns.org`). Legacy: `USERS_BUCKET_URL` |
+| `BUCKET_URL_MEDIA` | **Plaintext (Variable)** | Public | R2 Public CDN domain for comic media (e.g., `https://cdn-02.komikhq.dpdns.org`). Legacy: `MEDIA_BUCKET_URL` |
 | `PUSHER_APP_ID` | **Plaintext (Variable)** | Public | Pusher Channels App ID |
 | `PUSHER_KEY` | **Plaintext (Variable)** | Public | Pusher Channels App Key |
 | `PUSHER_SECRET` | **Encrypt (Secret)** | Sensitive | Pusher Channels App Secret |

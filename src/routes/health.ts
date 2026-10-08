@@ -27,7 +27,7 @@ healthRoutes.get("/", async (c) => {
   }
 
   try {
-    if (!c.env.MEDIA_BUCKET) storageStatus = "error";
+    if (!c.env.MEDIA_BUCKET && !c.env.BUCKET_MEDIA) storageStatus = "error";
   } catch (err) {
     storageStatus = "error";
   }
