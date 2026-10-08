@@ -89,7 +89,7 @@ export async function refreshRankings(env: AppEnv["Bindings"]): Promise<{
     // 1. Query Top 50 Daily from Analytics Engine
     const dailyResult = await queryAnalyticsEngine<ComicRankingItem>(
       env,
-      `SELECT blob1 AS comicId, toUInt64(SUM(_sample_interval)) AS views
+      `SELECT blob1 AS comicId, SUM(_sample_interval) AS views
        FROM komikhq_views
        WHERE timestamp >= NOW() - INTERVAL '1' DAY
        GROUP BY comicId
@@ -105,7 +105,7 @@ export async function refreshRankings(env: AppEnv["Bindings"]): Promise<{
     // 2. Query Top 50 Weekly from Analytics Engine
     const weeklyResult = await queryAnalyticsEngine<ComicRankingItem>(
       env,
-      `SELECT blob1 AS comicId, toUInt64(SUM(_sample_interval)) AS views
+      `SELECT blob1 AS comicId, SUM(_sample_interval) AS views
        FROM komikhq_views
        WHERE timestamp >= NOW() - INTERVAL '7' DAY
        GROUP BY comicId

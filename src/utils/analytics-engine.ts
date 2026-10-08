@@ -9,8 +9,8 @@ export async function queryAnalyticsEngine<T = any>(
   env: AppEnv["Bindings"],
   sqlQuery: string
 ): Promise<AnalyticsEngineQueryResult<T>> {
-  const accountId = (env as any).CF_ACCOUNT_ID;
-  const apiToken = (env as any).CF_API_TOKEN;
+  const accountId = (env as any).CF_ACCOUNT_ID || (env as any).CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = (env as any).CF_API_TOKEN || (env as any).CLOUDFLARE_API_TOKEN;
 
   if (!accountId || !apiToken) {
     console.warn("[Analytics Engine] CF_ACCOUNT_ID or CF_API_TOKEN is missing. Skipping SQL query.");

@@ -24,6 +24,9 @@ export async function syncViewsDelta(env: AppEnv["Bindings"]): Promise<{
     new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
   const nowIso = new Date().toISOString();
 
+  const lastSyncedSql = new Date(lastSyncedAt).toISOString().replace("T", " ").slice(0, 19);
+  const nowSql = new Date(nowIso).toISOString().replace("T", " ").slice(0, 19);
+
   let deltas: ChapterViewDelta[] = [];
   try {
     const result = await queryAnalyticsEngine<ChapterViewDelta>(
@@ -31,10 +34,10 @@ export async function syncViewsDelta(env: AppEnv["Bindings"]): Promise<{
       `SELECT 
          blob1 AS comicId, 
          blob2 AS chapterId, 
-         toUInt64(SUM(_sample_interval)) AS newViews
+         SUM(_sample_interval) AS newViews
        FROM komikhq_views
-       WHERE timestamp >= toDateTime64('${lastSyncedAt}', 3) 
-         AND timestamp < toDateTime64('${nowIso}', 3)
+       WHERE timestamp >= toDateTime('${lastSyncedSql}') 
+         AND timestamp < toDateTime('${nowSql}')
        GROUP BY comicId, chapterId`
     );
     deltas = result.data;

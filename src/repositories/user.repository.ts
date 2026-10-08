@@ -1,6 +1,6 @@
-import { createDbClient, users, accounts, comics, chapters, comments, comicViewLogs } from "@/db";
+import { createDbClient, users, accounts, comics, chapters, comments } from "@/db";
 import type { DbClient } from "@/db";
-import { eq, like, or, count, desc, and, isNotNull } from "drizzle-orm";
+import { eq, like, or, count, desc, and, isNotNull, sum } from "drizzle-orm";
 
 export interface ListUsersParams {
   query?: string;
@@ -85,7 +85,7 @@ export class UserRepository {
     const [totalAdminsRes] = await this.db.select({ count: count() }).from(users).where(eq(users.role, "admin"));
     const [totalComicsRes] = await this.db.select({ count: count() }).from(comics);
     const [totalChaptersRes] = await this.db.select({ count: count() }).from(chapters);
-    const [totalViewsRes] = await this.db.select({ count: count() }).from(comicViewLogs);
+    const [totalViewsRes] = await this.db.select({ sum: sum(comics.totalViews) }).from(comics);
     const [totalCommentsRes] = await this.db.select({ count: count() }).from(comments);
 
     return {
@@ -93,7 +93,7 @@ export class UserRepository {
       totalAdmins: totalAdminsRes?.count || 0,
       totalComics: totalComicsRes?.count || 0,
       totalChapters: totalChaptersRes?.count || 0,
-      totalViews: totalViewsRes?.count || 0,
+      totalViews: Number(totalViewsRes?.sum || 0),
       totalComments: totalCommentsRes?.count || 0,
     };
   }

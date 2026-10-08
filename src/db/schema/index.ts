@@ -17,4 +17,3 @@ export * from "./comments";
 export * from "./comment-mentions";
 export * from "./comment-likes";
 export * from "./comment-reports";
-export * from "./comic-view-logs";

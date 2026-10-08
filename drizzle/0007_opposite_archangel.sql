@@ -1,0 +1,1 @@
+DROP TABLE "comic_view_logs" CASCADE;

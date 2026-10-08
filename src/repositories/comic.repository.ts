@@ -1,6 +1,6 @@
-import { createDbClient, comics, comicGenres, genres, creators, comicCreators, chapters, comicViewLogs } from "@/db";
+import { createDbClient, comics, comicGenres, genres, creators, comicCreators, chapters } from "@/db";
 import type { DbClient } from "@/db";
-import { eq, like, or, and, count, desc, asc, inArray, gte, lte } from "drizzle-orm";
+import { eq, like, or, and, count, desc, asc, inArray } from "drizzle-orm";
 
 export interface ListComicsParams {
   q?: string;
@@ -264,33 +264,23 @@ export class ComicRepository {
 
     if (period === "popular") {
       const popularComics = await this.db
-        .select({ id: comics.id })
+        .select({ id: comics.id, totalViews: comics.totalViews })
         .from(comics)
         .orderBy(desc(comics.totalViews), desc(comics.createdAt))
         .limit(limit);
 
       comicIds = popularComics.map((c) => c.id);
+      periodViewCounts = new Map(popularComics.map((c) => [c.id, c.totalViews]));
     } else {
-      const windowHours = period === "daily" ? 24 : 168;
-      const now = new Date();
-      const windowStart = new Date(now.getTime() - windowHours * 60 * 60 * 1000);
-
-      const trendingLogs = await this.db
-        .select({
-          comicId: comicViewLogs.comicId,
-          viewCount: count(comicViewLogs.id),
-        })
-        .from(comicViewLogs)
-        .where(and(
-          gte(comicViewLogs.viewedAt, windowStart),
-          lte(comicViewLogs.viewedAt, now),
-        ))
-        .groupBy(comicViewLogs.comicId)
-        .orderBy(desc(count(comicViewLogs.id)))
+      // Fallback for daily/weekly when KV is cold: sort by total views and recent updates
+      const fallbackComics = await this.db
+        .select({ id: comics.id, totalViews: comics.totalViews })
+        .from(comics)
+        .orderBy(desc(comics.totalViews), desc(comics.updatedAt))
         .limit(limit);
 
-      comicIds = trendingLogs.map((l) => l.comicId);
-      periodViewCounts = new Map(trendingLogs.map((log) => [log.comicId, log.viewCount]));
+      comicIds = fallbackComics.map((c) => c.id);
+      periodViewCounts = new Map(fallbackComics.map((c) => [c.id, c.totalViews]));
     }
 
     if (comicIds.length === 0) {

@@ -50,6 +50,13 @@
       "when": 1791437323737,
       "tag": "0006_chilly_cannonball",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791443818091,
+      "tag": "0007_opposite_archangel",
+      "breakpoints": true
     }
   ]
 }
