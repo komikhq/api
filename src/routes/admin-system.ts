@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import type { AppEnv } from "@/middleware/auth";
 import { requireAdmin } from "@/middleware/admin";
-import { processBatchViews } from "@/cron/batch-views";
+import { syncViewsDelta } from "@/cron/sync-views-delta";
+import { refreshRankings } from "@/cron/refresh-rankings";
 import { successResponse, errorResponse } from "@/utils/response";
 
 export const adminSystemRoutes = new Hono<AppEnv>();
@@ -48,18 +49,24 @@ adminSystemRoutes.get("/system/maintenance-status", async (c) => {
   }
 });
 
-// POST /v1/admin/system/sync-views - Force flush view buffer from KV to Database
+// POST /v1/admin/system/sync-views - Force sync view deltas & refresh rankings
 adminSystemRoutes.post("/system/sync-views", async (c) => {
   try {
-    const result = await processBatchViews(c.env);
+    const syncResult = await syncViewsDelta(c.env);
+    const rankingResult = await refreshRankings(c.env);
+
     return successResponse(c, {
       success: true,
-      message: `Successfully synchronized ${result.syncedLogs} view logs across ${result.affectedComics} comics to database.`,
-      "synced-logs": result.syncedLogs,
-      "affected-comics": result.affectedComics,
+      message: `Successfully synchronized ${syncResult.syncedChapters} chapters across ${syncResult.syncedComics} comics (${syncResult.totalViewsAdded} views). Rankings refreshed.`,
+      "synced-chapters": syncResult.syncedChapters,
+      "synced-comics": syncResult.syncedComics,
+      "total-views-added": syncResult.totalViewsAdded,
+      "synced-logs": syncResult.totalViewsAdded,
+      "affected-comics": syncResult.syncedComics,
+      rankings: rankingResult,
     });
   } catch (err: any) {
-    return errorResponse(c, err.message || "Failed to synchronize buffered views.", 500);
+    return errorResponse(c, err.message || "Failed to synchronize views.", 500);
   }
 });
 

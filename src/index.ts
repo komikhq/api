@@ -19,7 +19,8 @@ import { adminStorageRoutes } from "./routes/admin-storage";
 import { adminSystemRoutes } from "./routes/admin-system";
 import { genreRoutes } from "./routes/genres";
 import { searchRoutes } from "./routes/search";
-import { processBatchViews } from "./cron/batch-views";
+import { refreshRankings } from "./cron/refresh-rankings";
+import { syncViewsDelta } from "./cron/sync-views-delta";
 
 const app = new Hono<AppEnv>();
 
@@ -57,6 +58,15 @@ export { GlobalPresenceDO, CommentStreamDO };
 export default {
   fetch: app.fetch,
   async scheduled(event: ScheduledEvent, env: AppEnv["Bindings"], ctx: ExecutionContext) {
-    ctx.waitUntil(processBatchViews(env));
+    if (event.cron === "0 */6 * * *") {
+      ctx.waitUntil(
+        (async () => {
+          await syncViewsDelta(env);
+          await refreshRankings(env);
+        })()
+      );
+    } else {
+      ctx.waitUntil(refreshRankings(env));
+    }
   },
 };

@@ -43,6 +43,13 @@
       "when": 1790694954790,
       "tag": "0005_add_comic_alternate_titles",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791437323737,
+      "tag": "0006_chilly_cannonball",
+      "breakpoints": true
     }
   ]
 }

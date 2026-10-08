@@ -3,6 +3,11 @@ import { comics } from "./comics";
 import { chapters } from "./chapters";
 import { users } from "./users";
 
+/**
+ * @deprecated View logs are now handled in Cloudflare Analytics Engine (AE_COMIC_VIEWS)
+ * and aggregated to chapters.totalViews & comics.totalViews via scheduled sync.
+ * Kept for historical data reference only.
+ */
 export const comicViewLogs = pgTable(
   "comic_view_logs",
   {

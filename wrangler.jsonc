@@ -22,6 +22,10 @@
     {
       "binding": "KV_KOMIKHQ",
       "id": "8e9495dce11d4e21a5103d30e96dddca"
+    },
+    {
+      "binding": "KV_VIEWS",
+      "id": "6999df4c38084567ac172dbf65ae7395"
     }
   ],
   "r2_buckets": [
@@ -44,9 +48,16 @@
   // "ai": {
   //   "binding": "AI"
   // },
+  "analytics_engine_datasets": [
+    {
+      "binding": "AE_COMIC_VIEWS",
+      "dataset": "komikhq_views"
+    }
+  ],
   "triggers": {
     "crons": [
-      "*/10 * * * *"
+      "0 * * * *",
+      "0 */6 * * *"
     ]
   },
   "durable_objects": {

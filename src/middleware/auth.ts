@@ -39,6 +39,9 @@ export interface AppEnv {
     PUSHER_KEY: string;
     PUSHER_SECRET: string;
     PUSHER_CLUSTER: string;
+    AE_COMIC_VIEWS?: AnalyticsEngineDataset;
+    CF_ACCOUNT_ID?: string;
+    CF_API_TOKEN?: string;
   };
   Variables: {
     user?: UserSessionPayload;

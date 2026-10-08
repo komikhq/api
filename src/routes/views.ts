@@ -11,6 +11,12 @@ viewRoutes.post("/", async (c) => {
     const { comicId, chapterId } = body;
     const user = c.get("user");
 
+    const userAgent = c.req.header("user-agent") || "";
+    const isBot = /bot|crawl|spider|slurp|facebookexternalhit|bytespider/i.test(userAgent);
+    if (isBot) {
+      return successResponse(c, { success: true, ignored: true, timestamp: new Date().toISOString() });
+    }
+
     const service = new ViewService(c.env);
     const result = await service.recordView(comicId, chapterId, user?.userId || null);
 

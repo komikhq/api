@@ -12,6 +12,7 @@ export const chapters = pgTable(
     title: varchar("title", { length: 255 }),
     slug: varchar("slug", { length: 255 }).notNull(),
     totalPages: integer("total_pages").notNull().default(0),
+    totalViews: integer("total_views").notNull().default(0),
     accessTier: varchar("access_tier", { length: 20 }),
     isEarlyAccess: boolean("is_early_access").notNull().default(false),
     freeReleaseAt: timestamp("free_release_at", { withTimezone: true }),

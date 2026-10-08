@@ -63,6 +63,25 @@ export class ComicService {
   }
 
   async getTrendingComics(period: "daily" | "weekly" | "popular" = "daily", limit: number = 10) {
+    if (this.env?.KV_KOMIKHQ) {
+      try {
+        const kvKey = period === "popular" ? "ranking:popular_all_time" : `ranking:trending_${period}`;
+        const cachedRaw = await this.env.KV_KOMIKHQ.get(kvKey);
+        if (cachedRaw) {
+          const cachedComics = JSON.parse(cachedRaw);
+          if (Array.isArray(cachedComics) && cachedComics.length > 0) {
+            const sliced = cachedComics.slice(0, limit);
+            return {
+              comics: sliced.map((c: any) => this.resolveComicUrls(c)),
+              total: sliced.length,
+            };
+          }
+        }
+      } catch (err) {
+        console.warn("[ComicService] Failed to read trending from KV cache, falling back to DB:", err);
+      }
+    }
+
     const result = await this.comicRepo.findTrending(period, limit);
     return {
       ...result,
