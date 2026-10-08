@@ -257,7 +257,10 @@ export class ChapterService {
     };
 
     if (dto.title !== undefined) updateData.title = dto.title;
-    if (dto.chapterNumber !== undefined) updateData.chapterNumber = dto.chapterNumber.toString();
+    if (dto.chapterNumber !== undefined) {
+      updateData.chapterNumber = dto.chapterNumber.toString();
+      updateData.slug = `ch-${dto.chapterNumber}`;
+    }
     if (dto.accessTier !== undefined) updateData.accessTier = dto.accessTier;
     if (dto.isEarlyAccess !== undefined) updateData.isEarlyAccess = Boolean(dto.isEarlyAccess);
 
