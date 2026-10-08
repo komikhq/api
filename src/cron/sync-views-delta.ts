@@ -20,7 +20,7 @@ export async function syncViewsDelta(env: AppEnv["Bindings"]): Promise<{
 
   const KV_SYNC_KEY = "views_sync:last_synced_at";
   const lastSyncedAt =
-    (await env.KV_KOMIKHQ.get(KV_SYNC_KEY)) ||
+    (await env.KV_VIEWS.get(KV_SYNC_KEY)) ||
     new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
   const nowIso = new Date().toISOString();
 
@@ -44,7 +44,7 @@ export async function syncViewsDelta(env: AppEnv["Bindings"]): Promise<{
   }
 
   if (deltas.length === 0) {
-    await env.KV_KOMIKHQ.put(KV_SYNC_KEY, nowIso);
+    await env.KV_VIEWS.put(KV_SYNC_KEY, nowIso);
     return { syncedChapters: 0, syncedComics: 0, totalViewsAdded: 0 };
   }
 
@@ -75,7 +75,7 @@ export async function syncViewsDelta(env: AppEnv["Bindings"]): Promise<{
   }
 
   // 3. Mark last synced timestamp in KV
-  await env.KV_KOMIKHQ.put(KV_SYNC_KEY, nowIso);
+  await env.KV_VIEWS.put(KV_SYNC_KEY, nowIso);
 
   return {
     syncedChapters: deltas.length,

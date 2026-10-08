@@ -63,10 +63,10 @@ export class ComicService {
   }
 
   async getTrendingComics(period: "daily" | "weekly" | "popular" = "daily", limit: number = 10) {
-    if (this.env?.KV_KOMIKHQ) {
+    if (this.env?.KV_VIEWS) {
       try {
         const kvKey = period === "popular" ? "ranking:popular_all_time" : `ranking:trending_${period}`;
-        const cachedRaw = await this.env.KV_KOMIKHQ.get(kvKey);
+        const cachedRaw = await this.env.KV_VIEWS.get(kvKey);
         if (cachedRaw) {
           const cachedComics = JSON.parse(cachedRaw);
           if (Array.isArray(cachedComics) && cachedComics.length > 0) {

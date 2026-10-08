@@ -15,6 +15,7 @@ export interface UserSessionPayload {
 export interface AppEnv {
   Bindings: {
     KV_KOMIKHQ: KVNamespace;
+    KV_VIEWS: KVNamespace;
     BUCKET_USERS?: R2Bucket;
     BUCKET_MEDIA?: R2Bucket;
     USERS_BUCKET?: R2Bucket;

@@ -138,13 +138,13 @@ export async function refreshRankings(env: AppEnv["Bindings"]): Promise<{
   ]);
 
   if (enrichedDaily.length > 0) {
-    await env.KV_KOMIKHQ.put("ranking:trending_daily", JSON.stringify(enrichedDaily));
+    await env.KV_VIEWS.put("ranking:trending_daily", JSON.stringify(enrichedDaily));
   }
   if (enrichedWeekly.length > 0) {
-    await env.KV_KOMIKHQ.put("ranking:trending_weekly", JSON.stringify(enrichedWeekly));
+    await env.KV_VIEWS.put("ranking:trending_weekly", JSON.stringify(enrichedWeekly));
   }
   if (enrichedPopular.length > 0) {
-    await env.KV_KOMIKHQ.put("ranking:popular_all_time", JSON.stringify(enrichedPopular));
+    await env.KV_VIEWS.put("ranking:popular_all_time", JSON.stringify(enrichedPopular));
   }
 
   return {
