@@ -11,7 +11,7 @@ commentRoutes.get("/", async (c) => {
     const comicId = c.req.query("comicId");
     const chapterId = c.req.query("chapterId");
 
-    const service = new CommentService(c.env.DATABASE_URL);
+    const service = new CommentService(c.env.DATABASE_URL, c.env);
     const result = await service.getComments(comicId, chapterId);
 
     return successResponse(c, { comments: result });
@@ -29,7 +29,7 @@ commentRoutes.post("/", async (c) => {
       return errorResponse(c, "Unauthorized or guest details missing", 401);
     }
 
-    const service = new CommentService(c.env.DATABASE_URL);
+    const service = new CommentService(c.env.DATABASE_URL, c.env);
     const userId = user ? user.userId : null;
 
     const comment = await service.postComment(userId, body);
@@ -56,7 +56,7 @@ commentRoutes.post("/:commentId/like", async (c) => {
     if (!user) return errorResponse(c, "Unauthorized", 401);
 
     const commentId = c.req.param("commentId");
-    const service = new CommentService(c.env.DATABASE_URL);
+    const service = new CommentService(c.env.DATABASE_URL, c.env);
 
     const result = await service.toggleLike(user.userId, commentId);
     return successResponse(c, { success: true, ...result });
@@ -71,7 +71,7 @@ commentRoutes.delete("/:commentId", async (c) => {
     if (!user) return errorResponse(c, "Unauthorized", 401);
 
     const commentId = c.req.param("commentId");
-    const service = new CommentService(c.env.DATABASE_URL);
+    const service = new CommentService(c.env.DATABASE_URL, c.env);
     const isAdmin = user.role === "admin";
 
     const result = await service.deleteComment(commentId, user.userId, isAdmin);
@@ -86,7 +86,7 @@ commentRoutes.post("/:commentId/report", async (c) => {
     const user = c.get("user");
     const commentId = c.req.param("commentId");
     const body = await c.req.json();
-    const service = new CommentService(c.env.DATABASE_URL);
+    const service = new CommentService(c.env.DATABASE_URL, c.env);
 
     const result = await service.reportComment({
       commentId,

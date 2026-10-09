@@ -1,21 +1,39 @@
 import { CommentRepository } from "@/repositories/comment.repository";
+import { toPublicUrl } from "@/lib/storage";
 
 export class CommentService {
   private repo: CommentRepository;
+  private env: any;
 
-  constructor(databaseUrl: string) {
+  constructor(databaseUrl: string, env?: any) {
     this.repo = new CommentRepository(databaseUrl);
+    this.env = env;
+  }
+
+  private formatComment(comment: any) {
+    if (!comment) return comment;
+    return {
+      ...comment,
+      author: comment.author
+        ? {
+            ...comment.author,
+            image: toPublicUrl(comment.author.image, "users", this.env) ?? comment.author.image,
+          }
+        : comment.author,
+    };
   }
 
   async getComments(comicId?: string, chapterId?: string) {
     if (!comicId && !chapterId) {
       throw new Error("comicId or chapterId is required");
     }
-    return this.repo.findByTarget(comicId, chapterId);
+    const comments = await this.repo.findByTarget(comicId, chapterId);
+    return comments.map((c) => this.formatComment(c));
   }
 
   async getFormattedCommentById(id: string) {
-    return this.repo.findFormattedById(id);
+    const comment = await this.repo.findFormattedById(id);
+    return this.formatComment(comment);
   }
 
   async postComment(
