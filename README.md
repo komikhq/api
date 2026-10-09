@@ -81,7 +81,7 @@ Cloudflare Worker bindings and runtime configuration are maintained in [`wrangle
 
 - [KomikHQ](https://komikhq.com) — the reader-facing application
 - [KomikHQ web application repository](https://github.com/komikhq/komikhq)
-- [KomikHQ organization profile](https://github.com/komikhq/.github/blob/main/profile/README.md)
+- [KomikHQ organization profile](https://github.com/komikhq)
 
 ---
 
