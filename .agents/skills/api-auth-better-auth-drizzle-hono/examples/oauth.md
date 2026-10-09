@@ -15,10 +15,10 @@
 
 ```typescript
 // lib/auth.ts
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { betterAuth } from "better-auth"
+import { drizzleAdapter } from "better-auth/adapters/drizzle"
 
-import { db } from "@/lib/db";
+import { db } from "@/lib/db"
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -35,7 +35,7 @@ export const auth = betterAuth({
       prompt: "consent",
     },
   },
-});
+})
 ```
 
 **Why good:** Environment variables protect secrets, accessType: "offline" ensures refresh tokens from Google, prompt: "consent" forces token refresh
@@ -101,7 +101,7 @@ export function OAuthButtons() {
 
 ```typescript
 // BAD Example - Hardcoded secrets
-import { betterAuth } from "better-auth";
+import { betterAuth } from "better-auth"
 
 export const auth = betterAuth({
   socialProviders: {
@@ -110,7 +110,7 @@ export const auth = betterAuth({
       clientSecret: "secret456", // BAD: Commits to git
     },
   },
-});
+})
 ```
 
 **Why bad:** Hardcoded secrets committed to version control, exposed in build logs, impossible to rotate without code change
@@ -123,10 +123,10 @@ Use any OAuth 2.0 or OIDC provider with the Generic OAuth plugin. Supports disco
 
 ```typescript
 // lib/auth.ts
-import { betterAuth } from "better-auth";
-import { genericOAuth } from "better-auth/plugins";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "@/lib/db";
+import { betterAuth } from "better-auth"
+import { genericOAuth } from "better-auth/plugins"
+import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { db } from "@/lib/db"
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -151,7 +151,7 @@ export const auth = betterAuth({
       ],
     }),
   ],
-});
+})
 ```
 
 Client-side usage with Generic OAuth:
@@ -160,7 +160,7 @@ Client-side usage with Generic OAuth:
 await authClient.signIn.oauth2({
   providerId: "custom-idp",
   callbackURL: "/dashboard",
-});
+})
 ```
 
 **Why good:** Works with any OAuth2/OIDC provider, PKCE for enhanced security, pre-configured helpers for common providers
@@ -172,7 +172,7 @@ await authClient.signIn.oauth2({
 Use `oAuthProvider()` to let your app act as an OAuth 2.1 provider for other services. Replaces deprecated `oidcProvider`.
 
 ```typescript
-import { oAuthProvider } from "better-auth/plugins";
+import { oAuthProvider } from "better-auth/plugins"
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -194,7 +194,7 @@ export const auth = betterAuth({
       ],
     }),
   ],
-});
+})
 ```
 
 **Why good:** OAuth 2.1 compliant, trusted client support for first-party apps, consent screen control

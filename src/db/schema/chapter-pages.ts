@@ -1,5 +1,12 @@
-import { pgTable, uuid, integer, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import { chapters } from "./chapters";
+import {
+  pgTable,
+  uuid,
+  integer,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core"
+import { chapters } from "./chapters"
 
 export const chapterPages = pgTable(
   "chapter_pages",
@@ -12,12 +19,17 @@ export const chapterPages = pgTable(
     imageUrl: text("image_url").notNull(),
     width: integer("width"),
     height: integer("height"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    uniqueIndex("chapter_page_number_idx").on(table.chapterId, table.pageNumber),
+    uniqueIndex("chapter_page_number_idx").on(
+      table.chapterId,
+      table.pageNumber
+    ),
   ]
-);
+)
 
-export type ChapterPage = typeof chapterPages.$inferSelect;
-export type NewChapterPage = typeof chapterPages.$inferInsert;
+export type ChapterPage = typeof chapterPages.$inferSelect
+export type NewChapterPage = typeof chapterPages.$inferInsert

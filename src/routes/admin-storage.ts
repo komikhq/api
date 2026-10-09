@@ -1,18 +1,18 @@
-import { Hono } from "hono";
-import type { AppEnv } from "@/middleware/auth";
-import { requireAdmin } from "@/middleware/admin";
-import { ChapterService } from "@/services/chapter.service";
-import { successResponse, errorResponse } from "@/utils/response";
+import { Hono } from "hono"
+import type { AppEnv } from "@/middleware/auth"
+import { requireAdmin } from "@/middleware/admin"
+import { ChapterService } from "@/services/chapter.service"
+import { successResponse, errorResponse } from "@/utils/response"
 
-export const adminStorageRoutes = new Hono<AppEnv>();
+export const adminStorageRoutes = new Hono<AppEnv>()
 
-adminStorageRoutes.use("*", requireAdmin());
+adminStorageRoutes.use("*", requireAdmin())
 
 // POST /v1/admin/storage/purge-orphans - Purge orphan image files in R2 not registered in DB
 adminStorageRoutes.post("/storage/purge-orphans", async (c) => {
   try {
-    const service = new ChapterService(c.env.DATABASE_URL, c.env);
-    const result = await service.purgeOrphanImages();
+    const service = new ChapterService(c.env.DATABASE_URL, c.env)
+    const result = await service.purgeOrphanImages()
 
     return successResponse(c, {
       success: true,
@@ -20,8 +20,12 @@ adminStorageRoutes.post("/storage/purge-orphans", async (c) => {
       "purged-count": result.purgedCount,
       "total-size-mb": result.totalSizeMB,
       ...result,
-    });
+    })
   } catch (err: any) {
-    return errorResponse(c, err.message || "Failed to purge orphan images.", 500);
+    return errorResponse(
+      c,
+      err.message || "Failed to purge orphan images.",
+      500
+    )
   }
-});
+})

@@ -97,12 +97,12 @@ Create the auth instance with database adapter. Single source of truth for all a
 
 ```typescript
 // lib/auth.ts
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "@/lib/db";
+import { betterAuth } from "better-auth"
+import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { db } from "@/lib/db"
 
-const SESSION_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 7; // 7 days
-const SESSION_UPDATE_AGE_SECONDS = 60 * 60 * 24; // Refresh daily
+const SESSION_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 7 // 7 days
+const SESSION_UPDATE_AGE_SECONDS = 60 * 60 * 24 // Refresh daily
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -116,7 +116,7 @@ export const auth = betterAuth({
     updateAge: SESSION_UPDATE_AGE_SECONDS,
   },
   trustedOrigins: [process.env.APP_URL || "http://localhost:3000"],
-});
+})
 ```
 
 **Why good:** Named constants make session policy auditable, env vars for URLs, single exported instance
@@ -126,8 +126,8 @@ export const auth = betterAuth({
 const auth = betterAuth({
   database: { url: "postgres://user:pass@localhost/db" },
   session: { expiresIn: 604800 },
-});
-export default auth;
+})
+export default auth
 ```
 
 **Why bad:** Hardcoded credentials leak in source control, magic numbers obscure policy, default export
@@ -142,25 +142,25 @@ Mount auth handler and create typed middleware for session access in routes.
 
 ```typescript
 // CRITICAL: CORS must be configured BEFORE auth routes
-app.use("/auth/*", cors({ origin: APP_URL, credentials: true }));
-app.on(["POST", "GET"], "/auth/*", (c) => auth.handler(c.req.raw));
+app.use("/auth/*", cors({ origin: APP_URL, credentials: true }))
+app.on(["POST", "GET"], "/auth/*", (c) => auth.handler(c.req.raw))
 ```
 
 ```typescript
 // middleware/auth-middleware.ts - Type-safe session access
 type AuthVariables = {
-  user: typeof auth.$Infer.Session.user | null;
-  session: typeof auth.$Infer.Session.session | null;
-};
+  user: typeof auth.$Infer.Session.user | null
+  session: typeof auth.$Infer.Session.session | null
+}
 
 export const authMiddleware = createMiddleware<{ Variables: AuthVariables }>(
   async (c, next) => {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
-    c.set("user", session?.user ?? null);
-    c.set("session", session?.session ?? null);
-    await next();
-  },
-);
+    const session = await auth.api.getSession({ headers: c.req.raw.headers })
+    c.set("user", session?.user ?? null)
+    c.set("session", session?.session ?? null)
+    await next()
+  }
+)
 ```
 
 **Why good:** `auth.$Infer.Session` ensures `c.get("user")` is correctly typed, CORS before auth prevents preflight failures, `c.req.raw` provides the Web Standard Request that Better Auth expects
@@ -168,10 +168,10 @@ export const authMiddleware = createMiddleware<{ Variables: AuthVariables }>(
 ```typescript
 // BAD: No type annotation - c.user is any, bypasses type system
 app.use("*", async (c, next) => {
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  c.user = session?.user; // any - no autocomplete
-  await next();
-});
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  c.user = session?.user // any - no autocomplete
+  await next()
+})
 ```
 
 **Why bad:** No AuthVariables type = any access, direct property assignment bypasses typed Variables
@@ -216,7 +216,7 @@ export const auth = betterAuth({
         to: user.email,
         subject: "Reset password",
         html: `<a href="${url}">Reset</a>`,
-      });
+      })
     },
   },
   emailVerification: {
@@ -225,10 +225,10 @@ export const auth = betterAuth({
         to: user.email,
         subject: "Verify email",
         html: `<a href="${url}">Verify</a>`,
-      });
+      })
     },
   },
-});
+})
 ```
 
 **Why good:** Email verification prevents fake signups, password requirements enforced server-side

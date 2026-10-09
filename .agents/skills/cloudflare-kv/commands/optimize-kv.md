@@ -49,6 +49,7 @@ Run multiple times for different files:
 ### Interactive Mode
 
 If no file specified, command will:
+
 1. Search for common Worker files (src/index.ts, index.js, worker.ts)
 2. List found files
 3. Ask which to analyze
@@ -66,6 +67,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/analyze-kv-usage.sh <worker-file>
 ```
 
 The script performs static code analysis to detect:
+
 - Missing TTL/expiration on put()
 - Missing cacheTtl on get()
 - Lack of error handling
@@ -157,6 +159,7 @@ For more details, see:
 These can cause runtime errors or data loss:
 
 **❌ No error handling**
+
 - Impact: Worker crashes on KV errors
 - Fix: Add try-catch blocks
 - Priority: HIGH
@@ -166,11 +169,13 @@ These can cause runtime errors or data loss:
 These affect reliability and costs:
 
 **⚠️ Missing TTL on put()**
+
 - Impact: Unnecessary storage costs
 - Fix: Add expirationTtl
 - Savings: Significant (depends on data volume)
 
 **⚠️ Missing pagination on list()**
+
 - Impact: Could hit 1000 key limit
 - Fix: Add limit parameter
 - Priority: MEDIUM
@@ -180,16 +185,19 @@ These affect reliability and costs:
 These improve performance:
 
 **💡 Missing cacheTtl on get()**
+
 - Impact: Slower reads, higher latency
 - Fix: Add cacheTtl parameter
 - Improvement: 50-90% faster reads
 
 **💡 Sequential operations**
+
 - Impact: Slower execution
 - Fix: Use Promise.all()
 - Improvement: 2-5x faster
 
 **💡 No waitUntil() usage**
+
 - Impact: Slower response times
 - Fix: Use ctx.waitUntil() for non-critical writes
 - Improvement: 10-100ms faster responses
@@ -227,6 +235,7 @@ Based on the report:
    - Document improvements
 
 2. **Benchmark**
+
    ```bash
    # Before optimization
    wrangler dev
@@ -243,16 +252,16 @@ Based on the report:
 
 ```typescript
 // ❌ Data persists forever
-await env.KV.put('session', sessionData);
+await env.KV.put("session", sessionData)
 ```
 
 ### After: With TTL
 
 ```typescript
 // ✅ Auto-expires after 1 hour
-await env.KV.put('session', sessionData, {
-  expirationTtl: 3600
-});
+await env.KV.put("session", sessionData, {
+  expirationTtl: 3600,
+})
 ```
 
 **Impact:** Prevents storage bloat, reduces costs
@@ -263,9 +272,9 @@ await env.KV.put('session', sessionData, {
 
 ```typescript
 // ❌ Each await blocks execution
-const user = await env.KV.get('user:123');
-const prefs = await env.KV.get('prefs:123');
-const stats = await env.KV.get('stats:123');
+const user = await env.KV.get("user:123")
+const prefs = await env.KV.get("prefs:123")
+const stats = await env.KV.get("stats:123")
 ```
 
 ### After: Parallel Reads
@@ -273,10 +282,10 @@ const stats = await env.KV.get('stats:123');
 ```typescript
 // ✅ All reads happen simultaneously
 const [user, prefs, stats] = await Promise.all([
-  env.KV.get('user:123'),
-  env.KV.get('prefs:123'),
-  env.KV.get('stats:123')
-]);
+  env.KV.get("user:123"),
+  env.KV.get("prefs:123"),
+  env.KV.get("stats:123"),
+])
 ```
 
 **Impact:** 3x faster execution
@@ -287,18 +296,16 @@ const [user, prefs, stats] = await Promise.all([
 
 ```typescript
 // ❌ Response waits for write
-await env.KV.put('analytics', data);
-return new Response('OK');
+await env.KV.put("analytics", data)
+return new Response("OK")
 ```
 
 ### After: Non-blocking Writes
 
 ```typescript
 // ✅ Response returns immediately
-ctx.waitUntil(
-  env.KV.put('analytics', data)
-);
-return new Response('OK');
+ctx.waitUntil(env.KV.put("analytics", data))
+return new Response("OK")
 ```
 
 **Impact:** 50-100ms faster responses
@@ -312,6 +319,7 @@ For complex codebases, consider using the **kv-optimizer agent** for automated r
 ```
 
 The agent will:
+
 - Apply optimizations automatically
 - Maintain code functionality
 - Add tests for changes
@@ -325,6 +333,7 @@ The agent will:
 ## References
 
 For comprehensive optimization guidance:
+
 - Load `references/best-practices.md` for production patterns
 - Load `references/performance-tuning.md` for advanced optimizations
 - Check official docs: https://developers.cloudflare.com/kv/best-practices/

@@ -1,38 +1,39 @@
-import { Hono } from "hono";
-import type { AppEnv } from "@/middleware/auth";
-import { createDbClient } from "@/db";
-import { sql } from "drizzle-orm";
+import { Hono } from "hono"
+import type { AppEnv } from "@/middleware/auth"
+import { createDbClient } from "@/db"
+import { sql } from "drizzle-orm"
 
-export const healthRoutes = new Hono<AppEnv>();
+export const healthRoutes = new Hono<AppEnv>()
 
 healthRoutes.get("/", async (c) => {
-  c.header("Access-Control-Allow-Origin", "*");
-  c.header("Access-Control-Allow-Methods", "GET, OPTIONS");
+  c.header("Access-Control-Allow-Origin", "*")
+  c.header("Access-Control-Allow-Methods", "GET, OPTIONS")
 
-  let dbStatus = "ok";
-  let cacheStatus = "ok";
-  let storageStatus = "ok";
+  let dbStatus = "ok"
+  let cacheStatus = "ok"
+  let storageStatus = "ok"
 
   try {
-    const db = createDbClient(c.env.DATABASE_URL);
-    await db.execute(sql`SELECT 1`);
+    const db = createDbClient(c.env.DATABASE_URL)
+    await db.execute(sql`SELECT 1`)
   } catch (err) {
-    dbStatus = "error";
+    dbStatus = "error"
   }
 
   try {
-    if (!c.env.KV_KOMIKHQ) cacheStatus = "error";
+    if (!c.env.KV_KOMIKHQ) cacheStatus = "error"
   } catch (err) {
-    cacheStatus = "error";
+    cacheStatus = "error"
   }
 
   try {
-    if (!c.env.MEDIA_BUCKET && !c.env.BUCKET_MEDIA) storageStatus = "error";
+    if (!c.env.MEDIA_BUCKET && !c.env.BUCKET_MEDIA) storageStatus = "error"
   } catch (err) {
-    storageStatus = "error";
+    storageStatus = "error"
   }
 
-  const isHealthy = dbStatus === "ok" && cacheStatus === "ok" && storageStatus === "ok";
+  const isHealthy =
+    dbStatus === "ok" && cacheStatus === "ok" && storageStatus === "ok"
 
   return c.json(
     {
@@ -45,5 +46,5 @@ healthRoutes.get("/", async (c) => {
       },
     },
     isHealthy ? 200 : 503
-  );
-});
+  )
+})

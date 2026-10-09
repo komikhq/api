@@ -1,31 +1,34 @@
-import { createDbClient } from "@/db";
-import type { DbClient } from "@/db";
-import { sql } from "drizzle-orm";
+import { createDbClient } from "@/db"
+import type { DbClient } from "@/db"
+import { sql } from "drizzle-orm"
 
 export interface ComicSuggestionRow {
-  uuid: string;
-  slug: string;
-  title: string;
-  matchedTitle: string;
-  coverUrl: string | null;
-  type: string | null;
-  status: string | null;
+  uuid: string
+  slug: string
+  title: string
+  matchedTitle: string
+  coverUrl: string | null
+  type: string | null
+  status: string | null
 }
 
 export interface RankedComicSuggestionRow extends ComicSuggestionRow {
-  matchScore: number;
-  totalViews: number;
-  updatedAt: string;
+  matchScore: number
+  totalViews: number
+  updatedAt: string
 }
 
 export class ComicSearchRepository {
-  private db: DbClient;
+  private db: DbClient
 
   constructor(databaseUrl: string) {
-    this.db = createDbClient(databaseUrl);
+    this.db = createDbClient(databaseUrl)
   }
 
-  async findSuggestions(query: string, limit: number): Promise<RankedComicSuggestionRow[]> {
+  async findSuggestions(
+    query: string,
+    limit: number
+  ): Promise<RankedComicSuggestionRow[]> {
     const result = await this.db.execute(sql`
       WITH search_input AS (
         SELECT
@@ -134,7 +137,7 @@ export class ComicSearchRepository {
       WHERE title_rank = 1
       ORDER BY match_score DESC, total_views DESC, updated_at DESC, id ASC
       LIMIT ${limit}
-    `);
+    `)
 
     return result.rows.map((row) => ({
       uuid: String(row.uuid),
@@ -147,6 +150,6 @@ export class ComicSearchRepository {
       matchScore: Number(row.matchScore),
       totalViews: Number(row.totalViews),
       updatedAt: String(row.updatedAt),
-    }));
+    }))
   }
 }

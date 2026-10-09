@@ -1,12 +1,12 @@
-import { createDbClient, chapters, chapterPages, comics } from "@/db";
-import type { DbClient } from "@/db";
-import { eq, count, asc, and } from "drizzle-orm";
+import { createDbClient, chapters, chapterPages, comics } from "@/db"
+import type { DbClient } from "@/db"
+import { eq, count, asc, and } from "drizzle-orm"
 
 export class ChapterRepository {
-  private db: DbClient;
+  private db: DbClient
 
   constructor(databaseUrl: string) {
-    this.db = createDbClient(databaseUrl);
+    this.db = createDbClient(databaseUrl)
   }
 
   async findByComicId(comicId: string) {
@@ -14,67 +14,89 @@ export class ChapterRepository {
       .select()
       .from(chapters)
       .where(eq(chapters.comicId, comicId))
-      .orderBy(asc(chapters.chapterNumber));
+      .orderBy(asc(chapters.chapterNumber))
   }
 
   async findByComicIdAndNumber(comicId: string, chapterNumber: string) {
     const [chapter] = await this.db
       .select()
       .from(chapters)
-      .where(and(eq(chapters.comicId, comicId), eq(chapters.chapterNumber, chapterNumber)));
-    return chapter || null;
+      .where(
+        and(
+          eq(chapters.comicId, comicId),
+          eq(chapters.chapterNumber, chapterNumber)
+        )
+      )
+    return chapter || null
   }
 
   async findById(chapterId: string) {
-    const [chapter] = await this.db.select().from(chapters).where(eq(chapters.id, chapterId));
-    if (!chapter) return null;
+    const [chapter] = await this.db
+      .select()
+      .from(chapters)
+      .where(eq(chapters.id, chapterId))
+    if (!chapter) return null
 
     const pages = await this.db
       .select()
       .from(chapterPages)
       .where(eq(chapterPages.chapterId, chapterId))
-      .orderBy(asc(chapterPages.pageNumber));
+      .orderBy(asc(chapterPages.pageNumber))
 
-    return { chapter, pages };
+    return { chapter, pages }
   }
 
   async findByComicSlugAndChapterSlug(comicSlug: string, chapterSlug: string) {
-    const [comic] = await this.db.select().from(comics).where(eq(comics.slug, comicSlug));
-    if (!comic) return null;
+    const [comic] = await this.db
+      .select()
+      .from(comics)
+      .where(eq(comics.slug, comicSlug))
+    if (!comic) return null
 
     const [chapter] = await this.db
       .select()
       .from(chapters)
-      .where(and(eq(chapters.comicId, comic.id), eq(chapters.slug, chapterSlug)));
+      .where(
+        and(eq(chapters.comicId, comic.id), eq(chapters.slug, chapterSlug))
+      )
 
-    if (!chapter) return null;
+    if (!chapter) return null
 
     const pages = await this.db
       .select()
       .from(chapterPages)
       .where(eq(chapterPages.chapterId, chapter.id))
-      .orderBy(asc(chapterPages.pageNumber));
+      .orderBy(asc(chapterPages.pageNumber))
 
     const allChapters = await this.db
-      .select({ id: chapters.id, chapterNumber: chapters.chapterNumber, slug: chapters.slug, title: chapters.title })
+      .select({
+        id: chapters.id,
+        chapterNumber: chapters.chapterNumber,
+        slug: chapters.slug,
+        title: chapters.title,
+      })
       .from(chapters)
       .where(eq(chapters.comicId, comic.id))
-      .orderBy(asc(chapters.chapterNumber));
+      .orderBy(asc(chapters.chapterNumber))
 
     return {
       comic: { id: comic.id, title: comic.title, slug: comic.slug },
       chapter,
       pages,
       allChapters,
-    };
+    }
   }
 
   async createChapter(data: typeof chapters.$inferInsert) {
-    const [newChapter] = await this.db.insert(chapters).values(data).returning();
-    return newChapter;
+    const [newChapter] = await this.db.insert(chapters).values(data).returning()
+    return newChapter
   }
 
-  async createPageRecord(chapterId: string, pageNumber: number, imageUrl: string) {
+  async createPageRecord(
+    chapterId: string,
+    pageNumber: number,
+    imageUrl: string
+  ) {
     const [pageRecord] = await this.db
       .insert(chapterPages)
       .values({
@@ -82,20 +104,23 @@ export class ChapterRepository {
         pageNumber,
         imageUrl,
       })
-      .returning();
-    return pageRecord;
+      .returning()
+    return pageRecord
   }
 
   async updateComicTotalChapters(comicId: string) {
     const [totalChaptersRes] = await this.db
       .select({ count: count() })
       .from(chapters)
-      .where(eq(chapters.comicId, comicId));
+      .where(eq(chapters.comicId, comicId))
 
     await this.db
       .update(comics)
-      .set({ totalChapters: totalChaptersRes?.count || 0, updatedAt: new Date() })
-      .where(eq(comics.id, comicId));
+      .set({
+        totalChapters: totalChaptersRes?.count || 0,
+        updatedAt: new Date(),
+      })
+      .where(eq(comics.id, comicId))
   }
 
   async update(chapterId: string, data: Partial<typeof chapters.$inferInsert>) {
@@ -103,26 +128,30 @@ export class ChapterRepository {
       .update(chapters)
       .set(data)
       .where(eq(chapters.id, chapterId))
-      .returning();
-    return updated;
+      .returning()
+    return updated
   }
 
   async delete(chapterId: string) {
-    await this.db.delete(chapters).where(eq(chapters.id, chapterId));
+    await this.db.delete(chapters).where(eq(chapters.id, chapterId))
   }
 
   async getAllActiveImageUrls(): Promise<Set<string>> {
-    const pages = await this.db.select({ imageUrl: chapterPages.imageUrl }).from(chapterPages);
-    const comicCovers = await this.db.select({ coverUrl: comics.coverUrl, bannerUrl: comics.bannerUrl }).from(comics);
+    const pages = await this.db
+      .select({ imageUrl: chapterPages.imageUrl })
+      .from(chapterPages)
+    const comicCovers = await this.db
+      .select({ coverUrl: comics.coverUrl, bannerUrl: comics.bannerUrl })
+      .from(comics)
 
-    const urls = new Set<string>();
+    const urls = new Set<string>()
     for (const p of pages) {
-      if (p.imageUrl) urls.add(p.imageUrl);
+      if (p.imageUrl) urls.add(p.imageUrl)
     }
     for (const c of comicCovers) {
-      if (c.coverUrl) urls.add(c.coverUrl);
-      if (c.bannerUrl) urls.add(c.bannerUrl);
+      if (c.coverUrl) urls.add(c.coverUrl)
+      if (c.bannerUrl) urls.add(c.bannerUrl)
     }
-    return urls;
+    return urls
   }
 }

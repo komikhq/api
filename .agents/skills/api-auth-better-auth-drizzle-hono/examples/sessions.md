@@ -15,15 +15,15 @@
 
 ```typescript
 // lib/auth.ts
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { betterAuth } from "better-auth"
+import { drizzleAdapter } from "better-auth/adapters/drizzle"
 
-import { db } from "@/lib/db";
+import { db } from "@/lib/db"
 
-const SESSION_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 7; // 7 days
-const SESSION_UPDATE_AGE_SECONDS = 60 * 60 * 24; // Refresh daily
-const CACHE_MAX_AGE_SECONDS = 5 * 60; // 5 minutes
-const FRESH_AGE_SECONDS = 60 * 5; // 5 minutes for sensitive operations
+const SESSION_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 7 // 7 days
+const SESSION_UPDATE_AGE_SECONDS = 60 * 60 * 24 // Refresh daily
+const CACHE_MAX_AGE_SECONDS = 5 * 60 // 5 minutes
+const FRESH_AGE_SECONDS = 60 * 5 // 5 minutes for sensitive operations
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -38,7 +38,7 @@ export const auth = betterAuth({
       strategy: "compact", // or "jwt" or "jwe"
     },
   },
-});
+})
 ```
 
 **Why good:** cookieCache reduces DB queries (verify signature instead), freshAge requires recent auth for sensitive ops, named constants make policy auditable
@@ -49,19 +49,19 @@ export const auth = betterAuth({
 
 ```typescript
 // hooks/use-sessions.ts
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client"
 
 export async function listSessions() {
-  const result = await authClient.session.listSessions();
-  return result.data ?? [];
+  const result = await authClient.session.listSessions()
+  return result.data ?? []
 }
 
 export async function revokeSession(token: string) {
-  await authClient.session.revokeSession({ token });
+  await authClient.session.revokeSession({ token })
 }
 
 export async function revokeOtherSessions() {
-  await authClient.session.revokeOtherSessions();
+  await authClient.session.revokeOtherSessions()
 }
 ```
 
@@ -75,7 +75,7 @@ Three encoding strategies for session cookies:
 
 ```typescript
 // lib/auth.ts
-const CACHE_MAX_AGE_SECONDS = 5 * 60; // 5 minutes
+const CACHE_MAX_AGE_SECONDS = 5 * 60 // 5 minutes
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -89,7 +89,7 @@ export const auth = betterAuth({
       // strategy: "jwe",  // Encrypted, hides session data
     },
   },
-});
+})
 ```
 
 | Strategy  | Size     | Security  | Use Case                                |
@@ -118,7 +118,7 @@ export const auth = betterAuth({
       version: 2, // Was 1
     },
   },
-});
+})
 ```
 
 **Why good:** Mass invalidation without database, useful for security incidents
@@ -131,9 +131,9 @@ Omit the `database` option entirely for fully stateless sessions stored in encry
 
 ```typescript
 // lib/auth.ts - No database dependency
-import { betterAuth } from "better-auth";
+import { betterAuth } from "better-auth"
 
-const CACHE_MAX_AGE_SECONDS = 60 * 5;
+const CACHE_MAX_AGE_SECONDS = 60 * 5
 
 export const auth = betterAuth({
   // No database option = stateless mode
@@ -146,7 +146,7 @@ export const auth = betterAuth({
       refreshCache: true, // Auto-refresh before expiry
     },
   },
-});
+})
 ```
 
 **Why good:** No database dependency, works with edge functions, auto-refresh prevents expiration during active sessions

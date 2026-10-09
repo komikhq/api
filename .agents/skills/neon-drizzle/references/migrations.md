@@ -20,28 +20,32 @@ Complete guide for database migrations with Drizzle and Neon.
 ### 1. Schema Change
 
 Update your schema file:
+
 ```typescript
 // src/db/schema.ts
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  email: varchar('email', { length: 255 }).notNull(),
-  phoneNumber: varchar('phone_number', { length: 20 }), // NEW
-});
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull(),
+  phoneNumber: varchar("phone_number", { length: 20 }), // NEW
+})
 ```
 
 ### 2. Generate Migration
 
 Run drizzle-kit to generate SQL:
+
 ```bash
 npm run drizzle-kit generate
 ```
 
 **What this does:**
+
 - Compares schema.ts with database
 - Generates SQL in migrations folder
 - Creates migration metadata
 
 **Output:**
+
 ```
 src/db/migrations/
 ├── 0000_initial.sql
@@ -54,6 +58,7 @@ src/db/migrations/
 ### 3. Review Migration
 
 **Always review** generated SQL before applying:
+
 ```sql
 -- 0001_add_phone_number.sql
 ALTER TABLE users ADD COLUMN phone_number VARCHAR(20);
@@ -62,11 +67,13 @@ ALTER TABLE users ADD COLUMN phone_number VARCHAR(20);
 ### 4. Apply Migration
 
 Execute migration against database:
+
 ```bash
 npm run drizzle-kit migrate
 ```
 
 **Or with explicit env loading:**
+
 ```bash
 export DATABASE_URL="$(grep DATABASE_URL .env.local | cut -d '=' -f2)" && \
 npm run drizzle-kit migrate
@@ -79,6 +86,7 @@ npm run drizzle-kit migrate
 **Problem:** drizzle-kit runs as separate process, may not inherit env vars.
 
 **Symptom:**
+
 ```
 Error: url is undefined in dbCredentials
 ```
@@ -86,20 +94,21 @@ Error: url is undefined in dbCredentials
 ### Solution 1: Config File Loading (Recommended)
 
 **drizzle.config.ts:**
-```typescript
-import { defineConfig } from 'drizzle-kit';
-import { config } from 'dotenv';
 
-config({ path: '.env.local' });
+```typescript
+import { defineConfig } from "drizzle-kit"
+import { config } from "dotenv"
+
+config({ path: ".env.local" })
 
 export default defineConfig({
-  schema: './src/db/schema.ts',
-  out: './src/db/migrations',
-  dialect: 'postgresql',
+  schema: "./src/db/schema.ts",
+  out: "./src/db/migrations",
+  dialect: "postgresql",
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-});
+})
 ```
 
 **Key:** `config({ path: '.env.local' })` loads before exporting config.
@@ -107,18 +116,21 @@ export default defineConfig({
 ### Solution 2: Shell Export
 
 **Bash/Zsh:**
+
 ```bash
 export DATABASE_URL="$(grep DATABASE_URL .env.local | cut -d '=' -f2)" && \
 npm run drizzle-kit migrate
 ```
 
 **Fish:**
+
 ```fish
 set -x DATABASE_URL (grep DATABASE_URL .env.local | cut -d '=' -f2)
 npm run drizzle-kit migrate
 ```
 
 **PowerShell:**
+
 ```powershell
 $env:DATABASE_URL = (Select-String -Path .env.local -Pattern "DATABASE_URL").Line.Split("=")[1]
 npm run drizzle-kit migrate
@@ -127,6 +139,7 @@ npm run drizzle-kit migrate
 ### Solution 3: NPM Scripts
 
 **package.json:**
+
 ```json
 {
   "scripts": {
@@ -138,6 +151,7 @@ npm run drizzle-kit migrate
 ```
 
 **Install dotenv-cli:**
+
 ```bash
 npm add -D dotenv-cli
 ```
@@ -145,22 +159,24 @@ npm add -D dotenv-cli
 ### Solution 4: Programmatic Migration
 
 **scripts/migrate.ts:**
+
 ```typescript
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
-import { migrate } from 'drizzle-orm/neon-http/migrator';
-import { config } from 'dotenv';
+import { drizzle } from "drizzle-orm/neon-http"
+import { neon } from "@neondatabase/serverless"
+import { migrate } from "drizzle-orm/neon-http/migrator"
+import { config } from "dotenv"
 
-config({ path: '.env.local' });
+config({ path: ".env.local" })
 
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql);
+const sql = neon(process.env.DATABASE_URL!)
+const db = drizzle(sql)
 
-await migrate(db, { migrationsFolder: './src/db/migrations' });
-console.log('Migrations complete');
+await migrate(db, { migrationsFolder: "./src/db/migrations" })
+console.log("Migrations complete")
 ```
 
 **Run:**
+
 ```bash
 tsx scripts/migrate.ts
 ```
@@ -170,6 +186,7 @@ tsx scripts/migrate.ts
 ### Initial Setup
 
 **First migration creates all tables:**
+
 ```sql
 -- 0000_initial.sql
 CREATE TABLE users (
@@ -193,15 +210,17 @@ CREATE INDEX posts_user_id_idx ON posts(user_id);
 ### Adding Columns
 
 **Schema:**
+
 ```typescript
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  email: varchar('email', { length: 255 }).notNull(),
-  phoneNumber: varchar('phone_number', { length: 20 }), // NEW
-});
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull(),
+  phoneNumber: varchar("phone_number", { length: 20 }), // NEW
+})
 ```
 
 **Generated:**
+
 ```sql
 ALTER TABLE users ADD COLUMN phone_number VARCHAR(20);
 ```
@@ -209,15 +228,17 @@ ALTER TABLE users ADD COLUMN phone_number VARCHAR(20);
 ### Dropping Columns
 
 **Schema:**
+
 ```typescript
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  email: varchar('email', { length: 255 }).notNull(),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull(),
   // removed: phoneNumber
-});
+})
 ```
 
 **Generated:**
+
 ```sql
 ALTER TABLE users DROP COLUMN phone_number;
 ```
@@ -229,20 +250,23 @@ ALTER TABLE users DROP COLUMN phone_number;
 **Problem:** Drizzle sees rename as drop + add (data loss).
 
 **Schema:**
+
 ```typescript
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  fullName: varchar('full_name', { length: 255 }), // was 'name'
-});
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  fullName: varchar("full_name", { length: 255 }), // was 'name'
+})
 ```
 
 **Generated (WRONG):**
+
 ```sql
 ALTER TABLE users DROP COLUMN name;
 ALTER TABLE users ADD COLUMN full_name VARCHAR(255);
 ```
 
 **Solution:** Manually edit migration:
+
 ```sql
 -- Change to:
 ALTER TABLE users RENAME COLUMN name TO full_name;
@@ -251,14 +275,16 @@ ALTER TABLE users RENAME COLUMN name TO full_name;
 ### Changing Column Types
 
 **Schema:**
+
 ```typescript
-export const posts = pgTable('posts', {
-  id: serial('id').primaryKey(),
-  views: bigint('views', { mode: 'number' }), // was integer
-});
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
+  views: bigint("views", { mode: "number" }), // was integer
+})
 ```
 
 **Generated:**
+
 ```sql
 ALTER TABLE posts ALTER COLUMN views TYPE BIGINT;
 ```
@@ -268,16 +294,22 @@ ALTER TABLE posts ALTER COLUMN views TYPE BIGINT;
 ### Adding Indexes
 
 **Schema:**
+
 ```typescript
-export const posts = pgTable('posts', {
-  id: serial('id').primaryKey(),
-  title: text('title').notNull(),
-}, (table) => ({
-  titleIdx: index('posts_title_idx').on(table.title), // NEW
-}));
+export const posts = pgTable(
+  "posts",
+  {
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+  },
+  (table) => ({
+    titleIdx: index("posts_title_idx").on(table.title), // NEW
+  })
+)
 ```
 
 **Generated:**
+
 ```sql
 CREATE INDEX posts_title_idx ON posts(title);
 ```
@@ -285,17 +317,19 @@ CREATE INDEX posts_title_idx ON posts(title);
 ### Adding Foreign Keys
 
 **Schema:**
+
 ```typescript
-export const comments = pgTable('comments', {
-  id: serial('id').primaryKey(),
-  postId: serial('post_id')
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  postId: serial("post_id")
     .notNull()
     .references(() => posts.id), // NEW
-  content: text('content').notNull(),
-});
+  content: text("content").notNull(),
+})
 ```
 
 **Generated:**
+
 ```sql
 ALTER TABLE comments
   ADD CONSTRAINT comments_post_id_fkey
@@ -305,29 +339,37 @@ ALTER TABLE comments
 ### Adding Constraints
 
 **Unique:**
+
 ```typescript
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-});
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+})
 ```
 
 **Generated:**
+
 ```sql
 ALTER TABLE users ADD CONSTRAINT users_email_unique UNIQUE (email);
 ```
 
 **Check:**
+
 ```typescript
-export const products = pgTable('products', {
-  id: serial('id').primaryKey(),
-  price: integer('price').notNull(),
-}, (table) => ({
-  priceCheck: check('price_check', 'price >= 0'),
-}));
+export const products = pgTable(
+  "products",
+  {
+    id: serial("id").primaryKey(),
+    price: integer("price").notNull(),
+  },
+  (table) => ({
+    priceCheck: check("price_check", "price >= 0"),
+  })
+)
 ```
 
 **Generated:**
+
 ```sql
 ALTER TABLE products ADD CONSTRAINT price_check CHECK (price >= 0);
 ```
@@ -339,11 +381,13 @@ ALTER TABLE products ADD CONSTRAINT price_check CHECK (price >= 0);
 **Scenario:** Add column with computed value from existing data.
 
 **Step 1:** Generate migration:
+
 ```bash
 npm run drizzle-kit generate
 ```
 
 **Step 2:** Edit migration to add data transformation:
+
 ```sql
 -- Add column
 ALTER TABLE users ADD COLUMN full_name VARCHAR(255);
@@ -358,6 +402,7 @@ ALTER TABLE users ALTER COLUMN full_name SET NOT NULL;
 ### Conditional Migrations
 
 **Add IF NOT EXISTS for idempotency:**
+
 ```sql
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20);
@@ -366,6 +411,7 @@ CREATE INDEX IF NOT EXISTS posts_title_idx ON posts(title);
 ```
 
 **Useful for:**
+
 - Re-running migrations
 - Partial deployments
 - Development environments
@@ -375,6 +421,7 @@ CREATE INDEX IF NOT EXISTS posts_title_idx ON posts(title);
 **Scenario:** Rename with zero downtime.
 
 **Migration 1 (Deploy this first):**
+
 ```sql
 -- Add new column
 ALTER TABLE users ADD COLUMN full_name VARCHAR(255);
@@ -386,6 +433,7 @@ UPDATE users SET full_name = name;
 **Application update:** Write to both `name` and `full_name`.
 
 **Migration 2 (Deploy after apps updated):**
+
 ```sql
 -- Make new column not null
 ALTER TABLE users ALTER COLUMN full_name SET NOT NULL;
@@ -399,6 +447,7 @@ ALTER TABLE users DROP COLUMN name;
 **Option 1: Down migrations (manual)**
 
 Create reverse migration:
+
 ```sql
 -- up.sql
 ALTER TABLE users ADD COLUMN phone_number VARCHAR(20);
@@ -410,11 +459,13 @@ ALTER TABLE users DROP COLUMN phone_number;
 **Option 2: Snapshot and restore**
 
 **Before migration:**
+
 ```bash
 pg_dump $DATABASE_URL > backup.sql
 ```
 
 **If problems:**
+
 ```bash
 psql $DATABASE_URL < backup.sql
 ```
@@ -422,6 +473,7 @@ psql $DATABASE_URL < backup.sql
 **Option 3: Drizzle push (dev only)**
 
 Reset to schema state:
+
 ```bash
 npm run drizzle-kit push --force
 ```
@@ -460,6 +512,7 @@ jobs:
 ### Vercel Example
 
 **vercel.json:**
+
 ```json
 {
   "buildCommand": "npm run build && npm run db:migrate",
@@ -470,6 +523,7 @@ jobs:
 ```
 
 **package.json:**
+
 ```json
 {
   "scripts": {
@@ -482,33 +536,34 @@ jobs:
 ### Safety Checks
 
 **Pre-migration script:**
+
 ```typescript
 // scripts/pre-migrate.ts
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
+import { drizzle } from "drizzle-orm/neon-http"
+import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql);
+const sql = neon(process.env.DATABASE_URL!)
+const db = drizzle(sql)
 
 async function preMigrationChecks() {
   try {
-    await sql`SELECT 1`;
-    console.log('✅ Database connection successful');
+    await sql`SELECT 1`
+    console.log("✅ Database connection successful")
 
     const tables = await sql`
       SELECT tablename FROM pg_tables
       WHERE schemaname = 'public'
-    `;
-    console.log(`✅ Found ${tables.length} tables`);
+    `
+    console.log(`✅ Found ${tables.length} tables`)
 
-    return true;
+    return true
   } catch (err) {
-    console.error('❌ Pre-migration check failed:', err);
-    process.exit(1);
+    console.error("❌ Pre-migration check failed:", err)
+    process.exit(1)
   }
 }
 
-preMigrationChecks();
+preMigrationChecks()
 ```
 
 ## Common Migration Errors
@@ -518,6 +573,7 @@ preMigrationChecks();
 **Cause:** Journal shows migration as applied.
 
 **Solution:**
+
 ```bash
 # Check journal
 cat src/db/migrations/meta/_journal.json
@@ -535,12 +591,14 @@ npm run drizzle-kit generate
 **Solutions:**
 
 **Option 1:** Edit migration to use IF NOT EXISTS:
+
 ```sql
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS phone_number VARCHAR(20);
 ```
 
 **Option 2:** Reset migrations (dev only):
+
 ```bash
 npm run drizzle-kit drop  # Drops all tables!
 npm run drizzle-kit migrate
@@ -551,6 +609,7 @@ npm run drizzle-kit migrate
 **Cause:** Trying to drop table referenced by foreign keys.
 
 **Solution:** Drop in reverse dependency order:
+
 ```sql
 DROP TABLE comments;  -- First (depends on posts)
 DROP TABLE posts;     -- Then (depends on users)
@@ -558,6 +617,7 @@ DROP TABLE users;     -- Finally
 ```
 
 Or use CASCADE (data loss!):
+
 ```sql
 DROP TABLE users CASCADE;
 ```
@@ -567,6 +627,7 @@ DROP TABLE users CASCADE;
 **Cause:** Column referenced by views, functions, or constraints.
 
 **Solution:**
+
 ```sql
 -- Find dependencies
 SELECT * FROM information_schema.view_column_usage
@@ -584,6 +645,7 @@ ALTER TABLE users DROP COLUMN your_column;
 ### 1. Always Review Generated SQL
 
 Don't blindly apply migrations:
+
 ```bash
 # Generate
 npm run drizzle-kit generate
@@ -598,6 +660,7 @@ npm run drizzle-kit migrate
 ### 2. Test Migrations in Development
 
 **Before production:**
+
 ```bash
 # On dev database
 export DATABASE_URL=$DEV_DATABASE_URL
@@ -618,6 +681,7 @@ pg_dump $DATABASE_URL > backup_$(date +%Y%m%d).sql
 ### 4. Use Transactions (when possible)
 
 Wrap multiple operations:
+
 ```sql
 BEGIN;
 
@@ -631,6 +695,7 @@ COMMIT;
 ### 5. Document Breaking Changes
 
 Add comments in migration files:
+
 ```sql
 -- Breaking change: Removing deprecated 'username' column
 -- Applications must use 'email' instead
@@ -641,6 +706,7 @@ ALTER TABLE users DROP COLUMN username;
 ### 6. Keep Migrations Small
 
 One logical change per migration:
+
 - ✅ Good: "Add phone number column"
 - ❌ Bad: "Add phone number, refactor users table, update indexes"
 

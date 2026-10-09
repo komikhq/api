@@ -1,14 +1,18 @@
-import type { Context } from "hono";
+import type { Context } from "hono"
 
 export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
+  page: number
+  limit: number
+  total: number
+  totalPages: number
 }
 
-export function successResponse<T>(c: Context, data: T, status: 200 | 201 = 200) {
-  return c.json(data, status);
+export function successResponse<T>(
+  c: Context,
+  data: T,
+  status: 200 | 201 = 200
+) {
+  return c.json(data, status)
 }
 
 export function paginatedResponse<T>(
@@ -20,7 +24,7 @@ export function paginatedResponse<T>(
   return c.json({
     [dataKey]: items,
     pagination,
-  });
+  })
 }
 
 export function errorResponse(
@@ -35,5 +39,5 @@ export function errorResponse(
       ...(details ? { details } : {}),
     },
     status
-  );
+  )
 }

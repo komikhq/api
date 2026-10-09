@@ -1,10 +1,10 @@
-import React from "react";
-import { Text as InkText, Box as InkBox } from "ink";
-import TextInput from "ink-text-input";
+import React from "react"
+import { Text as InkText, Box as InkBox } from "ink"
+import TextInput from "ink-text-input"
 
-const Box = InkBox as any;
-const Text = InkText as any;
-const InkTextInput = TextInput as any;
+const Box = InkBox as any
+const Text = InkText as any
+const InkTextInput = TextInput as any
 
 export function InputPromptView({
   label,
@@ -12,10 +12,10 @@ export function InputPromptView({
   onChange,
   onSubmit,
 }: {
-  label: string;
-  value: string;
-  onChange: (val: string) => void;
-  onSubmit: () => void;
+  label: string
+  value: string
+  onChange: (val: string) => void
+  onSubmit: () => void
 }) {
   return (
     <Box flexDirection="column">
@@ -24,5 +24,5 @@ export function InputPromptView({
       </Text>
       <InkTextInput value={value} onChange={onChange} onSubmit={onSubmit} />
     </Box>
-  );
+  )
 }

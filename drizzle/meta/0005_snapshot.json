@@ -101,12 +101,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -190,12 +186,8 @@
           "name": "bookmarks_user_id_user_id_fk",
           "tableFrom": "bookmarks",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -203,12 +195,8 @@
           "name": "bookmarks_comic_id_comics_id_fk",
           "tableFrom": "bookmarks",
           "tableTo": "comics",
-          "columnsFrom": [
-            "comic_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["comic_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -296,12 +284,8 @@
           "name": "chapter_pages_chapter_id_chapters_id_fk",
           "tableFrom": "chapter_pages",
           "tableTo": "chapters",
-          "columnsFrom": [
-            "chapter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["chapter_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -423,12 +407,8 @@
           "name": "chapters_comic_id_comics_id_fk",
           "tableFrom": "chapters",
           "tableTo": "comics",
-          "columnsFrom": [
-            "comic_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["comic_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -469,12 +449,8 @@
           "name": "comic_creators_comic_id_comics_id_fk",
           "tableFrom": "comic_creators",
           "tableTo": "comics",
-          "columnsFrom": [
-            "comic_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["comic_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -482,12 +458,8 @@
           "name": "comic_creators_creator_id_creators_id_fk",
           "tableFrom": "comic_creators",
           "tableTo": "creators",
-          "columnsFrom": [
-            "creator_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["creator_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -495,11 +467,7 @@
       "compositePrimaryKeys": {
         "comic_creators_comic_id_creator_id_role_pk": {
           "name": "comic_creators_comic_id_creator_id_role_pk",
-          "columns": [
-            "comic_id",
-            "creator_id",
-            "role"
-          ]
+          "columns": ["comic_id", "creator_id", "role"]
         }
       },
       "uniqueConstraints": {},
@@ -530,12 +498,8 @@
           "name": "comic_genres_comic_id_comics_id_fk",
           "tableFrom": "comic_genres",
           "tableTo": "comics",
-          "columnsFrom": [
-            "comic_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["comic_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -543,12 +507,8 @@
           "name": "comic_genres_genre_id_genres_id_fk",
           "tableFrom": "comic_genres",
           "tableTo": "genres",
-          "columnsFrom": [
-            "genre_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["genre_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -556,10 +516,7 @@
       "compositePrimaryKeys": {
         "comic_genres_comic_id_genre_id_pk": {
           "name": "comic_genres_comic_id_genre_id_pk",
-          "columns": [
-            "comic_id",
-            "genre_id"
-          ]
+          "columns": ["comic_id", "genre_id"]
         }
       },
       "uniqueConstraints": {},
@@ -659,12 +616,8 @@
           "name": "comic_view_logs_comic_id_comics_id_fk",
           "tableFrom": "comic_view_logs",
           "tableTo": "comics",
-          "columnsFrom": [
-            "comic_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["comic_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -672,12 +625,8 @@
           "name": "comic_view_logs_chapter_id_chapters_id_fk",
           "tableFrom": "comic_view_logs",
           "tableTo": "chapters",
-          "columnsFrom": [
-            "chapter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["chapter_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -685,12 +634,8 @@
           "name": "comic_view_logs_user_id_user_id_fk",
           "tableFrom": "comic_view_logs",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -806,9 +751,7 @@
         "comics_slug_unique": {
           "name": "comics_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -852,12 +795,8 @@
           "name": "comment_likes_comment_id_comments_id_fk",
           "tableFrom": "comment_likes",
           "tableTo": "comments",
-          "columnsFrom": [
-            "comment_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["comment_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -865,12 +804,8 @@
           "name": "comment_likes_user_id_user_id_fk",
           "tableFrom": "comment_likes",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -878,10 +813,7 @@
       "compositePrimaryKeys": {
         "comment_likes_comment_id_user_id_pk": {
           "name": "comment_likes_comment_id_user_id_pk",
-          "columns": [
-            "comment_id",
-            "user_id"
-          ]
+          "columns": ["comment_id", "user_id"]
         }
       },
       "uniqueConstraints": {},
@@ -919,12 +851,8 @@
           "name": "comment_mentions_comment_id_comments_id_fk",
           "tableFrom": "comment_mentions",
           "tableTo": "comments",
-          "columnsFrom": [
-            "comment_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["comment_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -932,12 +860,8 @@
           "name": "comment_mentions_mentioned_user_id_user_id_fk",
           "tableFrom": "comment_mentions",
           "tableTo": "user",
-          "columnsFrom": [
-            "mentioned_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["mentioned_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -945,10 +869,7 @@
       "compositePrimaryKeys": {
         "comment_mentions_comment_id_mentioned_user_id_pk": {
           "name": "comment_mentions_comment_id_mentioned_user_id_pk",
-          "columns": [
-            "comment_id",
-            "mentioned_user_id"
-          ]
+          "columns": ["comment_id", "mentioned_user_id"]
         }
       },
       "uniqueConstraints": {},
@@ -1024,12 +945,8 @@
           "name": "comment_reports_comment_id_comments_id_fk",
           "tableFrom": "comment_reports",
           "tableTo": "comments",
-          "columnsFrom": [
-            "comment_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["comment_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1037,12 +954,8 @@
           "name": "comment_reports_reporter_user_id_user_id_fk",
           "tableFrom": "comment_reports",
           "tableTo": "user",
-          "columnsFrom": [
-            "reporter_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["reporter_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1187,12 +1100,8 @@
           "name": "comments_chapter_id_chapters_id_fk",
           "tableFrom": "comments",
           "tableTo": "chapters",
-          "columnsFrom": [
-            "chapter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["chapter_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1200,12 +1109,8 @@
           "name": "comments_comic_id_comics_id_fk",
           "tableFrom": "comments",
           "tableTo": "comics",
-          "columnsFrom": [
-            "comic_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["comic_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1213,12 +1118,8 @@
           "name": "comments_user_id_user_id_fk",
           "tableFrom": "comments",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1226,12 +1127,8 @@
           "name": "comments_root_id_comments_id_fk",
           "tableFrom": "comments",
           "tableTo": "comments",
-          "columnsFrom": [
-            "root_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["root_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1239,12 +1136,8 @@
           "name": "comments_parent_id_comments_id_fk",
           "tableFrom": "comments",
           "tableTo": "comments",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1252,12 +1145,8 @@
           "name": "comments_reply_to_user_id_user_id_fk",
           "tableFrom": "comments",
           "tableTo": "user",
-          "columnsFrom": [
-            "reply_to_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["reply_to_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1325,9 +1214,7 @@
         "creators_slug_unique": {
           "name": "creators_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -1385,16 +1272,12 @@
         "genres_name_unique": {
           "name": "genres_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         },
         "genres_slug_unique": {
           "name": "genres_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -1471,16 +1354,12 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         },
         "user_username_unique": {
           "name": "user_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       },
       "policies": {},
@@ -1548,12 +1427,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1563,9 +1438,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -1722,12 +1595,8 @@
           "name": "reading_histories_user_id_user_id_fk",
           "tableFrom": "reading_histories",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1735,12 +1604,8 @@
           "name": "reading_histories_comic_id_comics_id_fk",
           "tableFrom": "reading_histories",
           "tableTo": "comics",
-          "columnsFrom": [
-            "comic_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["comic_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1748,12 +1613,8 @@
           "name": "reading_histories_chapter_id_chapters_id_fk",
           "tableFrom": "reading_histories",
           "tableTo": "chapters",
-          "columnsFrom": [
-            "chapter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["chapter_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1827,12 +1688,8 @@
           "name": "user_subscriptions_user_id_user_id_fk",
           "tableFrom": "user_subscriptions",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1921,12 +1778,8 @@
           "name": "ratings_user_id_user_id_fk",
           "tableFrom": "ratings",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1934,12 +1787,8 @@
           "name": "ratings_comic_id_comics_id_fk",
           "tableFrom": "ratings",
           "tableTo": "comics",
-          "columnsFrom": [
-            "comic_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["comic_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

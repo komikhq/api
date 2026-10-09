@@ -235,11 +235,11 @@ npm i @neon/config
 
 ```typescript
 // neon.ts
-import { defineConfig } from "@neon/config/v1";
+import { defineConfig } from "@neon/config/v1"
 
 export default defineConfig({
   branch: (branch) => {
-    if (branch.exists || branch.isDefault) return {}; // don't touch prod
+    if (branch.exists || branch.isDefault) return {} // don't touch prod
     return {
       ttl: "7d", // ephemeral branches auto-expire instead of accruing storage
       postgres: {
@@ -249,9 +249,9 @@ export default defineConfig({
           suspendTimeout: "5m",
         },
       },
-    };
+    }
   },
-});
+})
 ```
 
 ```bash

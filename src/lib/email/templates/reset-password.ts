@@ -1,13 +1,13 @@
 export interface ResetPasswordEmailProps {
-  userName: string;
-  resetUrl: string;
+  userName: string
+  resetUrl: string
 }
 
 export function renderResetPasswordEmailTemplate({
   userName,
   resetUrl,
 }: ResetPasswordEmailProps) {
-  const subject = "Reset Your Password - KomikHQ";
+  const subject = "Reset Your Password - KomikHQ"
 
   const html = `
 <!DOCTYPE html>
@@ -30,9 +30,9 @@ export function renderResetPasswordEmailTemplate({
   </div>
 </body>
 </html>
-  `.trim();
+  `.trim()
 
-  const text = `Hello ${userName},\n\nWe received a request to reset your KomikHQ password. Use the following link to set a new password:\n${resetUrl}\n\nIf you did not request a password reset, please ignore this email.`;
+  const text = `Hello ${userName},\n\nWe received a request to reset your KomikHQ password. Use the following link to set a new password:\n${resetUrl}\n\nIf you did not request a password reset, please ignore this email.`
 
-  return { subject, html, text };
+  return { subject, html, text }
 }

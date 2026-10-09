@@ -1,14 +1,14 @@
 export interface VerificationEmailProps {
-  userName: string;
-  verificationUrl: string;
+  userName: string
+  verificationUrl: string
 }
 
 export function renderVerificationEmailTemplate({
   userName,
   verificationUrl,
 }: VerificationEmailProps) {
-  const subject = "Verify Your Email Address - KomikHQ";
-  
+  const subject = "Verify Your Email Address - KomikHQ"
+
   const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -30,9 +30,9 @@ export function renderVerificationEmailTemplate({
   </div>
 </body>
 </html>
-  `.trim();
+  `.trim()
 
-  const text = `Hello ${userName},\n\nThank you for signing up for KomikHQ. Please verify your email via the following link:\n${verificationUrl}\n\nIf you did not register, please ignore this email.`;
+  const text = `Hello ${userName},\n\nThank you for signing up for KomikHQ. Please verify your email via the following link:\n${verificationUrl}\n\nIf you did not register, please ignore this email.`
 
-  return { subject, html, text };
+  return { subject, html, text }
 }

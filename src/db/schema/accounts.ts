@@ -1,5 +1,5 @@
-import { pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import { users } from "./users";
+import { pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { users } from "./users"
 
 export const accounts = pgTable("account", {
   id: text("id").primaryKey(),
@@ -18,8 +18,7 @@ export const accounts = pgTable("account", {
   issuer: text("issuer"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+})
 
-export type Account = typeof accounts.$inferSelect;
-export type NewAccount = typeof accounts.$inferInsert;
-
+export type Account = typeof accounts.$inferSelect
+export type NewAccount = typeof accounts.$inferInsert

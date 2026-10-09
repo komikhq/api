@@ -1,8 +1,8 @@
-import React from "react";
-import { Text as InkText, Box as InkBox } from "ink";
+import React from "react"
+import { Text as InkText, Box as InkBox } from "ink"
 
-const Box = InkBox as any;
-const Text = InkText as any;
+const Box = InkBox as any
+const Text = InkText as any
 
 export function HeaderView() {
   return (
@@ -12,14 +12,19 @@ export function HeaderView() {
       </Text>
       <Text color="gray">Tekan ESC / Ctrl+C untuk keluar.</Text>
     </Box>
-  );
+  )
 }
 
 export function StatusView({ message }: { message: string }) {
-  if (!message) return null;
+  if (!message) return null
   return (
-    <Box marginBottom={1} paddingX={1} borderStyle="single" borderColor="yellow">
+    <Box
+      marginBottom={1}
+      paddingX={1}
+      borderStyle="single"
+      borderColor="yellow"
+    >
       <Text color="yellow">{message}</Text>
     </Box>
-  );
+  )
 }

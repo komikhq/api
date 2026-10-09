@@ -22,6 +22,7 @@ context_limit: 800
 Hono was originally built for Cloudflare Workers and provides first-class support for the entire Cloudflare ecosystem including KV, D1, R2, Durable Objects, Queues, and more.
 
 **Key Features**:
+
 - Native Workers support
 - Type-safe bindings access
 - KV, D1, R2, Durable Objects integration
@@ -32,6 +33,7 @@ Hono was originally built for Cloudflare Workers and provides first-class suppor
 ## When to Use This Skill
 
 Use Hono on Cloudflare when:
+
 - Building edge APIs with global distribution
 - Need serverless SQLite with D1
 - Building real-time apps with Durable Objects
@@ -68,11 +70,11 @@ my-app/
 
 ```typescript
 // src/index.ts
-import { Hono } from 'hono'
+import { Hono } from "hono"
 
 const app = new Hono()
 
-app.get('/', (c) => c.text('Hello Cloudflare Workers!'))
+app.get("/", (c) => c.text("Hello Cloudflare Workers!"))
 
 export default app
 ```
@@ -92,7 +94,7 @@ npx wrangler dev
 ### Typed Bindings
 
 ```typescript
-import { Hono } from 'hono'
+import { Hono } from "hono"
 
 // Define your bindings
 type Bindings = {
@@ -118,7 +120,7 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-app.get('/config', (c) => {
+app.get("/config", (c) => {
   // Fully typed access
   const apiKey = c.env.API_KEY
   return c.json({ configured: !!apiKey })
@@ -167,48 +169,48 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>()
 
 // Get value
-app.get('/cache/:key', async (c) => {
-  const key = c.req.param('key')
+app.get("/cache/:key", async (c) => {
+  const key = c.req.param("key")
   const value = await c.env.CACHE.get(key)
 
   if (!value) {
-    return c.json({ error: 'Not found' }, 404)
+    return c.json({ error: "Not found" }, 404)
   }
 
   return c.json({ key, value })
 })
 
 // Get JSON value
-app.get('/cache/:key/json', async (c) => {
-  const key = c.req.param('key')
-  const value = await c.env.CACHE.get(key, 'json')
+app.get("/cache/:key/json", async (c) => {
+  const key = c.req.param("key")
+  const value = await c.env.CACHE.get(key, "json")
 
   return c.json({ key, value })
 })
 
 // Set value
-app.put('/cache/:key', async (c) => {
-  const key = c.req.param('key')
+app.put("/cache/:key", async (c) => {
+  const key = c.req.param("key")
   const body = await c.req.json()
 
   await c.env.CACHE.put(key, JSON.stringify(body), {
-    expirationTtl: 3600  // 1 hour
+    expirationTtl: 3600, // 1 hour
   })
 
   return c.json({ success: true })
 })
 
 // Delete value
-app.delete('/cache/:key', async (c) => {
-  const key = c.req.param('key')
+app.delete("/cache/:key", async (c) => {
+  const key = c.req.param("key")
   await c.env.CACHE.delete(key)
 
   return c.json({ success: true })
 })
 
 // List keys
-app.get('/cache', async (c) => {
-  const prefix = c.req.query('prefix') || ''
+app.get("/cache", async (c) => {
+  const prefix = c.req.query("prefix") || ""
   const list = await c.env.CACHE.list({ prefix, limit: 100 })
 
   return c.json({ keys: list.keys })
@@ -223,26 +225,29 @@ interface UserMeta {
   role: string
 }
 
-app.put('/users/:id', async (c) => {
-  const id = c.req.param('id')
+app.put("/users/:id", async (c) => {
+  const id = c.req.param("id")
   const user = await c.req.json()
 
   await c.env.CACHE.put(`user:${id}`, JSON.stringify(user), {
     metadata: {
       createdAt: new Date().toISOString(),
-      role: user.role
-    } as UserMeta
+      role: user.role,
+    } as UserMeta,
   })
 
   return c.json({ success: true })
 })
 
-app.get('/users/:id', async (c) => {
-  const id = c.req.param('id')
-  const { value, metadata } = await c.env.CACHE.getWithMetadata<UserMeta>(`user:${id}`, 'json')
+app.get("/users/:id", async (c) => {
+  const id = c.req.param("id")
+  const { value, metadata } = await c.env.CACHE.getWithMetadata<UserMeta>(
+    `user:${id}`,
+    "json"
+  )
 
   if (!value) {
-    return c.json({ error: 'Not found' }, 404)
+    return c.json({ error: "Not found" }, 404)
   }
 
   return c.json({ user: value, metadata })
@@ -261,51 +266,55 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>()
 
 // Select all
-app.get('/users', async (c) => {
-  const { results } = await c.env.DB
-    .prepare('SELECT * FROM users ORDER BY created_at DESC')
-    .all()
+app.get("/users", async (c) => {
+  const { results } = await c.env.DB.prepare(
+    "SELECT * FROM users ORDER BY created_at DESC"
+  ).all()
 
   return c.json({ users: results })
 })
 
 // Select one
-app.get('/users/:id', async (c) => {
-  const id = c.req.param('id')
-  const user = await c.env.DB
-    .prepare('SELECT * FROM users WHERE id = ?')
+app.get("/users/:id", async (c) => {
+  const id = c.req.param("id")
+  const user = await c.env.DB.prepare("SELECT * FROM users WHERE id = ?")
     .bind(id)
     .first()
 
   if (!user) {
-    return c.json({ error: 'Not found' }, 404)
+    return c.json({ error: "Not found" }, 404)
   }
 
   return c.json({ user })
 })
 
 // Insert
-app.post('/users', async (c) => {
+app.post("/users", async (c) => {
   const { name, email } = await c.req.json()
 
-  const result = await c.env.DB
-    .prepare('INSERT INTO users (name, email) VALUES (?, ?)')
+  const result = await c.env.DB.prepare(
+    "INSERT INTO users (name, email) VALUES (?, ?)"
+  )
     .bind(name, email)
     .run()
 
-  return c.json({
-    success: result.success,
-    id: result.meta.last_row_id
-  }, 201)
+  return c.json(
+    {
+      success: result.success,
+      id: result.meta.last_row_id,
+    },
+    201
+  )
 })
 
 // Update
-app.put('/users/:id', async (c) => {
-  const id = c.req.param('id')
+app.put("/users/:id", async (c) => {
+  const id = c.req.param("id")
   const { name, email } = await c.req.json()
 
-  const result = await c.env.DB
-    .prepare('UPDATE users SET name = ?, email = ? WHERE id = ?')
+  const result = await c.env.DB.prepare(
+    "UPDATE users SET name = ?, email = ? WHERE id = ?"
+  )
     .bind(name, email, id)
     .run()
 
@@ -313,11 +322,10 @@ app.put('/users/:id', async (c) => {
 })
 
 // Delete
-app.delete('/users/:id', async (c) => {
-  const id = c.req.param('id')
+app.delete("/users/:id", async (c) => {
+  const id = c.req.param("id")
 
-  const result = await c.env.DB
-    .prepare('DELETE FROM users WHERE id = ?')
+  const result = await c.env.DB.prepare("DELETE FROM users WHERE id = ?")
     .bind(id)
     .run()
 
@@ -328,20 +336,21 @@ app.delete('/users/:id', async (c) => {
 ### Batch Operations
 
 ```typescript
-app.post('/users/batch', async (c) => {
+app.post("/users/batch", async (c) => {
   const { users } = await c.req.json()
 
   const statements = users.map((user: { name: string; email: string }) =>
-    c.env.DB
-      .prepare('INSERT INTO users (name, email) VALUES (?, ?)')
-      .bind(user.name, user.email)
+    c.env.DB.prepare("INSERT INTO users (name, email) VALUES (?, ?)").bind(
+      user.name,
+      user.email
+    )
   )
 
   const results = await c.env.DB.batch(statements)
 
   return c.json({
-    success: results.every(r => r.success),
-    count: results.length
+    success: results.every((r) => r.success),
+    count: results.length,
   })
 })
 ```
@@ -356,53 +365,56 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>()
 
 // Upload file
-app.post('/files/:key', async (c) => {
-  const key = c.req.param('key')
+app.post("/files/:key", async (c) => {
+  const key = c.req.param("key")
   const body = await c.req.arrayBuffer()
-  const contentType = c.req.header('Content-Type') || 'application/octet-stream'
+  const contentType = c.req.header("Content-Type") || "application/octet-stream"
 
   await c.env.BUCKET.put(key, body, {
-    httpMetadata: { contentType }
+    httpMetadata: { contentType },
   })
 
   return c.json({ success: true, key })
 })
 
 // Download file
-app.get('/files/:key', async (c) => {
-  const key = c.req.param('key')
+app.get("/files/:key", async (c) => {
+  const key = c.req.param("key")
   const object = await c.env.BUCKET.get(key)
 
   if (!object) {
-    return c.json({ error: 'Not found' }, 404)
+    return c.json({ error: "Not found" }, 404)
   }
 
   const headers = new Headers()
-  headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream')
-  headers.set('ETag', object.httpEtag)
+  headers.set(
+    "Content-Type",
+    object.httpMetadata?.contentType || "application/octet-stream"
+  )
+  headers.set("ETag", object.httpEtag)
 
   return new Response(object.body, { headers })
 })
 
 // Delete file
-app.delete('/files/:key', async (c) => {
-  const key = c.req.param('key')
+app.delete("/files/:key", async (c) => {
+  const key = c.req.param("key")
   await c.env.BUCKET.delete(key)
 
   return c.json({ success: true })
 })
 
 // List files
-app.get('/files', async (c) => {
-  const prefix = c.req.query('prefix') || ''
+app.get("/files", async (c) => {
+  const prefix = c.req.query("prefix") || ""
   const list = await c.env.BUCKET.list({ prefix, limit: 100 })
 
   return c.json({
-    objects: list.objects.map(obj => ({
+    objects: list.objects.map((obj) => ({
       key: obj.key,
       size: obj.size,
-      uploaded: obj.uploaded
-    }))
+      uploaded: obj.uploaded,
+    })),
   })
 })
 ```
@@ -425,24 +437,24 @@ export class Counter {
     const url = new URL(request.url)
 
     // Load value from storage
-    this.value = await this.state.storage.get('value') || 0
+    this.value = (await this.state.storage.get("value")) || 0
 
     switch (url.pathname) {
-      case '/increment':
+      case "/increment":
         this.value++
-        await this.state.storage.put('value', this.value)
+        await this.state.storage.put("value", this.value)
         return new Response(String(this.value))
 
-      case '/decrement':
+      case "/decrement":
         this.value--
-        await this.state.storage.put('value', this.value)
+        await this.state.storage.put("value", this.value)
         return new Response(String(this.value))
 
-      case '/value':
+      case "/value":
         return new Response(String(this.value))
 
       default:
-        return new Response('Not found', { status: 404 })
+        return new Response("Not found", { status: 404 })
     }
   }
 }
@@ -451,7 +463,7 @@ export class Counter {
 ### Use in Hono
 
 ```typescript
-import { Hono } from 'hono'
+import { Hono } from "hono"
 
 type Bindings = {
   COUNTER: DurableObjectNamespace
@@ -459,23 +471,23 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-app.get('/counter/:name/increment', async (c) => {
-  const name = c.req.param('name')
+app.get("/counter/:name/increment", async (c) => {
+  const name = c.req.param("name")
   const id = c.env.COUNTER.idFromName(name)
   const stub = c.env.COUNTER.get(id)
 
-  const response = await stub.fetch('http://counter/increment')
+  const response = await stub.fetch("http://counter/increment")
   const value = await response.text()
 
   return c.json({ name, value: parseInt(value) })
 })
 
-app.get('/counter/:name', async (c) => {
-  const name = c.req.param('name')
+app.get("/counter/:name", async (c) => {
+  const name = c.req.param("name")
   const id = c.env.COUNTER.idFromName(name)
   const stub = c.env.COUNTER.get(id)
 
-  const response = await stub.fetch('http://counter/value')
+  const response = await stub.fetch("http://counter/value")
   const value = await response.text()
 
   return c.json({ name, value: parseInt(value) })
@@ -508,24 +520,24 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-app.post('/tasks', async (c) => {
+app.post("/tasks", async (c) => {
   const task = await c.req.json()
 
   await c.env.MY_QUEUE.send({
-    type: 'process',
-    data: task
+    type: "process",
+    data: task,
   })
 
   return c.json({ queued: true })
 })
 
 // Batch send
-app.post('/tasks/batch', async (c) => {
+app.post("/tasks/batch", async (c) => {
   const { tasks } = await c.req.json()
 
   await c.env.MY_QUEUE.sendBatch(
     tasks.map((task: any) => ({
-      body: { type: 'process', data: task }
+      body: { type: "process", data: task },
     }))
   )
 
@@ -551,7 +563,7 @@ export default {
         message.retry()
       }
     }
-  }
+  },
 }
 ```
 
@@ -571,16 +583,16 @@ assets = { directory = "public" }
 ### With Route Handler
 
 ```typescript
-import { Hono } from 'hono'
-import { serveStatic } from 'hono/cloudflare-workers'
+import { Hono } from "hono"
+import { serveStatic } from "hono/cloudflare-workers"
 
 const app = new Hono()
 
 // Serve static files
-app.use('/static/*', serveStatic({ root: './' }))
+app.use("/static/*", serveStatic({ root: "./" }))
 
 // API routes
-app.get('/api/hello', (c) => c.json({ hello: 'world' }))
+app.get("/api/hello", (c) => c.json({ hello: "world" }))
 
 export default app
 ```
@@ -588,7 +600,7 @@ export default app
 ## Scheduled Events (Cron)
 
 ```typescript
-import { Hono } from 'hono'
+import { Hono } from "hono"
 
 const app = new Hono()
 
@@ -603,23 +615,23 @@ export default {
     ctx: ExecutionContext
   ): Promise<void> {
     switch (event.cron) {
-      case '0 * * * *':  // Every hour
+      case "0 * * * *": // Every hour
         await hourlyTask(env)
         break
 
-      case '0 0 * * *':  // Daily at midnight
+      case "0 0 * * *": // Daily at midnight
         await dailyTask(env)
         break
     }
-  }
+  },
 }
 
 async function hourlyTask(env: Bindings) {
-  console.log('Running hourly task')
+  console.log("Running hourly task")
 }
 
 async function dailyTask(env: Bindings) {
-  console.log('Running daily task')
+  console.log("Running daily task")
 }
 ```
 
@@ -647,13 +659,13 @@ my-app/
 
 ```typescript
 // functions/[[path]].ts
-import { Hono } from 'hono'
-import { handle } from 'hono/cloudflare-pages'
+import { Hono } from "hono"
+import { handle } from "hono/cloudflare-pages"
 
-const app = new Hono().basePath('/api')
+const app = new Hono().basePath("/api")
 
-app.get('/hello', (c) => c.json({ hello: 'world' }))
-app.post('/echo', async (c) => c.json(await c.req.json()))
+app.get("/hello", (c) => c.json({ hello: "world" }))
+app.post("/echo", async (c) => c.json(await c.req.json()))
 
 export const onRequest = handle(app)
 ```
@@ -661,7 +673,7 @@ export const onRequest = handle(app)
 ## Middleware with Bindings
 
 ```typescript
-import { createMiddleware } from 'hono/factory'
+import { createMiddleware } from "hono/factory"
 
 type Bindings = {
   API_KEY: string
@@ -671,17 +683,17 @@ type Bindings = {
 const authMiddleware = createMiddleware<{ Bindings: Bindings }>(
   async (c, next) => {
     // Don't access env at module level - access in handler!
-    const apiKey = c.req.header('X-API-Key')
+    const apiKey = c.req.header("X-API-Key")
 
     if (apiKey !== c.env.API_KEY) {
-      return c.json({ error: 'Unauthorized' }, 401)
+      return c.json({ error: "Unauthorized" }, 401)
     }
 
     await next()
   }
 )
 
-app.use('/api/*', authMiddleware)
+app.use("/api/*", authMiddleware)
 ```
 
 ## Quick Reference

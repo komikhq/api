@@ -1,12 +1,12 @@
-import { createDbClient, readingHistories, comics, chapters } from "@/db";
-import type { DbClient } from "@/db";
-import { eq, and, desc } from "drizzle-orm";
+import { createDbClient, readingHistories, comics, chapters } from "@/db"
+import type { DbClient } from "@/db"
+import { eq, and, desc } from "drizzle-orm"
 
 export class HistoryRepository {
-  private db: DbClient;
+  private db: DbClient
 
   constructor(databaseUrl: string) {
-    this.db = createDbClient(databaseUrl);
+    this.db = createDbClient(databaseUrl)
   }
 
   async findByUserId(userId: string) {
@@ -23,10 +23,16 @@ export class HistoryRepository {
       .innerJoin(comics, eq(readingHistories.comicId, comics.id))
       .innerJoin(chapters, eq(readingHistories.chapterId, chapters.id))
       .where(eq(readingHistories.userId, userId))
-      .orderBy(desc(readingHistories.updatedAt));
+      .orderBy(desc(readingHistories.updatedAt))
   }
 
-  async upsert(userId: string, comicId: string, chapterId: string, lastReadPage: number = 1, snapshotTotalPages: number = 1) {
+  async upsert(
+    userId: string,
+    comicId: string,
+    chapterId: string,
+    lastReadPage: number = 1,
+    snapshotTotalPages: number = 1
+  ) {
     const [existing] = await this.db
       .select()
       .from(readingHistories)
@@ -35,7 +41,7 @@ export class HistoryRepository {
           eq(readingHistories.userId, userId),
           eq(readingHistories.comicId, comicId)
         )
-      );
+      )
 
     if (existing) {
       await this.db
@@ -46,9 +52,9 @@ export class HistoryRepository {
           snapshotTotalPages,
           updatedAt: new Date(),
         })
-        .where(eq(readingHistories.id, existing.id));
+        .where(eq(readingHistories.id, existing.id))
 
-      return { action: "updated" };
+      return { action: "updated" }
     }
 
     await this.db.insert(readingHistories).values({
@@ -57,8 +63,8 @@ export class HistoryRepository {
       chapterId,
       lastReadPage,
       snapshotTotalPages,
-    });
+    })
 
-    return { action: "created" };
+    return { action: "created" }
   }
 }

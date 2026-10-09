@@ -17,25 +17,25 @@ Hit the Cloudflare REST API directly when wrangler CLI or MCP servers aren't the
 
 ## When to Use This Instead of Wrangler or MCP
 
-| Use case | Wrangler | MCP | This skill |
-|----------|---------|-----|-----------|
-| Deploy a Worker | Yes | Yes | No |
-| Create a D1 database | Yes | Yes | No |
-| Bulk update 50 DNS records | Slow (one at a time) | Slow (one tool call each) | Yes — batch script |
-| Custom hostnames for white-label | No | Partial | Yes |
-| Email routing rules | No | Partial | Yes |
-| WAF/firewall rules | No | Yes but verbose | Yes — direct API |
-| Redirect rules in bulk | No | One at a time | Yes — batch script |
-| Zone settings across 20 zones | No | 20 separate calls | Yes — fleet script |
-| Cache purge by tag/prefix | No | Yes | Yes (when scripting) |
-| Worker route management | Limited | Yes | Yes (when bulk) |
-| Analytics/logs query | No | Partial | Yes — GraphQL |
-| D1 query/export across databases | One DB at a time | One DB at a time | Yes — cross-DB scripts |
-| R2 bulk object operations | No | One at a time | Yes — S3 API + batch |
-| KV bulk read/write/delete | One at a time | One at a time | Yes — bulk endpoints |
-| Vectorize query/delete | No | Via Worker only | Yes — direct API |
-| Queue message injection | No | Via Worker only | Yes — direct API |
-| Audit all resources in account | No | Tedious | Yes — inventory script |
+| Use case                         | Wrangler             | MCP                       | This skill             |
+| -------------------------------- | -------------------- | ------------------------- | ---------------------- |
+| Deploy a Worker                  | Yes                  | Yes                       | No                     |
+| Create a D1 database             | Yes                  | Yes                       | No                     |
+| Bulk update 50 DNS records       | Slow (one at a time) | Slow (one tool call each) | Yes — batch script     |
+| Custom hostnames for white-label | No                   | Partial                   | Yes                    |
+| Email routing rules              | No                   | Partial                   | Yes                    |
+| WAF/firewall rules               | No                   | Yes but verbose           | Yes — direct API       |
+| Redirect rules in bulk           | No                   | One at a time             | Yes — batch script     |
+| Zone settings across 20 zones    | No                   | 20 separate calls         | Yes — fleet script     |
+| Cache purge by tag/prefix        | No                   | Yes                       | Yes (when scripting)   |
+| Worker route management          | Limited              | Yes                       | Yes (when bulk)        |
+| Analytics/logs query             | No                   | Partial                   | Yes — GraphQL          |
+| D1 query/export across databases | One DB at a time     | One DB at a time          | Yes — cross-DB scripts |
+| R2 bulk object operations        | No                   | One at a time             | Yes — S3 API + batch   |
+| KV bulk read/write/delete        | One at a time        | One at a time             | Yes — bulk endpoints   |
+| Vectorize query/delete           | No                   | Via Worker only           | Yes — direct API       |
+| Queue message injection          | No                   | Via Worker only           | Yes — direct API       |
+| Audit all resources in account   | No                   | Tedious                   | Yes — inventory script |
 
 **Rule of thumb**: Single operations → MCP or wrangler. Bulk/fleet/scripted → API directly.
 
@@ -55,6 +55,7 @@ curl -s "https://api.cloudflare.com/client/v4/user/tokens/verify" \
 ```
 
 **Token scopes**: Always use minimal permissions. Common presets:
+
 - "Edit zone DNS" — for DNS operations
 - "Edit zone settings" — for zone config changes
 - "Edit Cloudflare Workers" — for Worker route management
@@ -283,6 +284,7 @@ done
 ```
 
 Common fleet settings:
+
 - `ssl` — "full" or "strict"
 - `min_tls_version` — "1.2"
 - `always_use_https` — "on"
@@ -354,18 +356,19 @@ curl -s -X POST "https://api.cloudflare.com/client/v4/graphql" \
 
 ## Rate Limits
 
-| Endpoint | Limit |
-|---------|-------|
-| Most API calls | 1200 requests / 5 minutes |
+| Endpoint              | Limit                            |
+| --------------------- | -------------------------------- |
+| Most API calls        | 1200 requests / 5 minutes        |
 | DNS record operations | 1200 / 5 min (shared with above) |
-| Cache purge | 1000 purge calls / day |
-| Zone creation | 5 per minute |
+| Cache purge           | 1000 purge calls / day           |
+| Zone creation         | 5 per minute                     |
 
 **In scripts**: Add `sleep 0.25` between calls for sustained operations. Use `p-limit` or `xargs -P 4` for controlled parallelism.
 
 ## Script Generation
 
 When the user describes what they need, generate a script in `.jez/scripts/` that:
+
 - Reads API token from environment (never hardcode)
 - Handles pagination for list operations
 - Includes error checking (`jq '.success'` after each call)
@@ -382,6 +385,7 @@ Base URL: `https://api.cloudflare.com/client/v4/`
 Full docs: `https://developers.cloudflare.com/api/`
 
 The API follows a consistent pattern:
+
 - `GET /zones` — list
 - `POST /zones` — create
 - `GET /zones/:id` — read
@@ -393,6 +397,6 @@ Every response has `{ success: bool, errors: [], messages: [], result: {} }`.
 
 ## Reference Files
 
-| When | Read |
-|------|------|
+| When                                                | Read                                                                         |
+| --------------------------------------------------- | ---------------------------------------------------------------------------- |
 | D1, R2, KV, Workers, Vectorize, Queues API patterns | [references/developer-platform-api.md](references/developer-platform-api.md) |
