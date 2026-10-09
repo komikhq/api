@@ -81,6 +81,7 @@ Cloudflare Worker bindings and runtime configuration are maintained in [`wrangle
 
 - [KomikHQ](https://komikhq.com) — the reader-facing application
 - [KomikHQ web application repository](https://github.com/komikhq/komikhq)
+- [KomikHQ Clipper](https://github.com/komikhq/komikhq-clipper) — a browser extension that downloads chapter images from supported sites as sequentially named ZIP archives
 - [KomikHQ organization profile](https://github.com/komikhq)
 
 ---
