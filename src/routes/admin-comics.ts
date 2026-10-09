@@ -48,8 +48,10 @@ adminComicRoutes.post("/comics", async (c) => {
       alternateTitles: formData.getAll("alternateTitles").map((value) => value.toString().trim()).filter(Boolean),
       genreIdsRaw: formData.get("genreIds")?.toString(),
       creatorName: formData.get("creator")?.toString().trim(),
-      coverFile: formData.get("cover") as File,
+      coverFile: formData.get("cover") as File | null,
+      coverUrlSource: formData.get("coverUrlSource")?.toString().trim() || null,
       bannerFile: formData.get("banner") as File | null,
+      bannerUrlSource: formData.get("bannerUrlSource")?.toString().trim() || null,
     });
 
     return successResponse(c, { success: true, comic }, 201);
@@ -90,7 +92,9 @@ adminComicRoutes.put("/comics/:id", async (c) => {
       genreIdsRaw: formData.get("genreIds")?.toString(),
       creatorName: formData.get("creator")?.toString().trim(),
       coverFile: formData.get("cover") as File | null,
+      coverUrlSource: formData.get("coverUrlSource")?.toString().trim() || null,
       bannerFile: formData.get("banner") as File | null,
+      bannerUrlSource: formData.get("bannerUrlSource")?.toString().trim() || null,
     });
 
     return successResponse(c, { success: true, comic: updatedComic });

@@ -1,6 +1,13 @@
 import { ComicRepository, type ListComicsParams } from "@/repositories/comic.repository";
 import { ChapterRepository } from "@/repositories/chapter.repository";
-import { uploadToR2, deleteFromR2, toPublicUrl, toObjectKey, type StorageEnv } from "@/lib/storage";
+import {
+  uploadToR2,
+  deleteFromR2,
+  toPublicUrl,
+  toObjectKey,
+  fetchImageFromUrl,
+  type StorageEnv,
+} from "@/lib/storage";
 import { slugify } from "@/utils/slugify";
 
 export interface CreateComicDto {
@@ -12,8 +19,10 @@ export interface CreateComicDto {
   genreIdsRaw?: string;
   creatorName?: string;
   alternateTitles?: string[];
-  coverFile: File;
+  coverFile?: File | null;
+  coverUrlSource?: string | null;
   bannerFile?: File | null;
+  bannerUrlSource?: string | null;
 }
 
 export interface UpdateComicDto {
@@ -26,7 +35,9 @@ export interface UpdateComicDto {
   creatorName?: string;
   alternateTitles?: string[];
   coverFile?: File | null;
+  coverUrlSource?: string | null;
   bannerFile?: File | null;
+  bannerUrlSource?: string | null;
 }
 
 export class ComicService {
@@ -109,23 +120,40 @@ export class ComicService {
     if (!dto.title) {
       throw new Error("Comic title is required.");
     }
-    if (!dto.coverFile) {
-      throw new Error("Comic cover image is required.");
+    if (!dto.coverFile && !dto.coverUrlSource) {
+      throw new Error("Comic cover image or URL is required.");
     }
 
     const slug = slugify(dto.title) + "-" + Date.now().toString().slice(-4);
 
-    // Upload Cover — uploadToR2 now returns the relative object key
-    const coverBuffer = await dto.coverFile.arrayBuffer();
-    const coverExt = dto.coverFile.name.split(".").pop() || "webp";
-    const coverKey = `comics/${slug}/cover-${Date.now()}.${coverExt}`;
-    const coverUrl = await uploadToR2(this.env as StorageEnv, "media", coverKey, coverBuffer, {
-      contentType: dto.coverFile.type || "image/webp",
-    });
+    // Upload Cover — from external URL or File
+    let coverUrl: string;
+    if (dto.coverUrlSource && dto.coverUrlSource.trim()) {
+      const { arrayBuffer, contentType, ext } = await fetchImageFromUrl(dto.coverUrlSource.trim());
+      const coverKey = `comics/${slug}/cover-${Date.now()}.${ext}`;
+      coverUrl = await uploadToR2(this.env as StorageEnv, "media", coverKey, arrayBuffer, {
+        contentType,
+      });
+    } else if (dto.coverFile && dto.coverFile.size > 0) {
+      const coverBuffer = await dto.coverFile.arrayBuffer();
+      const coverExt = dto.coverFile.name.split(".").pop() || "webp";
+      const coverKey = `comics/${slug}/cover-${Date.now()}.${coverExt}`;
+      coverUrl = await uploadToR2(this.env as StorageEnv, "media", coverKey, coverBuffer, {
+        contentType: dto.coverFile.type || "image/webp",
+      });
+    } else {
+      throw new Error("Comic cover image or URL is required.");
+    }
 
-    // Upload Banner if provided
+    // Upload Banner if provided (from external URL or File)
     let bannerUrl: string | null = null;
-    if (dto.bannerFile && dto.bannerFile.size > 0) {
+    if (dto.bannerUrlSource && dto.bannerUrlSource.trim()) {
+      const { arrayBuffer, contentType, ext } = await fetchImageFromUrl(dto.bannerUrlSource.trim());
+      const bannerKey = `comics/${slug}/banner-${Date.now()}.${ext}`;
+      bannerUrl = await uploadToR2(this.env as StorageEnv, "media", bannerKey, arrayBuffer, {
+        contentType,
+      });
+    } else if (dto.bannerFile && dto.bannerFile.size > 0) {
       const bannerBuffer = await dto.bannerFile.arrayBuffer();
       const bannerExt = dto.bannerFile.name.split(".").pop() || "webp";
       const bannerKey = `comics/${slug}/banner-${Date.now()}.${bannerExt}`;
@@ -186,7 +214,13 @@ export class ComicService {
       updateData.alternateTitles = dto.alternateTitles.map((title) => title.trim()).filter(Boolean);
     }
 
-    if (dto.coverFile && dto.coverFile.size > 0) {
+    if (dto.coverUrlSource && dto.coverUrlSource.trim()) {
+      const { arrayBuffer, contentType, ext } = await fetchImageFromUrl(dto.coverUrlSource.trim());
+      const coverKey = `comics/${existingComic.slug}/cover-${Date.now()}.${ext}`;
+      updateData.coverUrl = await uploadToR2(this.env as StorageEnv, "media", coverKey, arrayBuffer, {
+        contentType,
+      });
+    } else if (dto.coverFile && dto.coverFile.size > 0) {
       const coverBuffer = await dto.coverFile.arrayBuffer();
       const coverExt = dto.coverFile.name.split(".").pop() || "webp";
       const coverKey = `comics/${existingComic.slug}/cover-${Date.now()}.${coverExt}`;
@@ -195,7 +229,13 @@ export class ComicService {
       });
     }
 
-    if (dto.bannerFile && dto.bannerFile.size > 0) {
+    if (dto.bannerUrlSource && dto.bannerUrlSource.trim()) {
+      const { arrayBuffer, contentType, ext } = await fetchImageFromUrl(dto.bannerUrlSource.trim());
+      const bannerKey = `comics/${existingComic.slug}/banner-${Date.now()}.${ext}`;
+      updateData.bannerUrl = await uploadToR2(this.env as StorageEnv, "media", bannerKey, arrayBuffer, {
+        contentType,
+      });
+    } else if (dto.bannerFile && dto.bannerFile.size > 0) {
       const bannerBuffer = await dto.bannerFile.arrayBuffer();
       const bannerExt = dto.bannerFile.name.split(".").pop() || "webp";
       const bannerKey = `comics/${existingComic.slug}/banner-${Date.now()}.${bannerExt}`;
