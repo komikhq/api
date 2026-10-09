@@ -22,6 +22,8 @@ import { searchRoutes } from "./routes/search";
 import { refreshRankings } from "./cron/refresh-rankings";
 import { syncViewsDelta } from "./cron/sync-views-delta";
 
+import { sitemapRoutes } from "./routes/sitemaps";
+
 const app = new Hono<AppEnv>();
 
 // Open Public Route (Unconstrained by CORS & Auth)
@@ -48,6 +50,7 @@ app.route("/v1/comments", commentRoutes);
 app.route("/v1/ratings", ratingRoutes);
 app.route("/v1/view", viewRoutes);
 app.route("/v1/comics", comicRoutes);
+app.route("/v1/sitemaps", sitemapRoutes);
 app.route("/v1/realtime", realtimeRoutes);
 
 import { GlobalPresenceDO } from "./durable-objects/global-presence.do";
