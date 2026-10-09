@@ -11,7 +11,7 @@
 
 ---
 
-*A globally distributed API for the KomikHQ reading experience.*
+_A globally distributed API for the KomikHQ reading experience._
 
 </div>
 
@@ -27,14 +27,14 @@ This repository is also included as the `api` Git submodule in the [KomikHQ web 
 
 ## Service overview
 
-| Area | Responsibility |
-| --- | --- |
-| Catalog and discovery | Comics, chapters, genres, search, and rankings |
-| Reader accounts | Authentication, user profiles, bookmarks, and reading history |
-| Community | Comments, ratings, and real-time presence |
-| Platform services | View tracking, sitemaps, storage, and administrative tools |
-| Runtime | Hono on Cloudflare Workers |
-| Data and identity | PostgreSQL through Drizzle ORM; Better Auth |
+| Area                  | Responsibility                                                |
+| --------------------- | ------------------------------------------------------------- |
+| Catalog and discovery | Comics, chapters, genres, search, and rankings                |
+| Reader accounts       | Authentication, user profiles, bookmarks, and reading history |
+| Community             | Comments, ratings, and real-time presence                     |
+| Platform services     | View tracking, sitemaps, storage, and administrative tools    |
+| Runtime               | Hono on Cloudflare Workers                                    |
+| Data and identity     | PostgreSQL through Drizzle ORM; Better Auth                   |
 
 Versioned application routes are mounted under `/v1`. Health checks and sitemap XML routes are also provided. See the route registrations in `src/index.ts` for the current service surface.
 
@@ -63,13 +63,13 @@ Wrangler serves the API locally at `http://localhost:8787` by default.
 
 ## Project commands
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev` | Run the API locally with Wrangler |
-| `pnpm test` | Run the API test suite |
-| `pnpm typecheck` | Check TypeScript types |
+| Command            | Purpose                           |
+| ------------------ | --------------------------------- |
+| `pnpm dev`         | Run the API locally with Wrangler |
+| `pnpm test`        | Run the API test suite            |
+| `pnpm typecheck`   | Check TypeScript types            |
 | `pnpm db:generate` | Generate database migration files |
-| `pnpm deploy` | Deploy the Worker with Wrangler |
+| `pnpm deploy`      | Deploy the Worker with Wrangler   |
 
 Run database migrations against the intended database and review generated SQL before applying schema changes.
 
