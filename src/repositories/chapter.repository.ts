@@ -95,7 +95,9 @@ export class ChapterRepository {
   async createPageRecord(
     chapterId: string,
     pageNumber: number,
-    imageUrl: string
+    imageUrl: string,
+    width?: number,
+    height?: number
   ) {
     const [pageRecord] = await this.db
       .insert(chapterPages)
@@ -103,6 +105,8 @@ export class ChapterRepository {
         chapterId,
         pageNumber,
         imageUrl,
+        width,
+        height,
       })
       .returning()
     return pageRecord

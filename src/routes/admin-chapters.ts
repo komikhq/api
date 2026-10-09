@@ -58,6 +58,8 @@ adminChapterRoutes.post(
 
       const pageNumber = Number(formData.get("pageNumber")) || 1
       const file = formData.get("file") as File
+      const width = Number(formData.get("width"))
+      const height = Number(formData.get("height"))
 
       if (!file || typeof file !== "object" || file.size === 0) {
         return errorResponse(c, "Invalid page image file.", 400)
@@ -66,7 +68,9 @@ adminChapterRoutes.post(
       const pageRecord = await service.uploadSinglePage(
         chapterId,
         pageNumber,
-        file
+        file,
+        Number.isInteger(width) && width > 0 ? width : undefined,
+        Number.isInteger(height) && height > 0 ? height : undefined
       )
       return successResponse(c, { success: true, page: pageRecord }, 201)
     } catch (err: any) {

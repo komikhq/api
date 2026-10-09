@@ -118,7 +118,13 @@ export class ChapterService {
     }
   }
 
-  async uploadSinglePage(chapterId: string, pageNumber: number, file: File) {
+  async uploadSinglePage(
+    chapterId: string,
+    pageNumber: number,
+    file: File,
+    width?: number,
+    height?: number
+  ) {
     const existing = await this.chapterRepo.findById(chapterId)
     if (!existing) {
       throw new Error("Chapter not found.")
@@ -148,7 +154,9 @@ export class ChapterService {
       const pageRecord = await this.chapterRepo.createPageRecord(
         chapterId,
         pageNumber,
-        imageKey
+        imageKey,
+        width,
+        height
       )
       return pageRecord
     } catch (dbErr: any) {
