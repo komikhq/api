@@ -67,7 +67,7 @@ test("commentService formats author.image using toPublicUrl", async () => {
     BUCKET_URL_USERS: "https://cdn-01.komikhq.dpdns.org",
   };
 
-  const service = new CommentService("postgres://mock", mockEnv);
+  const service = new CommentService("postgresql://user:password@localhost/testdb", mockEnv);
   // Test formatComment private helper via any casting
   const formatted = (service as any).formatComment({
     id: "c-1",
