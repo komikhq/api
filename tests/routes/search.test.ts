@@ -19,6 +19,7 @@ function createTestApp(loadSuggestions: (query: string, limit: number) => Promis
   const app = new Hono<AppEnv>();
   app.use("*", authMiddleware());
   app.route("/v1/search", createSearchRoutes(async (_databaseUrl, query, limit) => loadSuggestions(query, limit)));
+  app.get("/v1/sitemaps/comics", (c) => c.json({ ok: true }));
   app.get("/v1/private", (c) => c.json({ ok: true }));
   return app;
 }
@@ -105,4 +106,7 @@ test("rejects oversized queries and keeps unrelated routes protected", async () 
 
   const privateResponse = await app.request("/v1/private", {}, bindings);
   assert.equal(privateResponse.status, 401);
+
+  const sitemapResponse = await app.request("/v1/sitemaps/comics", {}, bindings);
+  assert.equal(sitemapResponse.status, 200);
 });
