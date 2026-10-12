@@ -9,6 +9,7 @@ Autonomous agent specialized in debugging Cloudflare Workers KV errors, diagnosi
 ## Agent Capabilities
 
 ### Error Diagnosis
+
 - Identifies KV_ERROR types and root causes
 - Analyzes 429 rate limit issues
 - Debugs eventual consistency problems
@@ -18,6 +19,7 @@ Autonomous agent specialized in debugging Cloudflare Workers KV errors, diagnosi
 - Diagnoses permission issues
 
 ### Configuration Validation
+
 - Verifies wrangler.jsonc syntax
 - Validates namespace IDs
 - Checks binding names
@@ -25,12 +27,14 @@ Autonomous agent specialized in debugging Cloudflare Workers KV errors, diagnosi
 - Tests authentication status
 
 ### Solution Provision
+
 - Provides error-specific fixes
 - Offers step-by-step recovery procedures
 - Suggests preventive measures
 - Recommends monitoring strategies
 
 ### Automated Testing
+
 - Runs connection tests
 - Validates CRUD operations
 - Checks rate limit compliance
@@ -39,6 +43,7 @@ Autonomous agent specialized in debugging Cloudflare Workers KV errors, diagnosi
 ## When to Use This Agent
 
 The agent triggers when users mention:
+
 - "kv error"
 - "KV_ERROR"
 - "429 too many requests"
@@ -120,12 +125,14 @@ The agent triggers when users mention:
 ### Error 1: "KV namespace not found"
 
 **Diagnosis Flow:**
+
 1. Check if binding exists in wrangler.jsonc
 2. Verify namespace ID is correct
 3. Confirm wrangler authentication
 4. Test namespace accessibility
 
 **Solution Pattern:**
+
 ```
 Issue: The binding 'MY_KV' is not defined in wrangler.jsonc
 
@@ -146,12 +153,14 @@ Fix:
 ### Error 2: "429 Too Many Requests"
 
 **Diagnosis Flow:**
+
 1. Identify which operation caused 429
 2. Check operation frequency
 3. Analyze rate limit (1000/sec per key)
 4. Review bulk operation usage
 
 **Solution Pattern:**
+
 ```
 Issue: Writing to same key >1000 times/second
 
@@ -183,12 +192,14 @@ Solutions:
 ### Error 3: "Value is null (eventual consistency)"
 
 **Diagnosis Flow:**
+
 1. Verify write operation succeeded
 2. Check timing (writes propagate in ~60s)
 3. Determine if same-region or cross-region
 4. Review cacheTtl usage
 
 **Solution Pattern:**
+
 ```
 Issue: Just wrote a value but get() returns null
 
@@ -218,12 +229,14 @@ Solutions:
 ### Error 4: "env.MY_KV is undefined"
 
 **Diagnosis Flow:**
+
 1. Check TypeScript types defined
 2. Verify binding in wrangler.jsonc
 3. Confirm Worker parameter naming (env, ctx)
 4. Test in wrangler dev vs production
 
 **Solution Pattern:**
+
 ```
 Issue: TypeScript shows env.MY_KV as undefined
 
@@ -250,12 +263,14 @@ Fix:
 ### Error 5: "Operation timed out"
 
 **Diagnosis Flow:**
+
 1. Check operation type (get/put/list)
 2. Verify value size (<25MB)
 3. Review network connectivity
 4. Check for concurrent operations
 
 **Solution Pattern:**
+
 ```
 Issue: KV operation times out
 
@@ -298,13 +313,15 @@ Solutions:
 **User:** "I'm getting KV_ERROR when I try to put data"
 
 **Agent Actions:**
+
 1. Ask for error details and code
 2. Read wrangler.jsonc
 3. Run validation script
 4. Identify issue: Missing namespace ID
 
 **Agent Response:**
-```
+
+````
 I found the issue. Your wrangler.jsonc has a malformed namespace configuration:
 
 Current (broken):
@@ -313,9 +330,10 @@ Current (broken):
   "binding": "MY_KV",
   "id": ""  // ← Empty ID
 }]
-```
+````
 
 Fix:
+
 1. Get your namespace ID:
    wrangler kv namespace list
 
@@ -326,6 +344,7 @@ Fix:
    ${CLAUDE_PLUGIN_ROOT}/scripts/validate-kv-config.sh
 
 Would you like me to update the configuration for you?
+
 ```
 
 ### Example 2: Performance Debugging
@@ -340,24 +359,29 @@ Would you like me to update the configuration for you?
 
 **Agent Response:**
 ```
+
 The slow performance is because you're not using cacheTtl. Each get() hits the KV store directly:
 
 Current performance:
+
 - First read: ~50-200ms (varies by region)
 - Subsequent reads: ~50-200ms (no caching)
 
 With cacheTtl optimization:
+
 ```typescript
-const value = await env.KV.get('config', {
-  cacheTtl: 300 // Cache at edge for 5 min
-});
+const value = await env.KV.get("config", {
+  cacheTtl: 300, // Cache at edge for 5 min
+})
 ```
 
 New performance:
+
 - First read: ~50-200ms
 - Cached reads: ~1-5ms (99% faster!)
 
 For frequently-read data, this is a game-changer. Shall I add cacheTtl to your get() calls?
+
 ```
 
 ## Best Practices for Debugging
@@ -401,8 +425,10 @@ Effective debugging achieves:
 
 After debugging, recommend:
 ```
+
 /test-kv MY_NAMESPACE - Verify the fix works
 /optimize-kv - Check for performance issues
+
 ```
 
 ## Implementation Notes
@@ -413,3 +439,4 @@ After debugging, recommend:
 - Explain root cause, not just the fix
 - Test proposed solutions when possible
 - Document the resolution for future reference
+```

@@ -40,6 +40,7 @@ Replace `MY_NAMESPACE` with your actual binding name from wrangler.jsonc.
 ### Interactive Mode
 
 If no namespace provided, the command will:
+
 1. List available namespaces from wrangler.jsonc
 2. Ask which one to test
 3. Run comprehensive tests
@@ -57,6 +58,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/test-kv-connection.sh <NAMESPACE_BINDING>
 ```
 
 The script performs:
+
 1. Configuration validation
 2. Test key generation (timestamped, unique)
 3. PUT operation test
@@ -67,11 +69,13 @@ The script performs:
 ## Prerequisites
 
 1. **Wrangler CLI Installed**
+
    ```bash
    npm install -g wrangler
    ```
 
 2. **Authenticated**
+
    ```bash
    wrangler whoami  # Verify authentication
    ```
@@ -134,17 +138,20 @@ Add it to your wrangler.jsonc:
 This command tests:
 
 ✅ **Configuration**
+
 - Namespace binding exists
 - Namespace ID is valid format (32 hex chars)
 - wrangler.jsonc syntax is correct
 
 ✅ **Operations**
+
 - PUT: Can write key-value pairs
 - GET: Can retrieve values
 - DELETE: Can remove keys
 - Values match after write/read cycle
 
 ❌ **Not Tested**
+
 - TTL/expiration (requires time delay)
 - Metadata operations
 - List operations
@@ -160,6 +167,7 @@ For comprehensive testing, see `references/troubleshooting.md`.
 **Cause:** Missing or incorrect configuration
 
 **Solution:**
+
 1. Run `/cloudflare-kv:setup` to create namespace
 2. Or manually add to wrangler.jsonc:
    ```json
@@ -172,12 +180,14 @@ For comprehensive testing, see `references/troubleshooting.md`.
 ### "PUT operation failed"
 
 **Possible causes:**
+
 - Invalid namespace ID
 - Authentication expired
 - API rate limit reached
 - Network connectivity issue
 
 **Solution:**
+
 ```bash
 # Re-authenticate
 wrangler login
@@ -194,6 +204,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/validate-kv-config.sh
 **Cause:** Eventual consistency delay
 
 **Solution:** This is rare in local testing. If persistent:
+
 1. Wait 60 seconds and retry
 2. Check if namespace ID is correct
 3. Verify no other processes are modifying the test key
@@ -203,11 +214,13 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/validate-kv-config.sh
 If tests pass:
 
 1. **Start Development**
+
    ```bash
    wrangler dev
    ```
 
 2. **Optimize Usage**
+
    ```
    /cloudflare-kv:optimize src/index.ts
    ```
@@ -220,6 +233,7 @@ If tests pass:
 If tests fail:
 
 1. **Validate Configuration**
+
    ```
    ${CLAUDE_PLUGIN_ROOT}/scripts/validate-kv-config.sh
    ```
@@ -240,6 +254,7 @@ If tests fail:
 ## References
 
 For more details:
+
 - Load `references/troubleshooting.md` for error diagnostics
 - Load `references/setup-guide.md` for configuration help
 - Check official docs: https://developers.cloudflare.com/kv/api/

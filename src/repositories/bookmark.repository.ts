@@ -1,12 +1,12 @@
-import { createDbClient, bookmarks, comics } from "@/db";
-import type { DbClient } from "@/db";
-import { eq, and } from "drizzle-orm";
+import { createDbClient, bookmarks, comics } from "@/db"
+import type { DbClient } from "@/db"
+import { eq, and } from "drizzle-orm"
 
 export class BookmarkRepository {
-  private db: DbClient;
+  private db: DbClient
 
   constructor(databaseUrl: string) {
-    this.db = createDbClient(databaseUrl);
+    this.db = createDbClient(databaseUrl)
   }
 
   async findByUserId(userId: string) {
@@ -19,25 +19,25 @@ export class BookmarkRepository {
       })
       .from(bookmarks)
       .innerJoin(comics, eq(bookmarks.comicId, comics.id))
-      .where(eq(bookmarks.userId, userId));
+      .where(eq(bookmarks.userId, userId))
   }
 
   async findExisting(userId: string, comicId: string) {
     const [existing] = await this.db
       .select()
       .from(bookmarks)
-      .where(and(eq(bookmarks.userId, userId), eq(bookmarks.comicId, comicId)));
-    return existing || null;
+      .where(and(eq(bookmarks.userId, userId), eq(bookmarks.comicId, comicId)))
+    return existing || null
   }
 
   async upsert(userId: string, comicId: string, status: string = "reading") {
-    const existing = await this.findExisting(userId, comicId);
+    const existing = await this.findExisting(userId, comicId)
     if (existing) {
       await this.db
         .update(bookmarks)
         .set({ status, updatedAt: new Date() })
-        .where(eq(bookmarks.id, existing.id));
-      return { action: "updated" };
+        .where(eq(bookmarks.id, existing.id))
+      return { action: "updated" }
     }
 
     await this.db.insert(bookmarks).values({
@@ -45,13 +45,13 @@ export class BookmarkRepository {
       userId,
       comicId,
       status,
-    });
-    return { action: "added" };
+    })
+    return { action: "added" }
   }
 
   async delete(userId: string, comicId: string) {
     await this.db
       .delete(bookmarks)
-      .where(and(eq(bookmarks.userId, userId), eq(bookmarks.comicId, comicId)));
+      .where(and(eq(bookmarks.userId, userId), eq(bookmarks.comicId, comicId)))
   }
 }

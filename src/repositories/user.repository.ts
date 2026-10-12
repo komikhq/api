@@ -1,32 +1,39 @@
-import { createDbClient, users, accounts, comics, chapters, comments } from "@/db";
-import type { DbClient } from "@/db";
-import { eq, like, or, count, desc, and, isNotNull, sum } from "drizzle-orm";
+import {
+  createDbClient,
+  users,
+  accounts,
+  comics,
+  chapters,
+  comments,
+} from "@/db"
+import type { DbClient } from "@/db"
+import { eq, like, or, count, desc, and, isNotNull, sum } from "drizzle-orm"
 
 export interface ListUsersParams {
-  query?: string;
-  page: number;
-  limit: number;
+  query?: string
+  page: number
+  limit: number
 }
 
 export class UserRepository {
-  private db: DbClient;
+  private db: DbClient
 
   constructor(databaseUrl: string) {
-    this.db = createDbClient(databaseUrl);
+    this.db = createDbClient(databaseUrl)
   }
 
   async findUsersPaginated(params: ListUsersParams) {
-    const { query, page, limit } = params;
-    const offset = (page - 1) * limit;
+    const { query, page, limit } = params
+    const offset = (page - 1) * limit
 
     const searchCondition = query
       ? or(like(users.name, `%${query}%`), like(users.email, `%${query}%`))
-      : undefined;
+      : undefined
 
     const [totalRes] = await this.db
       .select({ count: count() })
       .from(users)
-      .where(searchCondition);
+      .where(searchCondition)
 
     const userList = await this.db
       .select({
@@ -44,17 +51,17 @@ export class UserRepository {
       .where(searchCondition)
       .orderBy(desc(users.createdAt))
       .limit(limit)
-      .offset(offset);
+      .offset(offset)
 
     return {
       users: userList,
       total: totalRes?.count || 0,
-    };
+    }
   }
 
   async findById(id: string) {
-    const [user] = await this.db.select().from(users).where(eq(users.id, id));
-    return user || null;
+    const [user] = await this.db.select().from(users).where(eq(users.id, id))
+    return user || null
   }
 
   async hasCredentialPassword(userId: string) {
@@ -67,26 +74,37 @@ export class UserRepository {
           eq(accounts.providerId, "credential"),
           isNotNull(accounts.password)
         )
-      );
-    return Boolean(credAccount);
+      )
+    return Boolean(credAccount)
   }
 
   async updateUser(id: string, data: Partial<typeof users.$inferInsert>) {
-    await this.db.update(users).set(data).where(eq(users.id, id));
-    return this.findById(id);
+    await this.db.update(users).set(data).where(eq(users.id, id))
+    return this.findById(id)
   }
 
   async deleteUser(id: string) {
-    await this.db.delete(users).where(eq(users.id, id));
+    await this.db.delete(users).where(eq(users.id, id))
   }
 
   async getSystemStats() {
-    const [totalUsersRes] = await this.db.select({ count: count() }).from(users);
-    const [totalAdminsRes] = await this.db.select({ count: count() }).from(users).where(eq(users.role, "admin"));
-    const [totalComicsRes] = await this.db.select({ count: count() }).from(comics);
-    const [totalChaptersRes] = await this.db.select({ count: count() }).from(chapters);
-    const [totalViewsRes] = await this.db.select({ sum: sum(comics.totalViews) }).from(comics);
-    const [totalCommentsRes] = await this.db.select({ count: count() }).from(comments);
+    const [totalUsersRes] = await this.db.select({ count: count() }).from(users)
+    const [totalAdminsRes] = await this.db
+      .select({ count: count() })
+      .from(users)
+      .where(eq(users.role, "admin"))
+    const [totalComicsRes] = await this.db
+      .select({ count: count() })
+      .from(comics)
+    const [totalChaptersRes] = await this.db
+      .select({ count: count() })
+      .from(chapters)
+    const [totalViewsRes] = await this.db
+      .select({ sum: sum(comics.totalViews) })
+      .from(comics)
+    const [totalCommentsRes] = await this.db
+      .select({ count: count() })
+      .from(comments)
 
     return {
       totalUsers: totalUsersRes?.count || 0,
@@ -95,6 +113,6 @@ export class UserRepository {
       totalChapters: totalChaptersRes?.count || 0,
       totalViews: Number(totalViewsRes?.sum || 0),
       totalComments: totalCommentsRes?.count || 0,
-    };
+    }
   }
 }

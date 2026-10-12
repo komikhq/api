@@ -1,8 +1,8 @@
-import assert from "node:assert/strict";
-import test from "node:test";
-import { Hono } from "hono";
-import { authMiddleware, type AppEnv } from "../../src/middleware/auth";
-import { createGenreRoutes } from "../../src/routes/genres";
+import assert from "node:assert/strict"
+import test from "node:test"
+import { Hono } from "hono"
+import { authMiddleware, type AppEnv } from "../../src/middleware/auth"
+import { createGenreRoutes } from "../../src/routes/genres"
 
 const genreList = [
   {
@@ -13,7 +13,7 @@ const genreList = [
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     updatedAt: new Date("2026-01-01T00:00:00.000Z"),
   },
-];
+]
 
 const genreResponse = {
   genres: genreList.map((genre) => ({
@@ -21,14 +21,17 @@ const genreResponse = {
     createdAt: genre.createdAt.toISOString(),
     updatedAt: genre.updatedAt.toISOString(),
   })),
-};
+}
 
 function createTestApp() {
-  const app = new Hono<AppEnv>();
-  app.use("*", authMiddleware());
-  app.route("/v1/genres", createGenreRoutes(async () => genreList));
-  app.get("/v1/private", (c) => c.json({ ok: true }));
-  return app;
+  const app = new Hono<AppEnv>()
+  app.use("*", authMiddleware())
+  app.route(
+    "/v1/genres",
+    createGenreRoutes(async () => genreList)
+  )
+  app.get("/v1/private", (c) => c.json({ ok: true }))
+  return app
 }
 
 function createBindings(cachedSession: unknown = null) {
@@ -37,19 +40,19 @@ function createBindings(cachedSession: unknown = null) {
     KV_KOMIKHQ: {
       get: async <T>() => cachedSession as T | null,
     },
-  } as unknown as AppEnv["Bindings"];
+  } as unknown as AppEnv["Bindings"]
 }
 
 test("allows anonymous genre requests and preserves the response shape", async () => {
   const response = await createTestApp().request(
     "/v1/genres",
     {},
-    createBindings(),
-  );
+    createBindings()
+  )
 
-  assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), genreResponse);
-});
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), genreResponse)
+})
 
 test("allows authenticated genre requests", async () => {
   const session = {
@@ -57,23 +60,23 @@ test("allows authenticated genre requests", async () => {
     userId: "user-1",
     email: "reader@example.com",
     name: "Reader",
-  };
+  }
   const response = await createTestApp().request(
     "/v1/genres",
     { headers: { Authorization: "Bearer valid-token" } },
-    createBindings(session),
-  );
+    createBindings(session)
+  )
 
-  assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), genreResponse);
-});
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), genreResponse)
+})
 
 test("keeps unrelated private routes protected", async () => {
   const response = await createTestApp().request(
     "/v1/private",
     {},
-    createBindings(),
-  );
+    createBindings()
+  )
 
-  assert.equal(response.status, 401);
-});
+  assert.equal(response.status, 401)
+})

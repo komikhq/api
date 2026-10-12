@@ -22,6 +22,7 @@ Complete guide for migrating to Workers KV from various storage solutions.
 ### Why Migrate?
 
 **Current limitations**:
+
 - Client-side only (not accessible from server)
 - 5-10MB storage limit per domain
 - No cross-device synchronization
@@ -29,6 +30,7 @@ Complete guide for migrating to Workers KV from various storage solutions.
 - No server-side validation
 
 **KV advantages**:
+
 - Global edge storage
 - Accessible from Workers (server-side)
 - 25MB per value (unlimited total)
@@ -42,74 +44,70 @@ Complete guide for migrating to Workers KV from various storage solutions.
 
 ```typescript
 // Client-side analysis
-const localStorageKeys = Object.keys(localStorage);
-const sessionStorageKeys = Object.keys(sessionStorage);
+const localStorageKeys = Object.keys(localStorage)
+const sessionStorageKeys = Object.keys(sessionStorage)
 
-console.log('localStorage items:', localStorageKeys.length);
-console.log('sessionStorage items:', sessionStorageKeys.length);
+console.log("localStorage items:", localStorageKeys.length)
+console.log("sessionStorage items:", sessionStorageKeys.length)
 
 // Analyze size
-let totalSize = 0;
-localStorageKeys.forEach(key => {
-  totalSize += localStorage.getItem(key)?.length || 0;
-});
-console.log('Total localStorage size:', totalSize, 'bytes');
+let totalSize = 0
+localStorageKeys.forEach((key) => {
+  totalSize += localStorage.getItem(key)?.length || 0
+})
+console.log("Total localStorage size:", totalSize, "bytes")
 ```
 
 **2. Create Migration Worker**
 
 ```typescript
-import { Hono } from 'hono';
+import { Hono } from "hono"
 
 type Bindings = {
-  USER_DATA: KVNamespace;
-};
+  USER_DATA: KVNamespace
+}
 
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Bindings }>()
 
 // Migration endpoint
-app.post('/migrate', async (c) => {
-  const { userId, data } = await c.req.json();
+app.post("/migrate", async (c) => {
+  const { userId, data } = await c.req.json()
 
   // Validate data
   if (!userId || !data) {
-    return c.json({ error: 'Missing userId or data' }, 400);
+    return c.json({ error: "Missing userId or data" }, 400)
   }
 
   // Migrate each localStorage item to KV
   for (const [key, value] of Object.entries(data)) {
-    await c.env.USER_DATA.put(
-      `user:${userId}:${key}`,
-      JSON.stringify(value),
-      {
-        expirationTtl: 86400 * 30, // 30 days
-        metadata: {
-          migratedAt: Date.now(),
-          source: 'localStorage'
-        }
-      }
-    );
+    await c.env.USER_DATA.put(`user:${userId}:${key}`, JSON.stringify(value), {
+      expirationTtl: 86400 * 30, // 30 days
+      metadata: {
+        migratedAt: Date.now(),
+        source: "localStorage",
+      },
+    })
   }
 
   return c.json({
     success: true,
-    itemsMigrated: Object.keys(data).length
-  });
-});
+    itemsMigrated: Object.keys(data).length,
+  })
+})
 
 // Read endpoint (replaces localStorage.getItem)
-app.get('/data/:userId/:key', async (c) => {
-  const { userId, key } = c.req.param();
-  const value = await c.env.USER_DATA.get(`user:${userId}:${key}`, 'json');
+app.get("/data/:userId/:key", async (c) => {
+  const { userId, key } = c.req.param()
+  const value = await c.env.USER_DATA.get(`user:${userId}:${key}`, "json")
 
   if (!value) {
-    return c.json({ error: 'Not found' }, 404);
+    return c.json({ error: "Not found" }, 404)
   }
 
-  return c.json({ value });
-});
+  return c.json({ value })
+})
 
-export default app;
+export default app
 ```
 
 **3. Client-Side Migration Script**
@@ -118,27 +116,27 @@ export default app;
 // Run once per user to migrate data
 async function migrateToKV(userId: string) {
   // Collect all localStorage data
-  const data: Record<string, any> = {};
+  const data: Record<string, any> = {}
   for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
+    const key = localStorage.key(i)
     if (key) {
       try {
-        data[key] = JSON.parse(localStorage.getItem(key) || '');
+        data[key] = JSON.parse(localStorage.getItem(key) || "")
       } catch {
-        data[key] = localStorage.getItem(key);
+        data[key] = localStorage.getItem(key)
       }
     }
   }
 
   // Send to migration endpoint
-  const response = await fetch('/migrate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, data })
-  });
+  const response = await fetch("/migrate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, data }),
+  })
 
   if (response.ok) {
-    console.log('Migration successful!');
+    console.log("Migration successful!")
     // Optionally clear localStorage after successful migration
     // localStorage.clear();
   }
@@ -149,17 +147,17 @@ async function migrateToKV(userId: string) {
 
 ```typescript
 // Before (localStorage)
-localStorage.setItem('theme', 'dark');
-const theme = localStorage.getItem('theme');
+localStorage.setItem("theme", "dark")
+const theme = localStorage.getItem("theme")
 
 // After (KV via Worker API)
-await fetch('/data/user123/theme', {
-  method: 'PUT',
-  body: JSON.stringify({ value: 'dark' })
-});
+await fetch("/data/user123/theme", {
+  method: "PUT",
+  body: JSON.stringify({ value: "dark" }),
+})
 
-const response = await fetch('/data/user123/theme');
-const { value: theme } = await response.json();
+const response = await fetch("/data/user123/theme")
+const { value: theme } = await response.json()
 ```
 
 ---
@@ -169,6 +167,7 @@ const { value: theme } = await response.json();
 ### Why Migrate?
 
 **Redis strengths**:
+
 - In-memory speed
 - Complex data structures (sets, sorted sets, etc.)
 - Pub/Sub
@@ -176,6 +175,7 @@ const { value: theme } = await response.json();
 - Strong consistency
 
 **When to use KV instead**:
+
 - Read-heavy workloads (KV has cacheTtl)
 - Global edge distribution needed
 - Don't need atomic operations
@@ -183,6 +183,7 @@ const { value: theme } = await response.json();
 - Cost optimization (Redis hosting can be expensive)
 
 **When NOT to migrate**:
+
 - Need atomic operations (INCR, etc.)
 - Need complex data structures (sorted sets, etc.)
 - Need strong consistency
@@ -211,28 +212,28 @@ SCAN 0 MATCH user:* COUNT 1000
 ```typescript
 // ✅ Simple key-value (easy migration)
 // Redis
-await redis.set('config', JSON.stringify(config));
-const config = JSON.parse(await redis.get('config'));
+await redis.set("config", JSON.stringify(config))
+const config = JSON.parse(await redis.get("config"))
 
 // KV
-await env.KV.put('config', JSON.stringify(config));
-const config = await env.KV.get('config', 'json');
+await env.KV.put("config", JSON.stringify(config))
+const config = await env.KV.get("config", "json")
 
 // ✅ TTL expiration (easy migration)
 // Redis
-await redis.setex('session:123', 3600, sessionData);
+await redis.setex("session:123", 3600, sessionData)
 
 // KV
-await env.KV.put('session:123', sessionData, {
-  expirationTtl: 3600
-});
+await env.KV.put("session:123", sessionData, {
+  expirationTtl: 3600,
+})
 
 // ✅ Key prefix patterns (easy migration)
 // Redis
-await redis.keys('user:*');
+await redis.keys("user:*")
 
 // KV
-await env.KV.list({ prefix: 'user:' });
+await env.KV.list({ prefix: "user:" })
 ```
 
 **3. Incompatible Patterns (Need Workarounds)**
@@ -240,95 +241,99 @@ await env.KV.list({ prefix: 'user:' });
 ```typescript
 // ❌ Atomic increment (use Durable Objects instead)
 // Redis
-await redis.incr('counter');
+await redis.incr("counter")
 
 // KV workaround (not atomic, eventual consistency issues)
-const count = parseInt(await env.KV.get('counter') || '0');
-await env.KV.put('counter', String(count + 1));
+const count = parseInt((await env.KV.get("counter")) || "0")
+await env.KV.put("counter", String(count + 1))
 
 // ✅ Better: Use Durable Objects for counters
 export class Counter {
-  state: DurableObjectState;
-  count = 0;
+  state: DurableObjectState
+  count = 0
 
   async increment() {
-    this.count++;
-    await this.state.storage.put('count', this.count);
-    return this.count;
+    this.count++
+    await this.state.storage.put("count", this.count)
+    return this.count
   }
 }
 
 // ❌ Sorted sets (use D1 instead)
 // Redis
-await redis.zadd('leaderboard', score, userId);
+await redis.zadd("leaderboard", score, userId)
 
 // D1
-await env.DB.prepare(`
+await env.DB.prepare(
+  `
   INSERT INTO leaderboard (user_id, score)
   VALUES (?, ?)
   ON CONFLICT (user_id) DO UPDATE SET score = ?
-`).bind(userId, score, score).run();
+`
+)
+  .bind(userId, score, score)
+  .run()
 
 // ❌ Pub/Sub (use Queues or Durable Objects)
 // Redis
-redis.subscribe('notifications');
+redis.subscribe("notifications")
 
 // Cloudflare Queues
-await env.QUEUE.send({ type: 'notification', data });
+await env.QUEUE.send({ type: "notification", data })
 ```
 
 **4. Migration Worker**
 
 ```typescript
-import { Hono } from 'hono';
-import { Redis } from '@upstash/redis';
+import { Hono } from "hono"
+import { Redis } from "@upstash/redis"
 
 type Bindings = {
-  KV: KVNamespace;
-  REDIS_URL: string;
-  REDIS_TOKEN: string;
-};
+  KV: KVNamespace
+  REDIS_URL: string
+  REDIS_TOKEN: string
+}
 
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Bindings }>()
 
-app.post('/migrate-redis', async (c) => {
+app.post("/migrate-redis", async (c) => {
   const redis = new Redis({
     url: c.env.REDIS_URL,
-    token: c.env.REDIS_TOKEN
-  });
+    token: c.env.REDIS_TOKEN,
+  })
 
-  let cursor = '0';
-  let migrated = 0;
+  let cursor = "0"
+  let migrated = 0
 
   do {
     // Scan Redis keys
     const [newCursor, keys] = await redis.scan(cursor, {
-      match: '*',
-      count: 100
-    });
-    cursor = newCursor;
+      match: "*",
+      count: 100,
+    })
+    cursor = newCursor
 
     // Migrate each key
     for (const key of keys) {
-      const value = await redis.get(key);
-      const ttl = await redis.ttl(key);
+      const value = await redis.get(key)
+      const ttl = await redis.ttl(key)
 
       if (value) {
-        const options: any = {};
+        const options: any = {}
         if (ttl > 0) {
-          options.expirationTtl = ttl;
+          options.expirationTtl = ttl
         }
 
-        await c.env.KV.put(key, value, options);
-        migrated++;
+        await c.env.KV.put(key, value, options)
+        migrated++
       }
     }
-  } while (cursor !== '0');
+  } while (cursor !== "0")
 
-  return c.json({ migrated });
-});
+  return c.json({ migrated })
+})
 
-export default app;
+export default app
 ```
 
 ---
@@ -338,6 +343,7 @@ export default app;
 ### Why Migrate?
 
 **D1 strengths**:
+
 - SQL queries
 - Relational data
 - Transactions
@@ -345,6 +351,7 @@ export default app;
 - Joins
 
 **When to use KV instead**:
+
 - Simple key-value lookups
 - No relational requirements
 - Read-heavy workloads
@@ -352,6 +359,7 @@ export default app;
 - Global edge caching needed
 
 **When NOT to migrate**:
+
 - Need SQL queries
 - Need relationships/joins
 - Need transactions
@@ -377,16 +385,12 @@ SELECT * FROM orders WHERE status = 'pending' AND created_at > ?;  -- Complex qu
 
 ```typescript
 // Export config table to KV
-const configs = await env.DB.prepare('SELECT key, value FROM config').all();
+const configs = await env.DB.prepare("SELECT key, value FROM config").all()
 
 for (const row of configs.results) {
-  await env.KV.put(
-    `config:${row.key}`,
-    row.value,
-    {
-      metadata: { migratedFrom: 'd1', table: 'config' }
-    }
-  );
+  await env.KV.put(`config:${row.key}`, row.value, {
+    metadata: { migratedFrom: "d1", table: "config" },
+  })
 }
 ```
 
@@ -396,33 +400,37 @@ for (const row of configs.results) {
 // During migration, write to both D1 and KV
 async function setConfig(key: string, value: string) {
   // Write to D1 (source of truth during migration)
-  await env.DB.prepare('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)')
+  await env.DB.prepare(
+    "INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)"
+  )
     .bind(key, value)
-    .run();
+    .run()
 
   // Also write to KV
-  await env.KV.put(`config:${key}`, value);
+  await env.KV.put(`config:${key}`, value)
 }
 
 // Read from KV, fallback to D1
 async function getConfig(key: string) {
   // Try KV first (faster)
-  let value = await env.KV.get(`config:${key}`);
+  let value = await env.KV.get(`config:${key}`)
 
   if (!value) {
     // Fallback to D1
-    const result = await env.DB.prepare('SELECT value FROM config WHERE key = ?')
+    const result = await env.DB.prepare(
+      "SELECT value FROM config WHERE key = ?"
+    )
       .bind(key)
-      .first();
+      .first()
 
     if (result) {
-      value = result.value as string;
+      value = result.value as string
       // Backfill KV
-      await env.KV.put(`config:${key}`, value);
+      await env.KV.put(`config:${key}`, value)
     }
   }
 
-  return value;
+  return value
 }
 ```
 
@@ -431,18 +439,18 @@ async function getConfig(key: string) {
 ```typescript
 // Validation script
 async function validateMigration() {
-  const d1Configs = await env.DB.prepare('SELECT key, value FROM config').all();
-  let mismatches = 0;
+  const d1Configs = await env.DB.prepare("SELECT key, value FROM config").all()
+  let mismatches = 0
 
   for (const row of d1Configs.results) {
-    const kvValue = await env.KV.get(`config:${row.key}`);
+    const kvValue = await env.KV.get(`config:${row.key}`)
     if (kvValue !== row.value) {
-      console.error(`Mismatch for ${row.key}: D1=${row.value}, KV=${kvValue}`);
-      mismatches++;
+      console.error(`Mismatch for ${row.key}: D1=${row.value}, KV=${kvValue}`)
+      mismatches++
     }
   }
 
-  return { total: d1Configs.results.length, mismatches };
+  return { total: d1Configs.results.length, mismatches }
 }
 ```
 
@@ -453,12 +461,14 @@ async function validateMigration() {
 ### Why Migrate?
 
 **R2 strengths**:
+
 - Large files (up to 5 TB)
 - S3-compatible API
 - Multipart uploads
 - No egress fees
 
 **When to use KV instead**:
+
 - Small values (<25 MB)
 - Metadata-heavy operations
 - Need TTL expiration
@@ -466,6 +476,7 @@ async function validateMigration() {
 - Read-heavy with edge caching
 
 **When NOT to migrate**:
+
 - Files >25 MB
 - Need S3 compatibility
 - Need multipart uploads
@@ -477,21 +488,25 @@ async function validateMigration() {
 
 ```typescript
 // Store large file in R2
-await env.R2.put('uploads/file.pdf', fileData);
+await env.R2.put("uploads/file.pdf", fileData)
 
 // Store metadata in KV
-await env.KV.put('file:metadata:file.pdf', JSON.stringify({
-  r2Key: 'uploads/file.pdf',
-  size: fileData.size,
-  type: 'application/pdf',
-  uploadedAt: Date.now()
-}), {
-  metadata: { source: 'r2-migration' }
-});
+await env.KV.put(
+  "file:metadata:file.pdf",
+  JSON.stringify({
+    r2Key: "uploads/file.pdf",
+    size: fileData.size,
+    type: "application/pdf",
+    uploadedAt: Date.now(),
+  }),
+  {
+    metadata: { source: "r2-migration" },
+  }
+)
 
 // Retrieve
-const metadata = await env.KV.get('file:metadata:file.pdf', 'json');
-const file = await env.R2.get(metadata.r2Key);
+const metadata = await env.KV.get("file:metadata:file.pdf", "json")
+const file = await env.R2.get(metadata.r2Key)
 ```
 
 ---
@@ -511,32 +526,32 @@ const file = await env.R2.get(metadata.r2Key);
 
 ```typescript
 async function validateMigration(env: Bindings) {
-  const errors: string[] = [];
+  const errors: string[] = []
 
   // Test 1: Verify data integrity
-  const sampleKeys = ['config:theme', 'user:123:preferences'];
+  const sampleKeys = ["config:theme", "user:123:preferences"]
   for (const key of sampleKeys) {
-    const value = await env.KV.get(key);
+    const value = await env.KV.get(key)
     if (!value) {
-      errors.push(`Missing key: ${key}`);
+      errors.push(`Missing key: ${key}`)
     }
   }
 
   // Test 2: Verify TTL
-  const ttlKey = 'session:test';
-  await env.KV.put(ttlKey, 'test', { expirationTtl: 60 });
-  const ttlValue = await env.KV.get(ttlKey);
+  const ttlKey = "session:test"
+  await env.KV.put(ttlKey, "test", { expirationTtl: 60 })
+  const ttlValue = await env.KV.get(ttlKey)
   if (!ttlValue) {
-    errors.push('TTL test failed');
+    errors.push("TTL test failed")
   }
 
   // Test 3: Verify metadata
-  const { value, metadata } = await env.KV.getWithMetadata('config:theme');
+  const { value, metadata } = await env.KV.getWithMetadata("config:theme")
   if (!metadata?.migratedFrom) {
-    errors.push('Metadata missing on migrated keys');
+    errors.push("Metadata missing on migrated keys")
   }
 
-  return { success: errors.length === 0, errors };
+  return { success: errors.length === 0, errors }
 }
 ```
 
@@ -555,15 +570,17 @@ async function rollback() {
   // 2. Stop writing to KV
   // 3. Log rollback event
 
-  console.log('Rolling back to source system');
+  console.log("Rolling back to source system")
 
   // Example: Revert to D1
   async function getConfig(key: string) {
     // Read from D1 only
-    const result = await env.DB.prepare('SELECT value FROM config WHERE key = ?')
+    const result = await env.DB.prepare(
+      "SELECT value FROM config WHERE key = ?"
+    )
       .bind(key)
-      .first();
-    return result?.value;
+      .first()
+    return result?.value
   }
 }
 ```
@@ -573,14 +590,16 @@ async function rollback() {
 ```typescript
 // Before deleting source data, verify KV
 async function safeDelete() {
-  const d1Count = await env.DB.prepare('SELECT COUNT(*) as count FROM config').first();
-  const kvCount = (await env.KV.list()).keys.length;
+  const d1Count = await env.DB.prepare(
+    "SELECT COUNT(*) as count FROM config"
+  ).first()
+  const kvCount = (await env.KV.list()).keys.length
 
   if (kvCount < d1Count.count) {
-    throw new Error('KV has fewer records than D1. Aborting deletion.');
+    throw new Error("KV has fewer records than D1. Aborting deletion.")
   }
 
-  console.log('Safe to delete source data');
+  console.log("Safe to delete source data")
 }
 ```
 
@@ -591,6 +610,7 @@ async function safeDelete() {
 ### Cutover Checklist
 
 **Pre-Cutover** (1 week before):
+
 - [ ] Complete all data migration
 - [ ] Validate data integrity
 - [ ] Test application with KV
@@ -599,6 +619,7 @@ async function safeDelete() {
 - [ ] Schedule maintenance window
 
 **During Cutover**:
+
 - [ ] Enable dual-write mode
 - [ ] Monitor error rates
 - [ ] Verify read performance
@@ -606,6 +627,7 @@ async function safeDelete() {
 - [ ] Monitor KV metrics in dashboard
 
 **Post-Cutover** (1 week after):
+
 - [ ] Disable dual-write (KV only)
 - [ ] Monitor for issues
 - [ ] Verify cost savings
@@ -617,21 +639,21 @@ async function safeDelete() {
 ```typescript
 // Add logging to track migration
 async function getConfigWithLogging(key: string) {
-  const start = Date.now();
+  const start = Date.now()
 
   // Try KV
-  const kvValue = await env.KV.get(`config:${key}`);
-  const kvTime = Date.now() - start;
+  const kvValue = await env.KV.get(`config:${key}`)
+  const kvTime = Date.now() - start
 
   // Log performance
   console.log({
     key,
-    source: kvValue ? 'kv' : 'fallback',
+    source: kvValue ? "kv" : "fallback",
     latency: kvTime,
-    timestamp: Date.now()
-  });
+    timestamp: Date.now(),
+  })
 
-  return kvValue;
+  return kvValue
 }
 ```
 
@@ -654,36 +676,38 @@ Monitor these metrics:
 ```typescript
 // Before (D1)
 const prefs = await env.DB.prepare(
-  'SELECT * FROM user_preferences WHERE user_id = ?'
-).bind(userId).first();
+  "SELECT * FROM user_preferences WHERE user_id = ?"
+)
+  .bind(userId)
+  .first()
 
 // After (KV)
-const prefs = await env.KV.get(`user:${userId}:preferences`, 'json');
+const prefs = await env.KV.get(`user:${userId}:preferences`, "json")
 ```
 
 ### Pattern 2: Configuration
 
 ```typescript
 // Before (Redis)
-const config = await redis.get('app:config');
+const config = await redis.get("app:config")
 
 // After (KV with cacheTtl)
-const config = await env.KV.get('app:config', {
-  type: 'json',
-  cacheTtl: 300 // Cache for 5 minutes
-});
+const config = await env.KV.get("app:config", {
+  type: "json",
+  cacheTtl: 300, // Cache for 5 minutes
+})
 ```
 
 ### Pattern 3: Session Management
 
 ```typescript
 // Before (Redis with TTL)
-await redis.setex(`session:${sessionId}`, 3600, sessionData);
+await redis.setex(`session:${sessionId}`, 3600, sessionData)
 
 // After (KV with expirationTtl)
 await env.KV.put(`session:${sessionId}`, sessionData, {
-  expirationTtl: 3600
-});
+  expirationTtl: 3600,
+})
 ```
 
 ---

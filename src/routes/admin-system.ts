@@ -1,51 +1,53 @@
-import { Hono } from "hono";
-import type { AppEnv } from "@/middleware/auth";
-import { requireAdmin } from "@/middleware/admin";
-import { syncViewsDelta } from "@/cron/sync-views-delta";
-import { refreshRankings } from "@/cron/refresh-rankings";
-import { successResponse, errorResponse } from "@/utils/response";
+import { Hono } from "hono"
+import type { AppEnv } from "@/middleware/auth"
+import { requireAdmin } from "@/middleware/admin"
+import { syncViewsDelta } from "@/cron/sync-views-delta"
+import { refreshRankings } from "@/cron/refresh-rankings"
+import { successResponse, errorResponse } from "@/utils/response"
 
-export const adminSystemRoutes = new Hono<AppEnv>();
+export const adminSystemRoutes = new Hono<AppEnv>()
 
-adminSystemRoutes.use("*", requireAdmin());
+adminSystemRoutes.use("*", requireAdmin())
 
 // GET /v1/admin/system/maintenance-status - Get live metrics for KV queues & storage
 adminSystemRoutes.get("/system/maintenance-status", async (c) => {
   try {
-    let cachedSearchKeysCount = 0;
-    let kvHealthy = true;
-    let kvViewsHealthy = true;
-    let aeHealthy = Boolean(c.env.AE_COMIC_VIEWS);
-    let r2Healthy = true;
-    let lastSyncedAt: string | null = null;
-    let cachedRankingsCount = 0;
+    let cachedSearchKeysCount = 0
+    let kvHealthy = true
+    let kvViewsHealthy = true
+    let aeHealthy = Boolean(c.env.AE_COMIC_VIEWS)
+    let r2Healthy = true
+    let lastSyncedAt: string | null = null
+    let cachedRankingsCount = 0
 
     if (c.env.KV_KOMIKHQ) {
       try {
-        const searchKeys = await c.env.KV_KOMIKHQ.list({ prefix: "comic-search:suggestions:" });
-        cachedSearchKeysCount = searchKeys.keys.length;
+        const searchKeys = await c.env.KV_KOMIKHQ.list({
+          prefix: "comic-search:suggestions:",
+        })
+        cachedSearchKeysCount = searchKeys.keys.length
       } catch {
-        kvHealthy = false;
+        kvHealthy = false
       }
     } else {
-      kvHealthy = false;
+      kvHealthy = false
     }
 
     if (c.env.KV_VIEWS) {
       try {
-        lastSyncedAt = await c.env.KV_VIEWS.get("views_sync:last_synced_at");
-        const rankingKeys = await c.env.KV_VIEWS.list({ prefix: "ranking:" });
-        cachedRankingsCount = rankingKeys.keys.length;
+        lastSyncedAt = await c.env.KV_VIEWS.get("views_sync:last_synced_at")
+        const rankingKeys = await c.env.KV_VIEWS.list({ prefix: "ranking:" })
+        cachedRankingsCount = rankingKeys.keys.length
       } catch {
-        kvViewsHealthy = false;
+        kvViewsHealthy = false
       }
     } else {
-      kvViewsHealthy = false;
+      kvViewsHealthy = false
     }
 
-    const bucket = c.env.BUCKET_MEDIA || c.env.MEDIA_BUCKET;
+    const bucket = c.env.BUCKET_MEDIA || c.env.MEDIA_BUCKET
     if (!bucket) {
-      r2Healthy = false;
+      r2Healthy = false
     }
 
     return successResponse(c, {
@@ -57,17 +59,21 @@ adminSystemRoutes.get("/system/maintenance-status", async (c) => {
       "cached-rankings-count": cachedRankingsCount,
       "r2-healthy": r2Healthy,
       timestamp: new Date().toISOString(),
-    });
+    })
   } catch (err: any) {
-    return errorResponse(c, err.message || "Failed to retrieve maintenance status.", 500);
+    return errorResponse(
+      c,
+      err.message || "Failed to retrieve maintenance status.",
+      500
+    )
   }
-});
+})
 
 // POST /v1/admin/system/sync-views - Force sync view deltas & refresh rankings
 adminSystemRoutes.post("/system/sync-views", async (c) => {
   try {
-    const syncResult = await syncViewsDelta(c.env);
-    const rankingResult = await refreshRankings(c.env);
+    const syncResult = await syncViewsDelta(c.env)
+    const rankingResult = await refreshRankings(c.env)
 
     return successResponse(c, {
       success: true,
@@ -78,39 +84,42 @@ adminSystemRoutes.post("/system/sync-views", async (c) => {
       "synced-logs": syncResult.totalViewsAdded,
       "affected-comics": syncResult.syncedComics,
       rankings: rankingResult,
-    });
+    })
   } catch (err: any) {
-    return errorResponse(c, err.message || "Failed to synchronize views.", 500);
+    return errorResponse(c, err.message || "Failed to synchronize views.", 500)
   }
-});
+})
 
 // POST /v1/admin/system/clear-search-cache - Invalidate search suggestions cache in KV
 adminSystemRoutes.post("/system/clear-search-cache", async (c) => {
   try {
     if (!c.env.KV_KOMIKHQ) {
-      return errorResponse(c, "KV_KOMIKHQ binding is not available.", 500);
+      return errorResponse(c, "KV_KOMIKHQ binding is not available.", 500)
     }
 
-    let clearedKeys = 0;
-    let truncated = true;
-    let cursor: string | undefined = undefined;
+    let clearedKeys = 0
+    let truncated = true
+    let cursor: string | undefined = undefined
 
     while (truncated) {
-      const listRes: { keys: { name: string }[]; list_complete?: boolean; cursor?: string } =
-        await c.env.KV_KOMIKHQ.list({
-          prefix: "comic-search:suggestions:",
-          cursor,
-        });
-      truncated = listRes.list_complete ? false : Boolean(listRes.cursor);
-      cursor = listRes.cursor;
+      const listRes: {
+        keys: { name: string }[]
+        list_complete?: boolean
+        cursor?: string
+      } = await c.env.KV_KOMIKHQ.list({
+        prefix: "comic-search:suggestions:",
+        cursor,
+      })
+      truncated = listRes.list_complete ? false : Boolean(listRes.cursor)
+      cursor = listRes.cursor
 
       for (const key of listRes.keys) {
-        await c.env.KV_KOMIKHQ.delete(key.name);
-        clearedKeys++;
+        await c.env.KV_KOMIKHQ.delete(key.name)
+        clearedKeys++
       }
 
       if (!listRes.cursor) {
-        break;
+        break
       }
     }
 
@@ -118,8 +127,8 @@ adminSystemRoutes.post("/system/clear-search-cache", async (c) => {
       success: true,
       message: `Search suggestion cache invalidated successfully (${clearedKeys} cached queries cleared).`,
       "cleared-keys": clearedKeys,
-    });
+    })
   } catch (err: any) {
-    return errorResponse(c, err.message || "Failed to clear search cache.", 500);
+    return errorResponse(c, err.message || "Failed to clear search cache.", 500)
   }
-});
+})

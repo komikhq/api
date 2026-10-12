@@ -39,6 +39,7 @@ Run the command and follow prompts:
 ```
 
 The command will:
+
 1. Ask for namespace name (e.g., "MY_KV" or "USER_DATA")
 2. Create production and preview namespaces
 3. Generate wrangler.jsonc configuration
@@ -62,6 +63,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/setup-kv-namespace.sh [namespace-name]
 ```
 
 The script will:
+
 - Check wrangler CLI installation
 - Verify authentication status
 - Create namespaces via wrangler API
@@ -74,11 +76,13 @@ The script will:
 Before running this command, ensure:
 
 1. **Wrangler CLI Installed**
+
    ```bash
    npm install -g wrangler
    ```
 
 2. **Authenticated with Cloudflare**
+
    ```bash
    wrangler login
    ```
@@ -138,24 +142,27 @@ Next steps:
 Once setup completes:
 
 1. **Verify Configuration**
+
    ```bash
    ${CLAUDE_PLUGIN_ROOT}/scripts/validate-kv-config.sh
    ```
 
 2. **Test Connection**
+
    ```
    /cloudflare-kv:test MY_KV_NAMESPACE
    ```
 
 3. **Start Developing**
+
    ```typescript
    export default {
      async fetch(request, env: Env) {
-       await env.MY_KV_NAMESPACE.put('key', 'value');
-       const value = await env.MY_KV_NAMESPACE.get('key');
-       return new Response(value);
-     }
-   };
+       await env.MY_KV_NAMESPACE.put("key", "value")
+       const value = await env.MY_KV_NAMESPACE.get("key")
+       return new Response(value)
+     },
+   }
    ```
 
 4. **Run Locally**
@@ -168,6 +175,7 @@ Once setup completes:
 ### "Not logged in to Wrangler"
 
 **Solution:** Authenticate first
+
 ```bash
 wrangler login
 ```
@@ -175,6 +183,7 @@ wrangler login
 ### "Failed to create namespace"
 
 **Possible causes:**
+
 - No Workers plan enabled
 - API token lacks permissions
 - Account quota exceeded
@@ -193,6 +202,7 @@ The script won't overwrite existing configs. You'll need to manually add the KV 
 ## References
 
 For more details:
+
 - Load `references/setup-guide.md` for complete setup documentation
 - Load `references/best-practices.md` for production configuration
 - Check official docs: https://developers.cloudflare.com/kv/get-started/

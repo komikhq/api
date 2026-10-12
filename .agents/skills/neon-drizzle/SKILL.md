@@ -18,8 +18,9 @@ Comprehensive Drizzle ORM setup for Neon databases with guided workflows.
 ## Code Generation Rules
 
 When generating TypeScript/JavaScript code:
+
 - BEFORE generating import statements, check tsconfig.json for path aliases (compilerOptions.paths)
-- If path aliases exist (e.g., "@/*": ["./src/*"]), use them (e.g., import { x } from '@/lib/utils')
+- If path aliases exist (e.g., "@/_": ["./src/_"]), use them (e.g., import { x } from '@/lib/utils')
 - If NO path aliases exist or unsure, ALWAYS use relative imports (e.g., import { x } from '../../../lib/utils')
 - Verify imports match the project's configuration
 - Default to relative imports - they always work regardless of configuration
@@ -71,6 +72,7 @@ For deeper technical details (loaded on-demand):
 ## Workflow
 
 I will:
+
 1. Detect your project context automatically
 2. Select and load the appropriate guide
 3. Follow the guide's phases sequentially

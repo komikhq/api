@@ -99,7 +99,7 @@ export const auth = betterAuth({
       clientSecret: "secret456", // Exposed in build logs!
     },
   },
-});
+})
 ```
 
 **Why it's wrong:** Secrets committed to git, visible in build logs, impossible to rotate without code change.
@@ -113,16 +113,16 @@ export const auth = betterAuth({
 ```typescript
 // ANTI-PATTERN: Auth routes before CORS
 app.on(["POST", "GET"], "/auth/*", (c) => {
-  return auth.handler(c.req.raw);
-});
+  return auth.handler(c.req.raw)
+})
 
 // CORS after auth - preflight requests fail!
 app.use(
   "/auth/*",
   cors({
     /* ... */
-  }),
-);
+  })
+)
 ```
 
 **Why it's wrong:** CORS middleware must run before route handlers to handle OPTIONS preflight requests.
@@ -136,10 +136,10 @@ app.use(
 ```typescript
 // ANTI-PATTERN: Untyped session access
 app.use("*", async (c, next) => {
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  c.user = session?.user; // No type - c.user is any
-  await next();
-});
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  c.user = session?.user // No type - c.user is any
+  await next()
+})
 ```
 
 **Why it's wrong:** No TypeScript safety, c.user is any, no autocomplete.
@@ -158,7 +158,7 @@ export const auth = betterAuth({
     updateAge: 86400, // Days? Hours?
     freshAge: 300, // No idea
   },
-});
+})
 ```
 
 **Why it's wrong:** Numbers scattered in code, meaning unclear, policy changes require hunting.
@@ -171,12 +171,12 @@ export const auth = betterAuth({
 
 ```typescript
 // ANTI-PATTERN: Adding plugins without schema update
-import { twoFactor, organization } from "better-auth/plugins";
+import { twoFactor, organization } from "better-auth/plugins"
 
 export const auth = betterAuth({
   plugins: [twoFactor(), organization()],
   // Error: Missing tables for plugins!
-});
+})
 ```
 
 **Why it's wrong:** Plugins require database tables that don't exist yet.

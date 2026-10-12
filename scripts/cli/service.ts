@@ -1,26 +1,29 @@
-import { createDbClient, users } from "../../src/db/index.js";
-import { eq, like, or, desc } from "drizzle-orm";
-import { getDatabaseUrl } from "../db-utils.js";
+import { createDbClient, users } from "../../src/db/index.js"
+import { eq, like, or, desc } from "drizzle-orm"
+import { getDatabaseUrl } from "../db-utils.js"
 
-const DATABASE_URL = getDatabaseUrl();
+const DATABASE_URL = getDatabaseUrl()
 
 export interface UserItem {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  emailVerified: boolean;
-  createdAt: Date;
+  id: string
+  name: string
+  email: string
+  role: string
+  emailVerified: boolean
+  createdAt: Date
 }
 
 export function createUsersCliService() {
-  const db = createDbClient(DATABASE_URL);
+  const db = createDbClient(DATABASE_URL)
 
   return {
     async fetchUsers(searchQuery: string): Promise<UserItem[]> {
       const condition = searchQuery
-        ? or(like(users.name, `%${searchQuery}%`), like(users.email, `%${searchQuery}%`))
-        : undefined;
+        ? or(
+            like(users.name, `%${searchQuery}%`),
+            like(users.email, `%${searchQuery}%`)
+          )
+        : undefined
 
       const res = await db
         .select({
@@ -34,27 +37,36 @@ export function createUsersCliService() {
         .from(users)
         .where(condition)
         .orderBy(desc(users.createdAt))
-        .limit(20);
+        .limit(20)
 
-      return res as UserItem[];
+      return res as UserItem[]
     },
 
     async updateName(userId: string, name: string): Promise<void> {
-      await db.update(users).set({ name, updatedAt: new Date() }).where(eq(users.id, userId));
+      await db
+        .update(users)
+        .set({ name, updatedAt: new Date() })
+        .where(eq(users.id, userId))
     },
 
     async updateEmail(userId: string, email: string): Promise<void> {
-      await db.update(users).set({ email, updatedAt: new Date() }).where(eq(users.id, userId));
+      await db
+        .update(users)
+        .set({ email, updatedAt: new Date() })
+        .where(eq(users.id, userId))
     },
 
     async toggleRole(userId: string, currentRole: string): Promise<string> {
-      const newRole = currentRole === "admin" ? "user" : "admin";
-      await db.update(users).set({ role: newRole, updatedAt: new Date() }).where(eq(users.id, userId));
-      return newRole;
+      const newRole = currentRole === "admin" ? "user" : "admin"
+      await db
+        .update(users)
+        .set({ role: newRole, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+      return newRole
     },
 
     async deleteUser(userId: string): Promise<void> {
-      await db.delete(users).where(eq(users.id, userId));
+      await db.delete(users).where(eq(users.id, userId))
     },
-  };
+  }
 }

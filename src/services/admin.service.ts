@@ -1,23 +1,26 @@
-import { UserRepository, type ListUsersParams } from "@/repositories/user.repository";
-import { getAuth } from "@/lib/auth";
-import type { UserSessionPayload } from "@/middleware/auth";
-import { toPublicUrl, deleteFromR2 } from "@/lib/storage";
+import {
+  UserRepository,
+  type ListUsersParams,
+} from "@/repositories/user.repository"
+import { getAuth } from "@/lib/auth"
+import type { UserSessionPayload } from "@/middleware/auth"
+import { toPublicUrl, deleteFromR2 } from "@/lib/storage"
 
 export class AdminService {
-  private userRepo: UserRepository;
-  private env: any;
+  private userRepo: UserRepository
+  private env: any
 
   constructor(databaseUrl: string, env: any) {
-    this.userRepo = new UserRepository(databaseUrl);
-    this.env = env;
+    this.userRepo = new UserRepository(databaseUrl)
+    this.env = env
   }
 
   async listUsers(params: ListUsersParams) {
-    const { users, total } = await this.userRepo.findUsersPaginated(params);
+    const { users, total } = await this.userRepo.findUsersPaginated(params)
     const resolvedUsers = users.map((u: any) => ({
       ...u,
       image: toPublicUrl(u.image, "users", this.env) ?? u.image,
-    }));
+    }))
     return {
       users: resolvedUsers,
       pagination: {
@@ -26,132 +29,157 @@ export class AdminService {
         total,
         totalPages: Math.ceil(total / params.limit),
       },
-    };
+    }
   }
 
-  async createUser(data: { name: string; email: string; password?: string; role?: string }) {
+  async createUser(data: {
+    name: string
+    email: string
+    password?: string
+    role?: string
+  }) {
     if (!data.name || !data.email || !data.password) {
-      throw new Error("Name, email, and password are required.");
+      throw new Error("Name, email, and password are required.")
     }
 
-    const auth = getAuth(this.env);
+    const auth = getAuth(this.env)
     const newUser = await auth.api.signUpEmail({
       body: {
         name: data.name,
         email: data.email,
         password: data.password,
       },
-    });
+    })
 
     if (!newUser) {
-      throw new Error("Failed to create user via auth engine.");
+      throw new Error("Failed to create user via auth engine.")
     }
 
-    const role = data.role || "user";
+    const role = data.role || "user"
     if (role !== "user") {
-      await this.userRepo.updateUser(newUser.user.id, { role });
+      await this.userRepo.updateUser(newUser.user.id, { role })
     }
 
-    return { ...newUser.user, role };
+    return { ...newUser.user, role }
   }
 
-  async updateUser(userId: string, data: { name?: string; email?: string; role?: string; password?: string }, rawHeaders: Headers) {
-    const existingUser = await this.userRepo.findById(userId);
+  async updateUser(
+    userId: string,
+    data: { name?: string; email?: string; role?: string; password?: string },
+    rawHeaders: Headers
+  ) {
+    const existingUser = await this.userRepo.findById(userId)
     if (!existingUser) {
-      throw new Error("User not found");
+      throw new Error("User not found")
     }
 
-    const updateData: any = { updatedAt: new Date() };
-    if (data.name !== undefined) updateData.name = data.name;
-    if (data.email !== undefined) updateData.email = data.email;
-    if (data.role !== undefined) updateData.role = data.role;
+    const updateData: any = { updatedAt: new Date() }
+    if (data.name !== undefined) updateData.name = data.name
+    if (data.email !== undefined) updateData.email = data.email
+    if (data.role !== undefined) updateData.role = data.role
 
-    await this.userRepo.updateUser(userId, updateData);
+    await this.userRepo.updateUser(userId, updateData)
 
     // Invalidate KV Session
     try {
       if (this.env.KV_KOMIKHQ) {
-        const list = await this.env.KV_KOMIKHQ.list({ prefix: "session:" });
+        const list = await this.env.KV_KOMIKHQ.list({ prefix: "session:" })
         for (const key of list.keys) {
-          const sess = (await this.env.KV_KOMIKHQ.get(key.name, "json")) as UserSessionPayload | null;
+          const sess = (await this.env.KV_KOMIKHQ.get(
+            key.name,
+            "json"
+          )) as UserSessionPayload | null
           if (sess && sess.userId === userId) {
-            await this.env.KV_KOMIKHQ.delete(key.name);
+            await this.env.KV_KOMIKHQ.delete(key.name)
           }
         }
       }
     } catch (e) {
-      console.error("[AdminService] Failed to purge KV session:", e);
+      console.error("[AdminService] Failed to purge KV session:", e)
     }
 
     if (data.password && data.password.trim().length > 0) {
-      const auth = getAuth(this.env);
+      const auth = getAuth(this.env)
       try {
-        const hasCred = await this.userRepo.hasCredentialPassword(userId);
+        const hasCred = await this.userRepo.hasCredentialPassword(userId)
         if (hasCred) {
           await auth.api.setPassword({
             body: { newPassword: data.password },
             headers: rawHeaders,
-          });
+          })
         }
       } catch (e) {
-        console.error("[AdminService] Failed to reset password:", e);
+        console.error("[AdminService] Failed to reset password:", e)
       }
     }
 
-    return this.userRepo.findById(userId);
+    return this.userRepo.findById(userId)
   }
 
   async deleteUser(userId: string, currentUserId?: string) {
     if (userId === currentUserId) {
-      throw new Error("You cannot delete your own account from the admin panel.");
+      throw new Error(
+        "You cannot delete your own account from the admin panel."
+      )
     }
 
-    const existingUser = await this.userRepo.findById(userId);
+    const existingUser = await this.userRepo.findById(userId)
     if (!existingUser) {
-      throw new Error("User not found");
+      throw new Error("User not found")
     }
 
     // Purge KV Sessions
     try {
       if (this.env.KV_KOMIKHQ) {
-        const list = await this.env.KV_KOMIKHQ.list({ prefix: "session:" });
+        const list = await this.env.KV_KOMIKHQ.list({ prefix: "session:" })
         for (const key of list.keys) {
-          const sess = (await this.env.KV_KOMIKHQ.get(key.name, "json")) as UserSessionPayload | null;
+          const sess = (await this.env.KV_KOMIKHQ.get(
+            key.name,
+            "json"
+          )) as UserSessionPayload | null
           if (sess && sess.userId === userId) {
-            await this.env.KV_KOMIKHQ.delete(key.name);
+            await this.env.KV_KOMIKHQ.delete(key.name)
           }
         }
       }
     } catch (e) {
-      console.error("[AdminService] Failed to purge KV sessions for deleted user:", e);
+      console.error(
+        "[AdminService] Failed to purge KV sessions for deleted user:",
+        e
+      )
     }
 
     // Delete R2 Avatar
-    if (existingUser.image && (this.env.BUCKET_USERS || this.env.USERS_BUCKET)) {
+    if (
+      existingUser.image &&
+      (this.env.BUCKET_USERS || this.env.USERS_BUCKET)
+    ) {
       try {
-        await deleteFromR2(this.env, "users", existingUser.image);
+        await deleteFromR2(this.env, "users", existingUser.image)
       } catch (e) {
-        console.error("[AdminService] Failed to delete R2 avatar:", e);
+        console.error("[AdminService] Failed to delete R2 avatar:", e)
       }
     }
 
-    await this.userRepo.deleteUser(userId);
-    return existingUser;
+    await this.userRepo.deleteUser(userId)
+    return existingUser
   }
 
   async getStats() {
-    return this.userRepo.getSystemStats();
+    return this.userRepo.getSystemStats()
   }
 
   async listReports(page = 1, limit = 20, status?: string) {
-    const { CommentRepository } = await import("@/repositories/comment.repository");
-    const repo = new CommentRepository(this.env.DATABASE_URL);
-    return repo.listReports(page, limit, status);
+    const { CommentRepository } =
+      await import("@/repositories/comment.repository")
+    const repo = new CommentRepository(this.env.DATABASE_URL)
+    return repo.listReports(page, limit, status)
   }
 
   async resolveReport(reportId: string, action: "delete_comment" | "dismiss") {
-    const { CommentRepository } = await import("@/repositories/comment.repository");
-    const repo = new CommentRepository(this.env.DATABASE_URL);
-    return repo.resolveReport(reportId, action);
+    const { CommentRepository } =
+      await import("@/repositories/comment.repository")
+    const repo = new CommentRepository(this.env.DATABASE_URL)
+    return repo.resolveReport(reportId, action)
   }
 }

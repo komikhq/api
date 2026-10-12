@@ -41,11 +41,11 @@ Replace `1536` with the embedding model's dimension. Generate stored-document an
 
 Choose the operator class and query operator as a matched pair:
 
-| Metric | Common use | Operator class | Distance operator |
-| --- | --- | --- | --- |
-| Cosine | Most text embeddings | `vector_cosine_ops` | `<=>` |
-| L2 / Euclidean | Absolute distance matters; vectors do not need normalization | `vector_l2_ops` | `<->` |
-| Inner product | Unit-normalized vectors; matches cosine for unit vectors | `vector_ip_ops` | `<#>` |
+| Metric         | Common use                                                   | Operator class      | Distance operator |
+| -------------- | ------------------------------------------------------------ | ------------------- | ----------------- |
+| Cosine         | Most text embeddings                                         | `vector_cosine_ops` | `<=>`             |
+| L2 / Euclidean | Absolute distance matters; vectors do not need normalization | `vector_l2_ops`     | `<->`             |
+| Inner product  | Unit-normalized vectors; matches cosine for unit vectors     | `vector_ip_ops`     | `<#>`             |
 
 ```sql
 CREATE INDEX documents_embedding_ann ON documents

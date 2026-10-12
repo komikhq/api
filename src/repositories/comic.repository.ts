@@ -1,41 +1,49 @@
-import { createDbClient, comics, comicGenres, genres, creators, comicCreators, chapters } from "@/db";
-import type { DbClient } from "@/db";
-import { eq, like, or, and, count, desc, asc, inArray } from "drizzle-orm";
+import {
+  createDbClient,
+  comics,
+  comicGenres,
+  genres,
+  creators,
+  comicCreators,
+  chapters,
+} from "@/db"
+import type { DbClient } from "@/db"
+import { eq, like, or, and, count, desc, asc, inArray } from "drizzle-orm"
 
 export interface ListComicsParams {
-  q?: string;
-  genre?: string;
-  status?: string;
-  type?: string;
-  sort?: string;
-  page: number;
-  limit: number;
+  q?: string
+  genre?: string
+  status?: string
+  type?: string
+  sort?: string
+  page: number
+  limit: number
 }
 
 export function attachPeriodViews<T extends { id: string }>(
   rankedComics: T[],
-  periodViewCounts: Map<string, number> | null,
+  periodViewCounts: Map<string, number> | null
 ) {
   return rankedComics.map((comic) => ({
     ...comic,
     ...(periodViewCounts
       ? { periodViews: periodViewCounts.get(comic.id) ?? 0 }
       : {}),
-  }));
+  }))
 }
 
 export class ComicRepository {
-  private db: DbClient;
+  private db: DbClient
 
   constructor(databaseUrl: string) {
-    this.db = createDbClient(databaseUrl);
+    this.db = createDbClient(databaseUrl)
   }
 
   async findManyWithPagination(params: ListComicsParams) {
-    const { q, genre, status, type, sort, page, limit } = params;
-    const offset = (page - 1) * limit;
+    const { q, genre, status, type, sort, page, limit } = params
+    const offset = (page - 1) * limit
 
-    let genreComicIds: string[] | null = null;
+    let genreComicIds: string[] | null = null
     if (genre && genre !== "all") {
       const matched = await this.db
         .select({ comicId: comicGenres.comicId })
@@ -47,41 +55,44 @@ export class ComicRepository {
             eq(genres.id, genre),
             like(genres.name, `%${genre}%`)
           )
-        );
+        )
 
-      genreComicIds = Array.from(new Set(matched.map((m) => m.comicId)));
+      genreComicIds = Array.from(new Set(matched.map((m) => m.comicId)))
       if (genreComicIds.length === 0) {
-        return { comics: [], total: 0 };
+        return { comics: [], total: 0 }
       }
     }
 
-    const conditions: any[] = [];
+    const conditions: any[] = []
 
     if (q) {
-      conditions.push(or(like(comics.title, `%${q}%`), like(comics.slug, `%${q}%`)));
+      conditions.push(
+        or(like(comics.title, `%${q}%`), like(comics.slug, `%${q}%`))
+      )
     }
     if (status && status !== "all") {
-      conditions.push(eq(comics.status, status));
+      conditions.push(eq(comics.status, status))
     }
     if (type && type !== "all") {
-      conditions.push(eq(comics.type, type));
+      conditions.push(eq(comics.type, type))
     }
     if (genreComicIds !== null) {
-      conditions.push(inArray(comics.id, genreComicIds));
+      conditions.push(inArray(comics.id, genreComicIds))
     }
 
-    const whereConditions = conditions.length > 0 ? and(...conditions) : undefined;
+    const whereConditions =
+      conditions.length > 0 ? and(...conditions) : undefined
 
     const [totalRes] = await this.db
       .select({ count: count() })
       .from(comics)
-      .where(whereConditions);
+      .where(whereConditions)
 
-    let orderByClause = desc(comics.createdAt);
+    let orderByClause = desc(comics.createdAt)
     if (sort === "popular") {
-      orderByClause = desc(comics.totalViews);
+      orderByClause = desc(comics.totalViews)
     } else if (sort === "updated") {
-      orderByClause = desc(comics.updatedAt);
+      orderByClause = desc(comics.updatedAt)
     }
 
     const comicList = await this.db
@@ -90,34 +101,54 @@ export class ComicRepository {
       .where(whereConditions)
       .orderBy(orderByClause)
       .limit(limit)
-      .offset(offset);
+      .offset(offset)
 
-    const comicIds = comicList.map((item) => item.id);
-    let comicGenresMap: Record<string, { id: string; name: string; slug: string }[]> = {};
-    let comicCreatorsMap: Record<string, string[]> = {};
-    let comicLatestChapterMap: Record<string, { chapterNumber: string; slug: string; title: string | null; publishedAt: Date }> = {};
+    const comicIds = comicList.map((item) => item.id)
+    let comicGenresMap: Record<
+      string,
+      { id: string; name: string; slug: string }[]
+    > = {}
+    let comicCreatorsMap: Record<string, string[]> = {}
+    let comicLatestChapterMap: Record<
+      string,
+      {
+        chapterNumber: string
+        slug: string
+        title: string | null
+        publishedAt: Date
+      }
+    > = {}
 
     if (comicIds.length > 0) {
       const cgList = await this.db
-        .select({ comicId: comicGenres.comicId, genreId: genres.id, genreName: genres.name, genreSlug: genres.slug })
+        .select({
+          comicId: comicGenres.comicId,
+          genreId: genres.id,
+          genreName: genres.name,
+          genreSlug: genres.slug,
+        })
         .from(comicGenres)
         .innerJoin(genres, eq(comicGenres.genreId, genres.id))
-        .where(inArray(comicGenres.comicId, comicIds));
+        .where(inArray(comicGenres.comicId, comicIds))
 
       for (const item of cgList) {
-        if (!comicGenresMap[item.comicId]) comicGenresMap[item.comicId] = [];
-        comicGenresMap[item.comicId].push({ id: item.genreId, name: item.genreName, slug: item.genreSlug });
+        if (!comicGenresMap[item.comicId]) comicGenresMap[item.comicId] = []
+        comicGenresMap[item.comicId].push({
+          id: item.genreId,
+          name: item.genreName,
+          slug: item.genreSlug,
+        })
       }
 
       const ccList = await this.db
         .select({ comicId: comicCreators.comicId, creatorName: creators.name })
         .from(comicCreators)
         .innerJoin(creators, eq(comicCreators.creatorId, creators.id))
-        .where(inArray(comicCreators.comicId, comicIds));
+        .where(inArray(comicCreators.comicId, comicIds))
 
       for (const item of ccList) {
-        if (!comicCreatorsMap[item.comicId]) comicCreatorsMap[item.comicId] = [];
-        comicCreatorsMap[item.comicId].push(item.creatorName);
+        if (!comicCreatorsMap[item.comicId]) comicCreatorsMap[item.comicId] = []
+        comicCreatorsMap[item.comicId].push(item.creatorName)
       }
 
       const chList = await this.db
@@ -130,11 +161,11 @@ export class ComicRepository {
         })
         .from(chapters)
         .where(inArray(chapters.comicId, comicIds))
-        .orderBy(desc(chapters.publishedAt), desc(chapters.chapterNumber));
+        .orderBy(desc(chapters.publishedAt), desc(chapters.chapterNumber))
 
       for (const ch of chList) {
         if (!comicLatestChapterMap[ch.comicId]) {
-          comicLatestChapterMap[ch.comicId] = ch;
+          comicLatestChapterMap[ch.comicId] = ch
         }
       }
     }
@@ -144,70 +175,81 @@ export class ComicRepository {
       genres: comicGenresMap[item.id] || [],
       creators: comicCreatorsMap[item.id] || [],
       latestChapter: comicLatestChapterMap[item.id] || null,
-    }));
+    }))
 
     return {
       comics: enrichedComics,
       total: totalRes?.count || 0,
-    };
+    }
   }
 
   async findById(id: string) {
-    const [comic] = await this.db.select().from(comics).where(eq(comics.id, id));
-    if (!comic) return null;
+    const [comic] = await this.db.select().from(comics).where(eq(comics.id, id))
+    if (!comic) return null
 
     const linkedGenres = await this.db
       .select({ id: genres.id, name: genres.name, slug: genres.slug })
       .from(comicGenres)
       .innerJoin(genres, eq(comicGenres.genreId, genres.id))
-      .where(eq(comicGenres.comicId, id));
+      .where(eq(comicGenres.comicId, id))
 
     const linkedCreators = await this.db
-      .select({ id: creators.id, name: creators.name, role: comicCreators.role })
+      .select({
+        id: creators.id,
+        name: creators.name,
+        role: comicCreators.role,
+      })
       .from(comicCreators)
       .innerJoin(creators, eq(comicCreators.creatorId, creators.id))
-      .where(eq(comicCreators.comicId, id));
+      .where(eq(comicCreators.comicId, id))
 
     return {
       comic,
       genres: linkedGenres,
       creators: linkedCreators,
-    };
+    }
   }
 
   async findBySlug(slug: string) {
-    const [comic] = await this.db.select().from(comics).where(eq(comics.slug, slug));
-    if (!comic) return null;
+    const [comic] = await this.db
+      .select()
+      .from(comics)
+      .where(eq(comics.slug, slug))
+    if (!comic) return null
 
     const linkedGenres = await this.db
       .select({ id: genres.id, name: genres.name, slug: genres.slug })
       .from(comicGenres)
       .innerJoin(genres, eq(comicGenres.genreId, genres.id))
-      .where(eq(comicGenres.comicId, comic.id));
+      .where(eq(comicGenres.comicId, comic.id))
 
     const linkedCreators = await this.db
-      .select({ id: creators.id, name: creators.name, role: comicCreators.role })
+      .select({
+        id: creators.id,
+        name: creators.name,
+        role: comicCreators.role,
+      })
       .from(comicCreators)
       .innerJoin(creators, eq(comicCreators.creatorId, creators.id))
-      .where(eq(comicCreators.comicId, comic.id));
+      .where(eq(comicCreators.comicId, comic.id))
 
     const comicChapters = await this.db
       .select()
       .from(chapters)
       .where(eq(chapters.comicId, comic.id))
-      .orderBy(asc(chapters.chapterNumber));
+      .orderBy(asc(chapters.chapterNumber))
 
     return {
       comic,
       genres: linkedGenres,
       creators: linkedCreators,
       chapters: comicChapters,
-    };
+    }
   }
 
   async create(data: typeof comics.$inferInsert) {
-    const [newComic] = await this.db.insert(comics).values(data).returning();
-    return newComic;
+    const [newComic] = await this.db.insert(comics).values(data).returning()
+    return newComic
   }
 
   async update(id: string, data: Partial<typeof comics.$inferInsert>) {
@@ -215,131 +257,156 @@ export class ComicRepository {
       .update(comics)
       .set(data)
       .where(eq(comics.id, id))
-      .returning();
-    return updatedComic;
+      .returning()
+    return updatedComic
   }
 
   async delete(id: string) {
-    await this.db.delete(comics).where(eq(comics.id, id));
+    await this.db.delete(comics).where(eq(comics.id, id))
   }
 
   async syncGenres(comicId: string, genreIds: string[]) {
-    await this.db.delete(comicGenres).where(eq(comicGenres.comicId, comicId));
+    await this.db.delete(comicGenres).where(eq(comicGenres.comicId, comicId))
     if (genreIds.length > 0) {
-      await this.db.insert(comicGenres).values(
-        genreIds.map((gId) => ({ comicId, genreId: gId }))
-      );
+      await this.db
+        .insert(comicGenres)
+        .values(genreIds.map((gId) => ({ comicId, genreId: gId })))
     }
   }
 
-  async syncCreator(comicId: string, creatorName: string, slugifyFn: (t: string) => string) {
-    if (!creatorName) return;
-    const creatorSlug = slugifyFn(creatorName);
+  async syncCreator(
+    comicId: string,
+    creatorName: string,
+    slugifyFn: (t: string) => string
+  ) {
+    if (!creatorName) return
+    const creatorSlug = slugifyFn(creatorName)
 
     let [existingCreator] = await this.db
       .select()
       .from(creators)
-      .where(eq(creators.slug, creatorSlug));
+      .where(eq(creators.slug, creatorSlug))
 
     if (!existingCreator) {
-      [existingCreator] = await this.db
+      ;[existingCreator] = await this.db
         .insert(creators)
         .values({ name: creatorName, slug: creatorSlug })
-        .returning();
+        .returning()
     }
 
-    await this.db.delete(comicCreators).where(eq(comicCreators.comicId, comicId));
+    await this.db
+      .delete(comicCreators)
+      .where(eq(comicCreators.comicId, comicId))
     if (existingCreator) {
       await this.db.insert(comicCreators).values({
         comicId,
         creatorId: existingCreator.id,
         role: "author",
-      });
+      })
     }
   }
 
-  async findTrending(period: "daily" | "weekly" | "popular" = "daily", limit: number = 10) {
-    let comicIds: string[] = [];
-    let periodViewCounts: Map<string, number> | null = null;
+  async findTrending(
+    period: "daily" | "weekly" | "popular" = "daily",
+    limit: number = 10
+  ) {
+    let comicIds: string[] = []
+    let periodViewCounts: Map<string, number> | null = null
 
     if (period === "popular") {
       const popularComics = await this.db
         .select({ id: comics.id, totalViews: comics.totalViews })
         .from(comics)
         .orderBy(desc(comics.totalViews), desc(comics.createdAt))
-        .limit(limit);
+        .limit(limit)
 
-      comicIds = popularComics.map((c) => c.id);
-      periodViewCounts = new Map(popularComics.map((c) => [c.id, c.totalViews]));
+      comicIds = popularComics.map((c) => c.id)
+      periodViewCounts = new Map(popularComics.map((c) => [c.id, c.totalViews]))
     } else {
       // Fallback for daily/weekly when KV is cold: sort by total views and recent updates
       const fallbackComics = await this.db
         .select({ id: comics.id, totalViews: comics.totalViews })
         .from(comics)
         .orderBy(desc(comics.totalViews), desc(comics.updatedAt))
-        .limit(limit);
+        .limit(limit)
 
-      comicIds = fallbackComics.map((c) => c.id);
-      periodViewCounts = new Map(fallbackComics.map((c) => [c.id, c.totalViews]));
+      comicIds = fallbackComics.map((c) => c.id)
+      periodViewCounts = new Map(
+        fallbackComics.map((c) => [c.id, c.totalViews])
+      )
     }
 
     if (comicIds.length === 0) {
-      return { comics: [], total: 0 };
+      return { comics: [], total: 0 }
     }
 
     // Fetch full comic objects preserving order of comicIds
     const comicList = await this.db
       .select()
       .from(comics)
-      .where(inArray(comics.id, comicIds));
+      .where(inArray(comics.id, comicIds))
 
     // Sort comicList to match comicIds order
-    const comicMap = new Map(comicList.map((c) => [c.id, c]));
+    const comicMap = new Map(comicList.map((c) => [c.id, c]))
     const sortedComics = comicIds
       .map((id) => comicMap.get(id))
-      .filter((c): c is typeof comics.$inferSelect => Boolean(c));
+      .filter((c): c is typeof comics.$inferSelect => Boolean(c))
 
     // Enrich with genres & creators
-    let comicGenresMap: Record<string, { id: string; name: string; slug: string }[]> = {};
-    let comicCreatorsMap: Record<string, string[]> = {};
+    let comicGenresMap: Record<
+      string,
+      { id: string; name: string; slug: string }[]
+    > = {}
+    let comicCreatorsMap: Record<string, string[]> = {}
 
-    const fetchedIds = sortedComics.map((c) => c.id);
+    const fetchedIds = sortedComics.map((c) => c.id)
     if (fetchedIds.length > 0) {
       const cgList = await this.db
-        .select({ comicId: comicGenres.comicId, genreId: genres.id, genreName: genres.name, genreSlug: genres.slug })
+        .select({
+          comicId: comicGenres.comicId,
+          genreId: genres.id,
+          genreName: genres.name,
+          genreSlug: genres.slug,
+        })
         .from(comicGenres)
         .innerJoin(genres, eq(comicGenres.genreId, genres.id))
-        .where(inArray(comicGenres.comicId, fetchedIds));
+        .where(inArray(comicGenres.comicId, fetchedIds))
 
       for (const item of cgList) {
-        if (!comicGenresMap[item.comicId]) comicGenresMap[item.comicId] = [];
-        comicGenresMap[item.comicId].push({ id: item.genreId, name: item.genreName, slug: item.genreSlug });
+        if (!comicGenresMap[item.comicId]) comicGenresMap[item.comicId] = []
+        comicGenresMap[item.comicId].push({
+          id: item.genreId,
+          name: item.genreName,
+          slug: item.genreSlug,
+        })
       }
 
       const ccList = await this.db
         .select({ comicId: comicCreators.comicId, creatorName: creators.name })
         .from(comicCreators)
         .innerJoin(creators, eq(comicCreators.creatorId, creators.id))
-        .where(inArray(comicCreators.comicId, fetchedIds));
+        .where(inArray(comicCreators.comicId, fetchedIds))
 
       for (const item of ccList) {
-        if (!comicCreatorsMap[item.comicId]) comicCreatorsMap[item.comicId] = [];
-        comicCreatorsMap[item.comicId].push(item.creatorName);
+        if (!comicCreatorsMap[item.comicId]) comicCreatorsMap[item.comicId] = []
+        comicCreatorsMap[item.comicId].push(item.creatorName)
       }
     }
 
-    const comicsWithPeriodViews = attachPeriodViews(sortedComics, periodViewCounts);
+    const comicsWithPeriodViews = attachPeriodViews(
+      sortedComics,
+      periodViewCounts
+    )
 
     const enrichedComics = comicsWithPeriodViews.map((item) => ({
       ...item,
       genres: comicGenresMap[item.id] || [],
       creators: comicCreatorsMap[item.id] || [],
-    }));
+    }))
 
     return {
       comics: enrichedComics,
       total: enrichedComics.length,
-    };
+    }
   }
 }
-

@@ -31,6 +31,7 @@ metadata:
     - kv operations
     - key value storage
 ---
+
 # Cloudflare Workers KV
 
 **Status**: Production Ready ✅ | **Last Verified**: 2025-12-27
@@ -40,6 +41,7 @@ metadata:
 ## What Is Workers KV?
 
 Global key-value storage on Cloudflare edge:
+
 - Eventually consistent
 - Low latency worldwide
 - 1GB+ values supported
@@ -68,9 +70,9 @@ bunx wrangler kv namespace create MY_NAMESPACE --preview
     {
       "binding": "MY_NAMESPACE",
       "id": "<PRODUCTION_ID>",
-      "preview_id": "<PREVIEW_ID>"
-    }
-  ]
+      "preview_id": "<PREVIEW_ID>",
+    },
+  ],
 }
 ```
 
@@ -80,17 +82,17 @@ bunx wrangler kv namespace create MY_NAMESPACE --preview
 export default {
   async fetch(request, env, ctx) {
     // Write
-    await env.MY_NAMESPACE.put('key', 'value');
+    await env.MY_NAMESPACE.put("key", "value")
 
     // Read
-    const value = await env.MY_NAMESPACE.get('key');
+    const value = await env.MY_NAMESPACE.get("key")
 
     // Delete
-    await env.MY_NAMESPACE.delete('key');
+    await env.MY_NAMESPACE.delete("key")
 
-    return new Response(value);
-  }
-};
+    return new Response(value)
+  },
+}
 ```
 
 **Load `references/setup-guide.md` for complete setup.**
@@ -103,62 +105,62 @@ export default {
 
 ```typescript
 // Basic
-await env.MY_NAMESPACE.put('key', 'value');
+await env.MY_NAMESPACE.put("key", "value")
 
 // With TTL (1 hour)
-await env.MY_NAMESPACE.put('key', 'value', {
-  expirationTtl: 3600
-});
+await env.MY_NAMESPACE.put("key", "value", {
+  expirationTtl: 3600,
+})
 
 // With expiration timestamp
-await env.MY_NAMESPACE.put('key', 'value', {
-  expiration: Math.floor(Date.now() / 1000) + 3600
-});
+await env.MY_NAMESPACE.put("key", "value", {
+  expiration: Math.floor(Date.now() / 1000) + 3600,
+})
 
 // With metadata
-await env.MY_NAMESPACE.put('key', 'value', {
-  metadata: { role: 'admin', created: Date.now() }
-});
+await env.MY_NAMESPACE.put("key", "value", {
+  metadata: { role: "admin", created: Date.now() },
+})
 ```
 
 ### get() - Read
 
 ```typescript
 // Simple get
-const value = await env.MY_NAMESPACE.get('key');
+const value = await env.MY_NAMESPACE.get("key")
 
 // With type
-const text = await env.MY_NAMESPACE.get('key', 'text');
-const json = await env.MY_NAMESPACE.get('key', 'json');
-const buffer = await env.MY_NAMESPACE.get('key', 'arrayBuffer');
-const stream = await env.MY_NAMESPACE.get('key', 'stream');
+const text = await env.MY_NAMESPACE.get("key", "text")
+const json = await env.MY_NAMESPACE.get("key", "json")
+const buffer = await env.MY_NAMESPACE.get("key", "arrayBuffer")
+const stream = await env.MY_NAMESPACE.get("key", "stream")
 
 // With metadata
-const { value, metadata } = await env.MY_NAMESPACE.getWithMetadata('key');
+const { value, metadata } = await env.MY_NAMESPACE.getWithMetadata("key")
 ```
 
 ### delete() - Remove
 
 ```typescript
-await env.MY_NAMESPACE.delete('key');
+await env.MY_NAMESPACE.delete("key")
 ```
 
 ### list() - List Keys
 
 ```typescript
 // Basic list
-const { keys } = await env.MY_NAMESPACE.list();
+const { keys } = await env.MY_NAMESPACE.list()
 
 // With prefix
 const { keys } = await env.MY_NAMESPACE.list({
-  prefix: 'user:',
-  limit: 100
-});
+  prefix: "user:",
+  limit: 100,
+})
 
 // Pagination
 const { keys, cursor } = await env.MY_NAMESPACE.list({
-  cursor: previousCursor
-});
+  cursor: previousCursor,
+})
 ```
 
 ---
@@ -198,63 +200,63 @@ const { keys, cursor } = await env.MY_NAMESPACE.list({
 ### Use Case 1: API Response Caching
 
 ```typescript
-const cacheKey = `api:${url}`;
-let cached = await env.MY_NAMESPACE.get(cacheKey, 'json');
+const cacheKey = `api:${url}`
+let cached = await env.MY_NAMESPACE.get(cacheKey, "json")
 
 if (!cached) {
-  cached = await fetch(url).then(r => r.json());
+  cached = await fetch(url).then((r) => r.json())
   await env.MY_NAMESPACE.put(cacheKey, JSON.stringify(cached), {
-    expirationTtl: 300  // 5 minutes
-  });
+    expirationTtl: 300, // 5 minutes
+  })
 }
 
-return Response.json(cached);
+return Response.json(cached)
 ```
 
 ### Use Case 2: User Preferences
 
 ```typescript
-const userId = '123';
+const userId = "123"
 const preferences = {
-  theme: 'dark',
-  language: 'en'
-};
+  theme: "dark",
+  language: "en",
+}
 
 await env.MY_NAMESPACE.put(
   `user:${userId}:preferences`,
   JSON.stringify(preferences),
   {
-    metadata: { updated: Date.now() }
+    metadata: { updated: Date.now() },
   }
-);
+)
 ```
 
 ### Use Case 3: Rate Limiting
 
 ```typescript
-const key = `ratelimit:${ip}`;
-const count = parseInt(await env.MY_NAMESPACE.get(key) || '0');
+const key = `ratelimit:${ip}`
+const count = parseInt((await env.MY_NAMESPACE.get(key)) || "0")
 
 if (count >= 100) {
-  return new Response('Rate limit exceeded', { status: 429 });
+  return new Response("Rate limit exceeded", { status: 429 })
 }
 
 await env.MY_NAMESPACE.put(key, String(count + 1), {
-  expirationTtl: 60  // 1 minute window
-});
+  expirationTtl: 60, // 1 minute window
+})
 ```
 
 ### Use Case 4: List with Prefix
 
 ```typescript
 const { keys } = await env.MY_NAMESPACE.list({
-  prefix: 'user:',
-  limit: 100
-});
+  prefix: "user:",
+  limit: 100,
+})
 
 const users = await Promise.all(
-  keys.map(({ name }) => env.MY_NAMESPACE.get(name, 'json'))
-);
+  keys.map(({ name }) => env.MY_NAMESPACE.get(name, "json"))
+)
 ```
 
 ### Use Case 5: waitUntil() Pattern
@@ -263,13 +265,11 @@ const users = await Promise.all(
 export default {
   async fetch(request, env, ctx) {
     // Don't wait for KV write
-    ctx.waitUntil(
-      env.MY_NAMESPACE.put('analytics', JSON.stringify(data))
-    );
+    ctx.waitUntil(env.MY_NAMESPACE.put("analytics", JSON.stringify(data)))
 
-    return new Response('OK');
-  }
-};
+    return new Response("OK")
+  },
+}
 ```
 
 ---
@@ -277,11 +277,13 @@ export default {
 ## Limits (Summary)
 
 **Key Limits:**
+
 - Key size: 512 bytes max
 - Value size: 25 MB max
 - Metadata: 1024 bytes max
 
 **Rate Limits:**
+
 - Writes: 1000/sec per key
 - List: 100/sec per namespace
 - Reads: Unlimited
@@ -293,6 +295,7 @@ export default {
 ## Eventual Consistency
 
 KV is **eventually consistent**:
+
 - Writes propagate globally (~60 seconds)
 - Not suitable for real-time data
 - Use D1 for strong consistency
@@ -301,10 +304,10 @@ KV is **eventually consistent**:
 
 ```typescript
 // Write
-await env.MY_NAMESPACE.put('key', 'value');
+await env.MY_NAMESPACE.put("key", "value")
 
 // May not be visible immediately in other regions
-const value = await env.MY_NAMESPACE.get('key');  // Might be null
+const value = await env.MY_NAMESPACE.get("key") // Might be null
 ```
 
 ---
@@ -314,22 +317,28 @@ const value = await env.MY_NAMESPACE.get('key');  // Might be null
 Load specific reference files based on task context:
 
 **For Setup & Configuration:**
+
 - Load `references/setup-guide.md` when creating namespaces or configuring bindings
 
 **For Performance Optimization:**
+
 - Load `references/best-practices.md` when implementing caching or optimizing performance
 - Load `references/performance-tuning.md` for advanced optimization scenarios, cacheTtl strategies, or benchmarking
 
 **For API Usage:**
+
 - Load `references/workers-api.md` when implementing KV operations or need method signatures
 
 **For Troubleshooting:**
+
 - Load `references/troubleshooting.md` when debugging errors or consistency issues
 
 **For Limits & Quotas:**
+
 - Load `references/limits-quotas.md` when planning capacity or encountering quota errors
 
 **For Migration:**
+
 - Load `references/migration-guide.md` when migrating from localStorage, Redis, D1, R2, or other storage solutions
 
 ---
@@ -337,6 +346,7 @@ Load specific reference files based on task context:
 ## Resources
 
 **References** (`references/`):
+
 - `best-practices.md` - Production patterns, caching strategies, rate limit handling, error recovery
 - `setup-guide.md` - Complete setup with Wrangler CLI commands, namespace creation, bindings configuration
 - `workers-api.md` - Complete API reference, consistency model (eventual consistency), limits & quotas, performance optimization
@@ -346,6 +356,7 @@ Load specific reference files based on task context:
 - `performance-tuning.md` - Advanced cacheTtl strategies, bulk operations, key design, benchmarking techniques
 
 **Templates** (`templates/`):
+
 - `kv-basic-operations.ts` - Basic KV operations (get, put, delete, list)
 - `kv-caching-pattern.ts` - HTTP caching with KV
 - `kv-list-pagination.ts` - List with cursor pagination
@@ -353,6 +364,7 @@ Load specific reference files based on task context:
 - `wrangler-kv-config.jsonc` - KV namespace bindings
 
 **Scripts** (`scripts/`):
+
 - `check-versions.sh` - Validate KV API endpoints and package versions
 - `test-kv-connection.sh` - Test KV namespace connection and operations
 - `setup-kv-namespace.sh` - Interactive namespace setup wizard
@@ -360,15 +372,18 @@ Load specific reference files based on task context:
 - `analyze-kv-usage.sh` - Analyze code for KV usage patterns and optimizations
 
 **Commands:**
+
 - `/cloudflare-kv:setup` - Interactive KV namespace setup wizard
 - `/cloudflare-kv:test` - Test KV operations and connection
 - `/cloudflare-kv:optimize` - Analyze and optimize KV usage
 
 **Agents:**
+
 - `kv-optimizer` - Analyzes KV usage and suggests performance optimizations
 - `kv-debugger` - Helps debug KV errors and consistency issues
 
 **Examples** (`examples/`):
+
 - `rate-limiting/` - Complete rate limiting implementation (fixed window, sliding window, token bucket, multi-tier)
 - `session-management/` - Production session store with TTL expiration, metadata tracking, and admin controls
 - `api-caching/` - HTTP response caching patterns (cache-aside, stale-while-revalidate, conditional caching, ETag)

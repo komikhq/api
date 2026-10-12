@@ -8,14 +8,14 @@ This document outlines the deployment workflow for the Hono API backend (`komikh
 
 When importing the `komikhq-api` repository for the first time via **Cloudflare Dashboard > Workers & Pages > Create > Import from Git**:
 
-| Dashboard Form Field | Value / Input | Description |
-| --- | --- | --- |
-| **Project Name** | `komikhq-api` | Worker project name in Cloudflare Dashboard. |
-| **Production Branch** | `main` | Primary branch triggering auto-deployments. |
-| **Build Command** | *(Leave Blank)* | Cloudflare automatically parses `wrangler.jsonc`. |
-| **Deploy Command** | `pnpm run deploy` | Runs the package script (`wrangler deploy --minify`). Use `pnpm run deploy`, not `pnpm deploy`; the latter is pnpm's built-in deploy command and requires a target directory. |
-| **Build Output Directory** | *(Leave Blank)* | Not required for standalone Hono Workers. |
-| **Root Directory** | `/` (or leave blank if at repo root) | Path to the API project directory in the GitHub repository (`komikhq/api`). |
+| Dashboard Form Field       | Value / Input                        | Description                                                                                                                                                                   |
+| -------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Project Name**           | `komikhq-api`                        | Worker project name in Cloudflare Dashboard.                                                                                                                                  |
+| **Production Branch**      | `main`                               | Primary branch triggering auto-deployments.                                                                                                                                   |
+| **Build Command**          | _(Leave Blank)_                      | Cloudflare automatically parses `wrangler.jsonc`.                                                                                                                             |
+| **Deploy Command**         | `pnpm run deploy`                    | Runs the package script (`wrangler deploy --minify`). Use `pnpm run deploy`, not `pnpm deploy`; the latter is pnpm's built-in deploy command and requires a target directory. |
+| **Build Output Directory** | _(Leave Blank)_                      | Not required for standalone Hono Workers.                                                                                                                                     |
+| **Root Directory**         | `/` (or leave blank if at repo root) | Path to the API project directory in the GitHub repository (`komikhq/api`).                                                                                                   |
 
 ---
 
@@ -29,20 +29,20 @@ In Cloudflare Workers, **Runtime Variables & Secrets** are values accessed by th
 
 ### Runtime Variables & Secrets Table
 
-| Variable Name | Dashboard Type | Category | Description / Example Value |
-| --- | --- | --- | --- |
-| `DATABASE_URL` | **Encrypt (Secret)** | Sensitive | Neon PostgreSQL connection string (`postgresql://...`) |
-| `BETTER_AUTH_SECRET` | **Encrypt (Secret)** | Sensitive | Random secret key for Better Auth encryption |
-| `BETTER_AUTH_URL` | **Plaintext (Variable)** | Public | Public API Backend domain (e.g., `https://api.komikhq.com`) |
-| `GOOGLE_CLIENT_ID` | **Plaintext (Variable)** | Public | Google Cloud Console OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | **Encrypt (Secret)** | Sensitive | Google Cloud Console OAuth Client Secret |
-| `RESEND_API_KEY` | **Encrypt (Secret)** | Sensitive | Resend email service API key |
-| `BUCKET_URL_USERS` | **Plaintext (Variable)** | Public | R2 Public CDN domain for users/avatars (e.g., `https://cdn-01.komikhq.dpdns.org`). Legacy: `USERS_BUCKET_URL` |
-| `BUCKET_URL_MEDIA` | **Plaintext (Variable)** | Public | R2 Public CDN domain for comic media (e.g., `https://cdn-02.komikhq.dpdns.org`). Legacy: `MEDIA_BUCKET_URL` |
-| `PUSHER_APP_ID` | **Plaintext (Variable)** | Public | Pusher Channels App ID |
-| `PUSHER_KEY` | **Plaintext (Variable)** | Public | Pusher Channels App Key |
-| `PUSHER_SECRET` | **Encrypt (Secret)** | Sensitive | Pusher Channels App Secret |
-| `PUSHER_CLUSTER` | **Plaintext (Variable)** | Public | Pusher Channels Cluster (e.g., `ap1`) |
+| Variable Name          | Dashboard Type           | Category  | Description / Example Value                                                                                   |
+| ---------------------- | ------------------------ | --------- | ------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`         | **Encrypt (Secret)**     | Sensitive | Neon PostgreSQL connection string (`postgresql://...`)                                                        |
+| `BETTER_AUTH_SECRET`   | **Encrypt (Secret)**     | Sensitive | Random secret key for Better Auth encryption                                                                  |
+| `BETTER_AUTH_URL`      | **Plaintext (Variable)** | Public    | Public API Backend domain (e.g., `https://api.komikhq.com`)                                                   |
+| `GOOGLE_CLIENT_ID`     | **Plaintext (Variable)** | Public    | Google Cloud Console OAuth Client ID                                                                          |
+| `GOOGLE_CLIENT_SECRET` | **Encrypt (Secret)**     | Sensitive | Google Cloud Console OAuth Client Secret                                                                      |
+| `RESEND_API_KEY`       | **Encrypt (Secret)**     | Sensitive | Resend email service API key                                                                                  |
+| `BUCKET_URL_USERS`     | **Plaintext (Variable)** | Public    | R2 Public CDN domain for users/avatars (e.g., `https://cdn-01.komikhq.dpdns.org`). Legacy: `USERS_BUCKET_URL` |
+| `BUCKET_URL_MEDIA`     | **Plaintext (Variable)** | Public    | R2 Public CDN domain for comic media (e.g., `https://cdn-02.komikhq.dpdns.org`). Legacy: `MEDIA_BUCKET_URL`   |
+| `PUSHER_APP_ID`        | **Plaintext (Variable)** | Public    | Pusher Channels App ID                                                                                        |
+| `PUSHER_KEY`           | **Plaintext (Variable)** | Public    | Pusher Channels App Key                                                                                       |
+| `PUSHER_SECRET`        | **Encrypt (Secret)**     | Sensitive | Pusher Channels App Secret                                                                                    |
+| `PUSHER_CLUSTER`       | **Plaintext (Variable)** | Public    | Pusher Channels Cluster (e.g., `ap1`)                                                                         |
 
 > [!IMPORTANT]
 > **Preventing Dashboard Overwrites (`keep_vars = true`)**
@@ -55,17 +55,18 @@ In Cloudflare Workers, **Runtime Variables & Secrets** are values accessed by th
 > [!IMPORTANT]
 > All resource bindings (KV, R2, Services) **MUST be declared in `wrangler.jsonc`** as part of code configuration. Do not manage bindings via Dashboard UI.
 
-| Variable Binding Name | Resource Type | Target Configuration in `wrangler.jsonc` |
-| --- | --- | --- |
-| `KV_KOMIKHQ` | **KV Namespace** | `"kv_namespaces": [{ "binding": "KV_KOMIKHQ", "id": "..." }]` |
-| `USERS_BUCKET` | **R2 Bucket** | `"r2_buckets": [{ "binding": "USERS_BUCKET", "bucket_name": "komikhq-users" }]` |
-| `MEDIA_BUCKET` | **R2 Bucket** | `"r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "komikhq-media" }]` |
+| Variable Binding Name | Resource Type    | Target Configuration in `wrangler.jsonc`                                        |
+| --------------------- | ---------------- | ------------------------------------------------------------------------------- |
+| `KV_KOMIKHQ`          | **KV Namespace** | `"kv_namespaces": [{ "binding": "KV_KOMIKHQ", "id": "..." }]`                   |
+| `USERS_BUCKET`        | **R2 Bucket**    | `"r2_buckets": [{ "binding": "USERS_BUCKET", "bucket_name": "komikhq-users" }]` |
+| `MEDIA_BUCKET`        | **R2 Bucket**    | `"r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "komikhq-media" }]` |
 
 ---
 
 ## 4. Custom Domain & Route Setup
 
 Custom domains are declared in `wrangler.jsonc` under `routes`:
+
 ```jsonc
 "routes": [
   {
@@ -74,6 +75,7 @@ Custom domains are declared in `wrangler.jsonc` under `routes`:
   }
 ]
 ```
+
 Ensure the DNS zone `komikhq.com` is active under your Cloudflare account.
 
 ---

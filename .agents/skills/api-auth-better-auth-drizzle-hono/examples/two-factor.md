@@ -15,11 +15,11 @@
 
 ```typescript
 // lib/auth.ts
-import { betterAuth } from "better-auth";
-import { twoFactor } from "better-auth/plugins";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { betterAuth } from "better-auth"
+import { twoFactor } from "better-auth/plugins"
+import { drizzleAdapter } from "better-auth/adapters/drizzle"
 
-import { db } from "@/lib/db";
+import { db } from "@/lib/db"
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -31,7 +31,7 @@ export const auth = betterAuth({
       // skipVerificationOnEnable: false,
     }),
   ],
-});
+})
 ```
 
 After adding the plugin, run:
@@ -53,8 +53,8 @@ npx drizzle-kit migrate
 
 ```typescript
 // lib/auth-client.ts
-import { createAuthClient } from "better-auth/react";
-import { twoFactorClient } from "better-auth/client/plugins";
+import { createAuthClient } from "better-auth/react"
+import { twoFactorClient } from "better-auth/client/plugins"
 
 export const authClient = createAuthClient({
   baseURL: process.env.APP_URL || "http://localhost:3000",
@@ -63,7 +63,7 @@ export const authClient = createAuthClient({
       twoFactorPage: "/auth/two-factor", // Redirect for 2FA verification
     }),
   ],
-});
+})
 ```
 
 ---

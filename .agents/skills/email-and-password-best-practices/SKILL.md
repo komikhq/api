@@ -18,8 +18,8 @@ description: Configure email verification, implement password reset flows, set p
 Configure `emailVerification.sendVerificationEmail` to verify user email addresses.
 
 ```ts
-import { betterAuth } from "better-auth";
-import { sendEmail } from "./email"; // your email sending function
+import { betterAuth } from "better-auth"
+import { sendEmail } from "./email" // your email sending function
 
 export const auth = betterAuth({
   emailVerification: {
@@ -28,10 +28,10 @@ export const auth = betterAuth({
         to: user.email,
         subject: "Verify your email address",
         text: `Click the link to verify your email: ${url}`,
-      });
+      })
     },
   },
-});
+})
 ```
 
 **Note**: The `url` parameter contains the full verification link. The `token` is available if you need to build a custom verification URL.
@@ -45,7 +45,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     requireEmailVerification: true,
   },
-});
+})
 ```
 
 **Note**: This requires `sendVerificationEmail` to be configured and only applies to email/password sign-ins.
@@ -61,7 +61,7 @@ Always use absolute URLs (including the origin) for callback URLs in sign-up and
 ```ts
 const { data, error } = await authClient.signUp.email({
   callbackURL: "https://example.com/callback", // absolute URL with origin
-});
+})
 ```
 
 ## Password Reset Flows
@@ -69,8 +69,8 @@ const { data, error } = await authClient.signUp.email({
 Provide `sendResetPassword` in the email and password config to enable password resets.
 
 ```ts
-import { betterAuth } from "better-auth";
-import { sendEmail } from "./email"; // your email sending function
+import { betterAuth } from "better-auth"
+import { sendEmail } from "./email" // your email sending function
 
 export const auth = betterAuth({
   emailAndPassword: {
@@ -81,15 +81,15 @@ export const auth = betterAuth({
         to: user.email,
         subject: "Reset your password",
         text: `Click the link to reset your password: ${url}`,
-      });
+      })
     },
     // Optional event hook
     onPasswordReset: async ({ user }, request) => {
       // your logic here
-      console.log(`Password for user ${user.email} has been reset.`);
+      console.log(`Password for user ${user.email} has been reset.`)
     },
   },
-});
+})
 ```
 
 ### Security Considerations
@@ -104,11 +104,11 @@ export const auth = betterAuth({
     backgroundTasks: {
       handler: (promise) => {
         // Use platform-specific methods like waitUntil
-        waitUntil(promise);
+        waitUntil(promise)
       },
     },
   },
-});
+})
 ```
 
 #### Token Security
@@ -121,7 +121,7 @@ export const auth = betterAuth({
     enabled: true,
     resetPasswordTokenExpiresIn: 60 * 30, // 30 minutes
   },
-});
+})
 ```
 
 Tokens are single-use — deleted immediately after successful reset.
@@ -136,7 +136,7 @@ export const auth = betterAuth({
     enabled: true,
     revokeSessionsOnPasswordReset: true,
   },
-});
+})
 ```
 
 #### Password Requirements
@@ -150,7 +150,7 @@ export const auth = betterAuth({
     minPasswordLength: 12,
     maxPasswordLength: 256,
   },
-});
+})
 ```
 
 ### Sending the Password Reset
@@ -163,7 +163,7 @@ const data = await auth.api.requestPasswordReset({
     email: "john.doe@example.com", // required
     redirectTo: "https://example.com/reset-password",
   },
-});
+})
 ```
 
 Or authClient:
@@ -172,7 +172,7 @@ Or authClient:
 const { data, error } = await authClient.requestPasswordReset({
   email: "john.doe@example.com", // required
   redirectTo: "https://example.com/reset-password",
-});
+})
 ```
 
 **Note**: While the `email` is required, we also recommend configuring the `redirectTo` for a smoother user experience.
@@ -186,8 +186,8 @@ Default: `scrypt` (Node.js native, no external dependencies).
 To use Argon2id or another algorithm, provide custom `hash` and `verify` functions:
 
 ```ts
-import { betterAuth } from "better-auth";
-import { hash, verify, type Options } from "@node-rs/argon2";
+import { betterAuth } from "better-auth"
+import { hash, verify, type Options } from "@node-rs/argon2"
 
 const argon2Options: Options = {
   memoryCost: 65536, // 64 MiB
@@ -195,7 +195,7 @@ const argon2Options: Options = {
   parallelism: 4, // 4 parallel lanes
   outputLen: 32, // 32 byte output
   algorithm: 2, // Argon2id variant
-};
+}
 
 export const auth = betterAuth({
   emailAndPassword: {
@@ -206,7 +206,7 @@ export const auth = betterAuth({
         verify(storedHash, password, argon2Options),
     },
   },
-});
+})
 ```
 
 **Note**: If you switch hashing algorithms on an existing system, users with passwords hashed using the old algorithm won't be able to sign in. Plan a migration strategy if needed.

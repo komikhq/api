@@ -15,23 +15,23 @@
 
 ```typescript
 // hooks/use-sign-up.ts
-import { useState } from "react";
+import { useState } from "react"
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client"
 
 interface SignUpData {
-  name: string;
-  email: string;
-  password: string;
+  name: string
+  email: string
+  password: string
 }
 
 export function useSignUp() {
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const signUp = async (data: SignUpData) => {
-    setIsPending(true);
-    setError(null);
+    setIsPending(true)
+    setError(null)
 
     try {
       const result = await authClient.signUp.email({
@@ -39,23 +39,23 @@ export function useSignUp() {
         email: data.email,
         password: data.password,
         callbackURL: "/dashboard",
-      });
+      })
 
       if (result.error) {
-        setError(result.error.message);
-        return { success: false };
+        setError(result.error.message)
+        return { success: false }
       }
 
-      return { success: true };
+      return { success: true }
     } catch (err) {
-      setError("An unexpected error occurred");
-      return { success: false };
+      setError("An unexpected error occurred")
+      return { success: false }
     } finally {
-      setIsPending(false);
+      setIsPending(false)
     }
-  };
+  }
 
-  return { signUp, isPending, error };
+  return { signUp, isPending, error }
 }
 ```
 
@@ -67,24 +67,24 @@ export function useSignUp() {
 
 ```typescript
 // hooks/use-sign-in.ts
-import { useState } from "react";
+import { useState } from "react"
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client"
 
 interface SignInData {
-  email: string;
-  password: string;
-  rememberMe?: boolean;
+  email: string
+  password: string
+  rememberMe?: boolean
 }
 
 export function useSignIn() {
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [requires2FA, setRequires2FA] = useState(false);
+  const [isPending, setIsPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [requires2FA, setRequires2FA] = useState(false)
 
   const signIn = async (data: SignInData) => {
-    setIsPending(true);
-    setError(null);
+    setIsPending(true)
+    setError(null)
 
     try {
       const result = await authClient.signIn.email({
@@ -92,29 +92,29 @@ export function useSignIn() {
         password: data.password,
         rememberMe: data.rememberMe ?? false,
         callbackURL: "/dashboard",
-      });
+      })
 
       // Handle 2FA requirement
       if (result.data?.twoFactorRedirect) {
-        setRequires2FA(true);
-        return { success: false, requires2FA: true };
+        setRequires2FA(true)
+        return { success: false, requires2FA: true }
       }
 
       if (result.error) {
-        setError(result.error.message);
-        return { success: false };
+        setError(result.error.message)
+        return { success: false }
       }
 
-      return { success: true };
+      return { success: true }
     } catch (err) {
-      setError("An unexpected error occurred");
-      return { success: false };
+      setError("An unexpected error occurred")
+      return { success: false }
     } finally {
-      setIsPending(false);
+      setIsPending(false)
     }
-  };
+  }
 
-  return { signIn, isPending, error, requires2FA };
+  return { signIn, isPending, error, requires2FA }
 }
 ```
 
@@ -128,26 +128,26 @@ export function useSignIn() {
 
 ```typescript
 // lib/db.ts
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres"
+import { Pool } from "pg"
 
-import * as schema from "./schema";
+import * as schema from "./schema"
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-});
+})
 
-export const db = drizzle(pool, { schema });
+export const db = drizzle(pool, { schema })
 ```
 
 ### Auth Configuration
 
 ```typescript
 // lib/auth.ts
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle"; // or "@better-auth/drizzle-adapter" (v1.5+)
+import { betterAuth } from "better-auth"
+import { drizzleAdapter } from "better-auth/adapters/drizzle" // or "@better-auth/drizzle-adapter" (v1.5+)
 
-import { db } from "@/lib/db";
+import { db } from "@/lib/db"
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -162,7 +162,7 @@ export const auth = betterAuth({
   experimental: {
     joins: true,
   },
-});
+})
 ```
 
 ### Schema Generation Commands
@@ -195,20 +195,20 @@ Better Auth provides framework-specific clients: `better-auth/react`, `better-au
 
 ```typescript
 // lib/auth-client.ts
-import { createAuthClient } from "better-auth/react"; // or /vue, /svelte, /solid, /client
+import { createAuthClient } from "better-auth/react" // or /vue, /svelte, /solid, /client
 
 export const authClient = createAuthClient({
   baseURL: process.env.APP_URL || "http://localhost:3000",
-});
+})
 ```
 
 ### With Plugins
 
 ```typescript
 // lib/auth-client.ts
-import { createAuthClient } from "better-auth/react";
-import { twoFactorClient } from "better-auth/client/plugins";
-import { organizationClient } from "better-auth/client/plugins";
+import { createAuthClient } from "better-auth/react"
+import { twoFactorClient } from "better-auth/client/plugins"
+import { organizationClient } from "better-auth/client/plugins"
 
 export const authClient = createAuthClient({
   baseURL: process.env.APP_URL || "http://localhost:3000",
@@ -218,7 +218,7 @@ export const authClient = createAuthClient({
     }),
     organizationClient(),
   ],
-});
+})
 ```
 
 ### useSession Hook
@@ -263,38 +263,38 @@ Use `authClient.requestPasswordReset` (renamed from `forgotPassword` in v1.4).
 
 ```typescript
 // hooks/use-password-reset.ts
-import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { useState } from "react"
+import { authClient } from "@/lib/auth-client"
 
 export function usePasswordReset() {
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [isPending, setIsPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const requestReset = async (email: string) => {
-    setIsPending(true);
-    setError(null);
+    setIsPending(true)
+    setError(null)
 
     try {
       const result = await authClient.requestPasswordReset({
         email,
         redirectTo: "/auth/reset-password",
-      });
+      })
 
       if (result.error) {
-        setError(result.error.message);
-        return;
+        setError(result.error.message)
+        return
       }
 
-      setSuccess(true);
+      setSuccess(true)
     } catch (err) {
-      setError("Failed to send reset email");
+      setError("Failed to send reset email")
     } finally {
-      setIsPending(false);
+      setIsPending(false)
     }
-  };
+  }
 
-  return { requestReset, isPending, error, success };
+  return { requestReset, isPending, error, success }
 }
 ```
 
@@ -306,25 +306,25 @@ Use `auth.api.verifyPassword` to confirm identity before sensitive operations (e
 
 ```typescript
 // routes/settings.ts
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth"
 
-const HTTP_STATUS_UNAUTHORIZED = 401;
+const HTTP_STATUS_UNAUTHORIZED = 401
 
 app.post("/settings/change-email", async (c) => {
-  const session = c.get("session");
-  const { password, newEmail } = await c.req.json();
+  const session = c.get("session")
+  const { password, newEmail } = await c.req.json()
 
   const isValid = await auth.api.verifyPassword({
     body: { email: session.user.email, password },
-  });
+  })
 
   if (!isValid) {
-    return c.json({ error: "Invalid password" }, HTTP_STATUS_UNAUTHORIZED);
+    return c.json({ error: "Invalid password" }, HTTP_STATUS_UNAUTHORIZED)
   }
 
   // Proceed with email change...
-  return c.json({ success: true }, 200);
-});
+  return c.json({ success: true }, 200)
+})
 ```
 
 ---
@@ -335,13 +335,13 @@ Use `better-auth/minimal` to reduce bundle size when using ORM adapters (exclude
 
 ```typescript
 // lib/auth.ts - Use minimal entry point for smaller bundles
-import { betterAuth } from "better-auth/minimal";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "@/lib/db";
+import { betterAuth } from "better-auth/minimal"
+import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { db } from "@/lib/db"
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
-});
+})
 ```
 
 **When to use:** Projects using Drizzle, Prisma, or MongoDB adapters (not direct database connections)

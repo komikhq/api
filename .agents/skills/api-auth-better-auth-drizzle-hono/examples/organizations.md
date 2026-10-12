@@ -15,15 +15,15 @@
 
 ```typescript
 // lib/auth.ts
-import { betterAuth } from "better-auth";
-import { organization } from "better-auth/plugins";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { betterAuth } from "better-auth"
+import { organization } from "better-auth/plugins"
+import { drizzleAdapter } from "better-auth/adapters/drizzle"
 
-import { db } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
+import { db } from "@/lib/db"
+import { sendEmail } from "@/lib/email"
 
-const ORG_LIMIT_PER_USER = 5;
-const INVITATION_EXPIRY_SECONDS = 48 * 60 * 60; // 48 hours
+const ORG_LIMIT_PER_USER = 5
+const INVITATION_EXPIRY_SECONDS = 48 * 60 * 60 // 48 hours
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -32,16 +32,16 @@ export const auth = betterAuth({
       organizationLimit: ORG_LIMIT_PER_USER,
       invitationExpiresIn: INVITATION_EXPIRY_SECONDS,
       sendInvitationEmail: async ({ email, invitationId, organization }) => {
-        const inviteUrl = `${process.env.APP_URL}/accept-invite?id=${invitationId}`;
+        const inviteUrl = `${process.env.APP_URL}/accept-invite?id=${invitationId}`
         await sendEmail({
           to: email,
           subject: `Join ${organization.name}`,
           html: `<a href="${inviteUrl}">Accept invitation</a>`,
-        });
+        })
       },
     }),
   ],
-});
+})
 ```
 
 ---
@@ -50,13 +50,13 @@ export const auth = betterAuth({
 
 ```typescript
 // lib/auth-client.ts
-import { createAuthClient } from "better-auth/react";
-import { organizationClient } from "better-auth/client/plugins";
+import { createAuthClient } from "better-auth/react"
+import { organizationClient } from "better-auth/client/plugins"
 
 export const authClient = createAuthClient({
   baseURL: process.env.APP_URL || "http://localhost:3000",
   plugins: [organizationClient()],
-});
+})
 ```
 
 ---
@@ -65,49 +65,49 @@ export const authClient = createAuthClient({
 
 ```typescript
 // hooks/use-create-org.ts
-import { useState } from "react";
+import { useState } from "react"
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client"
 
 interface CreateOrgData {
-  name: string;
-  slug: string;
+  name: string
+  slug: string
 }
 
 export function useCreateOrg() {
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const createOrg = async (data: CreateOrgData) => {
-    setIsPending(true);
-    setError(null);
+    setIsPending(true)
+    setError(null)
 
     try {
       const result = await authClient.organization.create({
         name: data.name,
         slug: data.slug,
-      });
+      })
 
       if (result.error) {
-        setError(result.error.message);
-        return { success: false };
+        setError(result.error.message)
+        return { success: false }
       }
 
       // Set as active organization
       await authClient.organization.setActive({
         organizationId: result.data.id,
-      });
+      })
 
-      return { success: true, organization: result.data };
+      return { success: true, organization: result.data }
     } catch (err) {
-      setError("Failed to create organization");
-      return { success: false };
+      setError("Failed to create organization")
+      return { success: false }
     } finally {
-      setIsPending(false);
+      setIsPending(false)
     }
-  };
+  }
 
-  return { createOrg, isPending, error };
+  return { createOrg, isPending, error }
 }
 ```
 
@@ -117,48 +117,48 @@ export function useCreateOrg() {
 
 ```typescript
 // hooks/use-invite-member.ts
-import { useState } from "react";
+import { useState } from "react"
 
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth-client"
 
-type Role = "owner" | "admin" | "member";
+type Role = "owner" | "admin" | "member"
 
 interface InviteData {
-  email: string;
-  role: Role;
-  organizationId: string;
+  email: string
+  role: Role
+  organizationId: string
 }
 
 export function useInviteMember() {
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const inviteMember = async (data: InviteData) => {
-    setIsPending(true);
-    setError(null);
+    setIsPending(true)
+    setError(null)
 
     try {
       const result = await authClient.organization.inviteMember({
         email: data.email,
         role: data.role,
         organizationId: data.organizationId,
-      });
+      })
 
       if (result.error) {
-        setError(result.error.message);
-        return { success: false };
+        setError(result.error.message)
+        return { success: false }
       }
 
-      return { success: true };
+      return { success: true }
     } catch (err) {
-      setError("Failed to send invitation");
-      return { success: false };
+      setError("Failed to send invitation")
+      return { success: false }
     } finally {
-      setIsPending(false);
+      setIsPending(false)
     }
-  };
+  }
 
-  return { inviteMember, isPending, error };
+  return { inviteMember, isPending, error }
 }
 ```
 

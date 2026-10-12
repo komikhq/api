@@ -17,6 +17,7 @@ Workers have a 128 MB memory limit. Buffering entire bodies with `await response
 **Check**: any `await response.text()`, `await response.json()`, or `await response.arrayBuffer()` on data that could be large or unbounded. Small, bounded payloads (known-size JSON, config files) are fine to buffer.
 
 Correct — stream through:
+
 ```ts
 async fetch(request: Request, env: Env): Promise<Response> {
   const response = await fetch("https://api.example.com/large-dataset");
@@ -25,6 +26,7 @@ async fetch(request: Request, env: Env): Promise<Response> {
 ```
 
 Correct — concatenate multiple streams:
+
 ```ts
 async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const urls = ["https://api.example.com/part-1", "https://api.example.com/part-2"];
@@ -48,11 +50,12 @@ async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response
 ```
 
 Anti-pattern:
+
 ```ts
 // Buffers entire body — crashes on large payloads
-const response = await fetch("https://api.example.com/large-dataset");
-const text = await response.text();
-return new Response(text);
+const response = await fetch("https://api.example.com/large-dataset")
+const text = await response.text()
+return new Response(text)
 ```
 
 **Retrieve**: streaming APIs at `/workers/runtime-apis/streams/`.
@@ -79,10 +82,11 @@ async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response
 ```
 
 Anti-pattern:
+
 ```ts
 // Destructuring ctx loses the this binding
-const { waitUntil } = ctx;  // "Illegal invocation" at runtime
-waitUntil(somePromise);
+const { waitUntil } = ctx // "Illegal invocation" at runtime
+waitUntil(somePromise)
 ```
 
 ---
@@ -97,16 +101,17 @@ Bindings (KV, R2, D1, Queues, Workflows) are direct, in-process references — n
 
 ```ts
 // Binding — direct, zero-cost
-const object = await env.MY_BUCKET.get("my-file");
+const object = await env.MY_BUCKET.get("my-file")
 ```
 
 Anti-pattern:
+
 ```ts
 // REST API from inside a Worker — unnecessary overhead
 const response = await fetch(
   "https://api.cloudflare.com/client/v4/accounts/.../r2/buckets/.../objects/my-file",
   { headers: { Authorization: `Bearer ${env.CF_API_TOKEN}` } }
-);
+)
 ```
 
 ### Use Queues and Workflows for async and background work
@@ -142,16 +147,18 @@ Service bindings are zero-cost, bypass the public internet, and support type-saf
 **Check**: Worker-to-Worker calls use `env.SERVICE_NAME.method()` (RPC) or `env.SERVICE_NAME.fetch()`, not `fetch("https://my-other-worker.example.com/...")`.
 
 ```ts
-import { WorkerEntrypoint } from "cloudflare:workers";
+import { WorkerEntrypoint } from "cloudflare:workers"
 
 export class AuthService extends WorkerEntrypoint {
-  async verifyToken(token: string): Promise<{ userId: string; valid: boolean }> {
-    return { userId: "user-123", valid: true };
+  async verifyToken(
+    token: string
+  ): Promise<{ userId: string; valid: boolean }> {
+    return { userId: "user-123", valid: true }
   }
 }
 
 // Caller Worker
-const auth = await env.AUTH_SERVICE.verifyToken(token);
+const auth = await env.AUTH_SERVICE.verifyToken(token)
 ```
 
 **Retrieve**: verify uncertain `WorkerEntrypoint` import paths or signatures against the project's target types, consulting current docs when runtime compatibility needs clarification.
@@ -164,7 +171,7 @@ Hyperdrive maintains a regional connection pool, eliminating per-request TCP + T
 
 ```jsonc
 {
-  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<YOUR_HYPERDRIVE_ID>" }]
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<YOUR_HYPERDRIVE_ID>" }],
 }
 ```
 
@@ -193,25 +200,30 @@ Workers reuse isolates across requests. Module-level mutable variables cause cro
 
 ```ts
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const userId = request.headers.get("X-User-Id");
-    const result = await handleRequest(userId, env);
-    return Response.json(result);
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext
+  ): Promise<Response> {
+    const userId = request.headers.get("X-User-Id")
+    const result = await handleRequest(userId, env)
+    return Response.json(result)
   },
-} satisfies ExportedHandler<Env>;
+} satisfies ExportedHandler<Env>
 ```
 
 Anti-pattern:
+
 ```ts
 // Module-level mutable state — leaks between requests
-let currentUser: string | null = null;
+let currentUser: string | null = null
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    currentUser = request.headers.get("X-User-Id");  // Visible to next request
+    currentUser = request.headers.get("X-User-Id") // Visible to next request
     // ...
   },
-};
+}
 ```
 
 ### Always await or waitUntil Promises
@@ -222,16 +234,28 @@ A Promise that is not `await`ed, `return`ed, or passed to `ctx.waitUntil()` is a
 
 ```ts
 // Correct: await when you need the result
-const response = await fetch("https://api.example.com/process", { method: "POST", body: JSON.stringify(data) });
+const response = await fetch("https://api.example.com/process", {
+  method: "POST",
+  body: JSON.stringify(data),
+})
 
 // Correct: waitUntil when you don't need the result before responding
-ctx.waitUntil(fetch("https://api.example.com/webhook", { method: "POST", body: JSON.stringify(data) }));
+ctx.waitUntil(
+  fetch("https://api.example.com/webhook", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+)
 ```
 
 Anti-pattern:
+
 ```ts
 // Floating promise — result dropped, error swallowed
-fetch("https://api.example.com/webhook", { method: "POST", body: JSON.stringify(data) });
+fetch("https://api.example.com/webhook", {
+  method: "POST",
+  body: JSON.stringify(data),
+})
 ```
 
 ### Be aware of platform limits
@@ -256,33 +280,39 @@ For comparing secrets (API keys, HMAC signatures), use `crypto.subtle.timingSafe
 
 ```ts
 // Secure random UUID
-const sessionId = crypto.randomUUID();
+const sessionId = crypto.randomUUID()
 
 // Secure random bytes
-const tokenBytes = new Uint8Array(32);
-crypto.getRandomValues(tokenBytes);
-const token = Array.from(tokenBytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+const tokenBytes = new Uint8Array(32)
+crypto.getRandomValues(tokenBytes)
+const token = Array.from(tokenBytes)
+  .map((b) => b.toString(16).padStart(2, "0"))
+  .join("")
 ```
 
 ```ts
 // Constant-time comparison — hash first to avoid length leak
-async function verifyToken(provided: string, expected: string): Promise<boolean> {
-  const encoder = new TextEncoder();
+async function verifyToken(
+  provided: string,
+  expected: string
+): Promise<boolean> {
+  const encoder = new TextEncoder()
   const [providedHash, expectedHash] = await Promise.all([
     crypto.subtle.digest("SHA-256", encoder.encode(provided)),
     crypto.subtle.digest("SHA-256", encoder.encode(expected)),
-  ]);
-  return crypto.subtle.timingSafeEqual(providedHash, expectedHash);
+  ])
+  return crypto.subtle.timingSafeEqual(providedHash, expectedHash)
 }
 ```
 
 Anti-pattern:
+
 ```ts
 // Predictable — not cryptographically secure
-const token = Math.random().toString(36).substring(2);
+const token = Math.random().toString(36).substring(2)
 
 // Timing side-channel — leaks information about the expected value
-return provided === expected;
+return provided === expected
 ```
 
 **Retrieve**: `/workers/runtime-apis/web-crypto/` for current API surface.
@@ -319,21 +349,21 @@ Runs tests inside the Workers runtime with real bindings. Catches issues that No
 **Check**: test setup uses `@cloudflare/vitest-pool-workers`. Tests cover nullable returns (e.g., KV `.get()` returning `null`).
 
 ```ts
-import { describe, it, expect } from "vitest";
-import { env } from "cloudflare:test";
+import { describe, it, expect } from "vitest"
+import { env } from "cloudflare:test"
 
 describe("KV operations", () => {
   it("should store and retrieve a value", async () => {
-    await env.MY_KV.put("key", "value");
-    const result = await env.MY_KV.get("key");
-    expect(result).toBe("value");
-  });
+    await env.MY_KV.put("key", "value")
+    const result = await env.MY_KV.get("key")
+    expect(result).toBe("value")
+  })
 
   it("should return null for missing keys", async () => {
-    const result = await env.MY_KV.get("nonexistent");
-    expect(result).toBeNull();
-  });
-});
+    const result = await env.MY_KV.get("nonexistent")
+    expect(result).toBeNull()
+  })
+})
 ```
 
 **Retrieve**: `/workers/testing/vitest-integration/` for current setup and configuration.

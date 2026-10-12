@@ -11,27 +11,27 @@
  * Production-ready Worker with Hono framework
  */
 
-import { Hono } from 'hono';
-import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
+import { Hono } from "hono"
+import { getCookie, setCookie, deleteCookie } from "hono/cookie"
 
 type Bindings = {
-  SESSIONS: KVNamespace;
-};
-
-interface Session {
-  userId: string;
-  createdAt: number;
-  lastActivity: number;
-  ipAddress: string;
-  userAgent: string;
-  data?: Record<string, any>;
+  SESSIONS: KVNamespace
 }
 
-const app = new Hono<{ Bindings: Bindings }>();
+interface Session {
+  userId: string
+  createdAt: number
+  lastActivity: number
+  ipAddress: string
+  userAgent: string
+  data?: Record<string, any>
+}
+
+const app = new Hono<{ Bindings: Bindings }>()
 
 // Session configuration
-const SESSION_TTL = 86400; // 24 hours
-const SESSION_COOKIE_NAME = 'session_id';
+const SESSION_TTL = 86400 // 24 hours
+const SESSION_COOKIE_NAME = "session_id"
 
 // ============================================================================
 // Helper Functions
@@ -41,9 +41,11 @@ const SESSION_COOKIE_NAME = 'session_id';
  * Generate secure random session ID
  */
 function generateSessionId(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
+    ""
+  )
 }
 
 /**
@@ -53,8 +55,8 @@ async function getSession(
   kv: KVNamespace,
   sessionId: string
 ): Promise<Session | null> {
-  const sessionData = await kv.get(`session:${sessionId}`, 'json');
-  return sessionData as Session | null;
+  const sessionData = await kv.get(`session:${sessionId}`, "json")
+  return sessionData as Session | null
 }
 
 /**
@@ -70,16 +72,19 @@ async function saveSession(
     metadata: {
       userId: session.userId,
       ipAddress: session.ipAddress,
-      lastActivity: session.lastActivity
-    }
-  });
+      lastActivity: session.lastActivity,
+    },
+  })
 }
 
 /**
  * Delete session from KV
  */
-async function deleteSession(kv: KVNamespace, sessionId: string): Promise<void> {
-  await kv.delete(`session:${sessionId}`);
+async function deleteSession(
+  kv: KVNamespace,
+  sessionId: string
+): Promise<void> {
+  await kv.delete(`session:${sessionId}`)
 }
 
 // ============================================================================
@@ -89,25 +94,25 @@ async function deleteSession(kv: KVNamespace, sessionId: string): Promise<void> 
 /**
  * Middleware to load and validate session
  */
-app.use('*', async (c, next) => {
-  const sessionId = getCookie(c, SESSION_COOKIE_NAME);
+app.use("*", async (c, next) => {
+  const sessionId = getCookie(c, SESSION_COOKIE_NAME)
 
   if (sessionId) {
-    const session = await getSession(c.env.SESSIONS, sessionId);
+    const session = await getSession(c.env.SESSIONS, sessionId)
 
     if (session) {
       // Update last activity
-      session.lastActivity = Date.now();
-      await saveSession(c.env.SESSIONS, sessionId, session);
+      session.lastActivity = Date.now()
+      await saveSession(c.env.SESSIONS, sessionId, session)
 
       // Attach session to context
-      c.set('session', session);
-      c.set('sessionId', sessionId);
+      c.set("session", session)
+      c.set("sessionId", sessionId)
     }
   }
 
-  await next();
-});
+  await next()
+})
 
 // ============================================================================
 // Authentication Endpoints
@@ -116,78 +121,78 @@ app.use('*', async (c, next) => {
 /**
  * Login endpoint - creates new session
  */
-app.post('/auth/login', async (c) => {
-  const { username, password } = await c.req.json();
+app.post("/auth/login", async (c) => {
+  const { username, password } = await c.req.json()
 
   // In production, validate credentials against database
   // This is a simplified example
   if (!username || !password) {
-    return c.json({ error: 'Missing credentials' }, 400);
+    return c.json({ error: "Missing credentials" }, 400)
   }
 
   // Simulate authentication (replace with real auth)
-  if (password !== 'demo123') {
-    return c.json({ error: 'Invalid credentials' }, 401);
+  if (password !== "demo123") {
+    return c.json({ error: "Invalid credentials" }, 401)
   }
 
   // Create session
-  const sessionId = generateSessionId();
+  const sessionId = generateSessionId()
   const session: Session = {
     userId: username,
     createdAt: Date.now(),
     lastActivity: Date.now(),
-    ipAddress: c.req.header('cf-connecting-ip') || 'unknown',
-    userAgent: c.req.header('user-agent') || 'unknown',
+    ipAddress: c.req.header("cf-connecting-ip") || "unknown",
+    userAgent: c.req.header("user-agent") || "unknown",
     data: {
       loginTimestamp: Date.now(),
-      role: 'user'
-    }
-  };
+      role: "user",
+    },
+  }
 
   // Save to KV
-  await saveSession(c.env.SESSIONS, sessionId, session);
+  await saveSession(c.env.SESSIONS, sessionId, session)
 
   // Set cookie
   setCookie(c, SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
     secure: true,
-    sameSite: 'Lax',
+    sameSite: "Lax",
     maxAge: SESSION_TTL,
-    path: '/'
-  });
+    path: "/",
+  })
 
   return c.json({
     success: true,
     session: {
       userId: session.userId,
-      expiresAt: Date.now() + SESSION_TTL * 1000
-    }
-  });
-});
+      expiresAt: Date.now() + SESSION_TTL * 1000,
+    },
+  })
+})
 
 /**
  * Logout endpoint - destroys session
  */
-app.post('/auth/logout', async (c) => {
-  const sessionId = c.get('sessionId');
+app.post("/auth/logout", async (c) => {
+  const sessionId = c.get("sessionId")
 
   if (sessionId) {
-    await deleteSession(c.env.SESSIONS, sessionId);
-    deleteCookie(c, SESSION_COOKIE_NAME);
+    await deleteSession(c.env.SESSIONS, sessionId)
+    deleteCookie(c, SESSION_COOKIE_NAME)
   }
 
-  return c.json({ success: true, message: 'Logged out successfully' });
-});
+  return c.json({ success: true, message: "Logged out successfully" })
+})
 
 /**
  * Session status endpoint
  */
-app.get('/auth/status', async (c) => {
-  const session = c.get('session');
-  const sessionId = c.get('sessionId');
+app.get("/auth/status", async (c) => {
+  const session = c.get("session")
+  const sessionId = c.get("sessionId")
 
   if (!session || !sessionId) {
-    return c.json({ authenticated: false });
+    return c.json({ authenticated: false })
   }
 
   return c.json({
@@ -196,10 +201,10 @@ app.get('/auth/status', async (c) => {
       userId: session.userId,
       createdAt: session.createdAt,
       lastActivity: session.lastActivity,
-      timeRemaining: SESSION_TTL - (Date.now() - session.createdAt) / 1000
-    }
-  });
-});
+      timeRemaining: SESSION_TTL - (Date.now() - session.createdAt) / 1000,
+    },
+  })
+})
 
 // ============================================================================
 // Protected Routes
@@ -209,47 +214,47 @@ app.get('/auth/status', async (c) => {
  * Middleware to require authentication
  */
 const requireAuth = async (c: any, next: any) => {
-  const session = c.get('session');
+  const session = c.get("session")
 
   if (!session) {
-    return c.json({ error: 'Unauthorized' }, 401);
+    return c.json({ error: "Unauthorized" }, 401)
   }
 
-  await next();
-};
+  await next()
+}
 
 /**
  * Protected dashboard endpoint
  */
-app.get('/dashboard', requireAuth, async (c) => {
-  const session = c.get('session');
+app.get("/dashboard", requireAuth, async (c) => {
+  const session = c.get("session")
 
   return c.json({
-    message: 'Welcome to your dashboard',
+    message: "Welcome to your dashboard",
     user: {
       userId: session.userId,
       sessionAge: Math.floor((Date.now() - session.createdAt) / 1000),
-      data: session.data
-    }
-  });
-});
+      data: session.data,
+    },
+  })
+})
 
 /**
  * Update session data
  */
-app.post('/dashboard/update', requireAuth, async (c) => {
-  const sessionId = c.get('sessionId');
-  const session = c.get('session');
-  const updates = await c.req.json();
+app.post("/dashboard/update", requireAuth, async (c) => {
+  const sessionId = c.get("sessionId")
+  const session = c.get("session")
+  const updates = await c.req.json()
 
   // Merge updates into session data
-  session.data = { ...session.data, ...updates };
+  session.data = { ...session.data, ...updates }
 
   // Save updated session
-  await saveSession(c.env.SESSIONS, sessionId, session);
+  await saveSession(c.env.SESSIONS, sessionId, session)
 
-  return c.json({ success: true, data: session.data });
-});
+  return c.json({ success: true, data: session.data })
+})
 
 // ============================================================================
 // Admin Endpoints
@@ -258,71 +263,71 @@ app.post('/dashboard/update', requireAuth, async (c) => {
 /**
  * List all active sessions (for admin)
  */
-app.get('/admin/sessions', async (c) => {
+app.get("/admin/sessions", async (c) => {
   const { keys } = await c.env.SESSIONS.list({
-    prefix: 'session:',
-    limit: 100
-  });
+    prefix: "session:",
+    limit: 100,
+  })
 
   const sessions = await Promise.all(
     keys.map(async ({ name, metadata }) => {
-      const sessionId = name.replace('session:', '');
-      const session = await getSession(c.env.SESSIONS, sessionId);
+      const sessionId = name.replace("session:", "")
+      const session = await getSession(c.env.SESSIONS, sessionId)
 
       return {
         sessionId,
         userId: metadata?.userId,
         ipAddress: metadata?.ipAddress,
         lastActivity: metadata?.lastActivity,
-        isActive: session !== null
-      };
+        isActive: session !== null,
+      }
     })
-  );
+  )
 
   return c.json({
     total: sessions.length,
-    sessions: sessions.filter(s => s.isActive)
-  });
-});
+    sessions: sessions.filter((s) => s.isActive),
+  })
+})
 
 /**
  * Revoke specific session (admin)
  */
-app.delete('/admin/sessions/:sessionId', async (c) => {
-  const sessionId = c.req.param('sessionId');
+app.delete("/admin/sessions/:sessionId", async (c) => {
+  const sessionId = c.req.param("sessionId")
 
-  await deleteSession(c.env.SESSIONS, sessionId);
+  await deleteSession(c.env.SESSIONS, sessionId)
 
-  return c.json({ success: true, message: `Session ${sessionId} revoked` });
-});
+  return c.json({ success: true, message: `Session ${sessionId} revoked` })
+})
 
 /**
  * Revoke all sessions for user (admin)
  */
-app.delete('/admin/users/:userId/sessions', async (c) => {
-  const userId = c.req.param('userId');
+app.delete("/admin/users/:userId/sessions", async (c) => {
+  const userId = c.req.param("userId")
 
   // List all sessions
   const { keys } = await c.env.SESSIONS.list({
-    prefix: 'session:',
-    limit: 1000
-  });
+    prefix: "session:",
+    limit: 1000,
+  })
 
   // Delete sessions for this user
-  let deleted = 0;
+  let deleted = 0
   for (const { name, metadata } of keys) {
     if (metadata?.userId === userId) {
-      const sessionId = name.replace('session:', '');
-      await deleteSession(c.env.SESSIONS, sessionId);
-      deleted++;
+      const sessionId = name.replace("session:", "")
+      await deleteSession(c.env.SESSIONS, sessionId)
+      deleted++
     }
   }
 
   return c.json({
     success: true,
-    message: `Revoked ${deleted} sessions for user ${userId}`
-  });
-});
+    message: `Revoked ${deleted} sessions for user ${userId}`,
+  })
+})
 
 // ============================================================================
 // Session Analytics
@@ -331,52 +336,52 @@ app.delete('/admin/users/:userId/sessions', async (c) => {
 /**
  * Track user activity
  */
-app.post('/analytics/event', requireAuth, async (c) => {
-  const session = c.get('session');
-  const { eventType, eventData } = await c.req.json();
+app.post("/analytics/event", requireAuth, async (c) => {
+  const session = c.get("session")
+  const { eventType, eventData } = await c.req.json()
 
-  const analyticsKey = `analytics:${session.userId}:${eventType}:${Date.now()}`;
+  const analyticsKey = `analytics:${session.userId}:${eventType}:${Date.now()}`
 
   await c.env.SESSIONS.put(
     analyticsKey,
-    JSON.stringify({ eventData, sessionId: c.get('sessionId') }),
+    JSON.stringify({ eventData, sessionId: c.get("sessionId") }),
     {
       expirationTtl: 86400 * 30, // Keep for 30 days
       metadata: {
         userId: session.userId,
         eventType,
-        timestamp: Date.now()
-      }
+        timestamp: Date.now(),
+      },
     }
-  );
+  )
 
-  return c.json({ success: true });
-});
+  return c.json({ success: true })
+})
 
 /**
  * Get user activity
  */
-app.get('/analytics/user/:userId', async (c) => {
-  const userId = c.req.param('userId');
+app.get("/analytics/user/:userId", async (c) => {
+  const userId = c.req.param("userId")
 
   const { keys } = await c.env.SESSIONS.list({
     prefix: `analytics:${userId}:`,
-    limit: 100
-  });
+    limit: 100,
+  })
 
   const events = keys.map(({ name, metadata }) => ({
     eventType: metadata?.eventType,
-    timestamp: metadata?.timestamp
-  }));
+    timestamp: metadata?.timestamp,
+  }))
 
-  return c.json({ userId, events });
-});
+  return c.json({ userId, events })
+})
 
 // ============================================================================
 // Root & 404
 // ============================================================================
 
-app.get('/', (c) => {
+app.get("/", (c) => {
   return c.html(`
     <h1>Cloudflare Workers KV - Session Management Example</h1>
     <p>Try these endpoints:</p>
@@ -402,11 +407,11 @@ app.get('/', (c) => {
       <li>POST /analytics/event - Track user event</li>
       <li>GET /analytics/user/:userId - Get user activity</li>
     </ul>
-  `);
-});
+  `)
+})
 
 app.notFound((c) => {
-  return c.json({ error: 'Not found' }, 404);
-});
+  return c.json({ error: "Not found" }, 404)
+})
 
-export default app;
+export default app

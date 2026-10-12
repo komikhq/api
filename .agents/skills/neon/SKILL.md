@@ -201,7 +201,7 @@ npm i @neon/config
 
 ```typescript
 // neon.ts
-import { defineConfig } from "@neon/config/v1";
+import { defineConfig } from "@neon/config/v1"
 
 export default defineConfig({
   preview: {
@@ -218,7 +218,7 @@ export default defineConfig({
       },
     },
   },
-});
+})
 ```
 
 ### Provision services with neon config
@@ -235,7 +235,7 @@ export default defineConfig({
     buckets: {},
     aiGateway: true, // see the neon-ai-gateway skill
   },
-});
+})
 ```
 
 Reconcile the declaration from the CLI — the Neon equivalent of `terraform status` / `plan` / `apply`:
@@ -267,28 +267,28 @@ npm i @neon/env
 ```
 
 ```typescript
-import { parseEnv } from "@neon/env";
-import config from "./neon";
+import { parseEnv } from "@neon/env"
+import config from "./neon"
 
-const env = parseEnv(config);
+const env = parseEnv(config)
 
-console.log(env.postgres.databaseUrl);
-console.log(env.auth.baseUrl);
+console.log(env.postgres.databaseUrl)
+console.log(env.auth.baseUrl)
 ```
 
 By default `parseEnv` requires _every_ variable your config implies. When one of your apps only uses a subset, for example when you need to read `DATABASE_URL` but never the unpooled URL, pass an array of env-var keys to require and validate only those. The keys are typesafe: autocomplete only offers variables your config enables, and the returned shape is narrowed to exactly what you selected (so unselected variables are neither enforced nor present).
 
 ```typescript
-import { parseEnv } from "@neon/env";
-import config from "./neon";
+import { parseEnv } from "@neon/env"
+import config from "./neon"
 
 // Only DATABASE_URL is required and returned; DATABASE_URL_UNPOOLED is not enforced.
-const { postgres } = parseEnv(config, ["DATABASE_URL"]);
-console.log(postgres.databaseUrl);
+const { postgres } = parseEnv(config, ["DATABASE_URL"])
+console.log(postgres.databaseUrl)
 
 // Selecting across services — only these keys are validated.
-const env = parseEnv(config, ["DATABASE_URL", "NEON_AUTH_BASE_URL"]);
-console.log(env.postgres.databaseUrl, env.auth.baseUrl);
+const env = parseEnv(config, ["DATABASE_URL", "NEON_AUTH_BASE_URL"])
+console.log(env.postgres.databaseUrl, env.auth.baseUrl)
 ```
 
 ### Branch configuration
@@ -297,7 +297,7 @@ Beyond services, `neon.ts` can program what configuration _new_ branches receive
 
 ```typescript
 // neon.ts
-import { defineConfig } from "@neon/config/v1";
+import { defineConfig } from "@neon/config/v1"
 
 export default defineConfig({
   auth: true,
@@ -305,7 +305,7 @@ export default defineConfig({
   branch: (branch) => {
     if (branch.exists) {
       // leave existing branches untouched
-      return {};
+      return {}
     }
     if (branch.name.startsWith("dev")) {
       return {
@@ -317,11 +317,11 @@ export default defineConfig({
             suspendTimeout: "5m",
           },
         },
-      };
+      }
     }
-    return {};
+    return {}
   },
-});
+})
 ```
 
 The `branch` function receives the target branch (its `name`, whether it `exists` yet, whether it's the default, and more) and returns the tuning you want. Here new `dev-*` branches get a 7-day TTL so they clean themselves up, plus a cheap scale-to-zero compute profile, while existing branches and everything else fall through to the defaults. Because `neon checkout` applies this policy on create, a fresh `dev-*` branch comes up with these settings already in place.
@@ -333,14 +333,14 @@ Because `neon.ts` is TypeScript, the compiler catches invalid infrastructure bef
 ```typescript
 export default defineConfig({
   dataApi: true, // type error: `dataApi` (default authProvider 'neon') requires Neon Auth
-});
+})
 ```
 
 The message names both fixes, so pick one:
 
 ```typescript
 // 1. Enable Neon Auth (the default Data API auth provider):
-export default defineConfig({ auth: true, dataApi: true });
+export default defineConfig({ auth: true, dataApi: true })
 
 // 2. Or verify a third-party IdP instead of Neon Auth:
 export default defineConfig({
@@ -348,7 +348,7 @@ export default defineConfig({
     authProvider: "external",
     jwksUrl: "https://your-idp/.well-known/jwks.json",
   },
-});
+})
 ```
 
 Treat a `neon.ts` type error as the config telling you which services must go together — read the message, it spells out the valid combinations.
@@ -420,15 +420,15 @@ for await (const record of neon.logs.query(projectId, branchId, {
   since: "1h",
   source: "function",
 })) {
-  console.log(record.timestamp, record.severity_text, record.message);
+  console.log(record.timestamp, record.severity_text, record.message)
 }
 
-const { data: fields } = await neon.logs.fields(projectId, branchId);
+const { data: fields } = await neon.logs.fields(projectId, branchId)
 const { data: serviceNames } = await neon.logs.fieldValues(
   projectId,
   branchId,
-  "service_name",
-);
+  "service_name"
+)
 ```
 
 `query`'s iterator always throws on error, but `fields` and `fieldValues` follow the client's `throwOnError`, which defaults to `false` and hands back `{ data, error }`. `fieldValues` resolves to the whole response, not a bare array: read `serviceNames.values`, and treat them as an arbitrary subset whenever `serviceNames.is_truncated` is true.

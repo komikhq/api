@@ -9,6 +9,7 @@ Autonomous agent specialized in analyzing and optimizing Cloudflare Workers KV u
 ## Agent Capabilities
 
 ### Code Analysis
+
 - Scans Worker files for KV operations
 - Identifies missing TTL/expiration on put() calls
 - Detects missing cacheTtl on get() operations
@@ -18,6 +19,7 @@ Autonomous agent specialized in analyzing and optimizing Cloudflare Workers KV u
 - Analyzes waitUntil() usage patterns
 
 ### Optimization Recommendations
+
 - Prioritized list of improvements (critical → nice-to-have)
 - Code examples for each optimization
 - Before/after comparisons
@@ -26,6 +28,7 @@ Autonomous agent specialized in analyzing and optimizing Cloudflare Workers KV u
 - Risk assessment for each change
 
 ### Automated Refactoring
+
 - Applies optimizations to code
 - Maintains functionality and tests
 - Adds inline comments explaining changes
@@ -33,6 +36,7 @@ Autonomous agent specialized in analyzing and optimizing Cloudflare Workers KV u
 - Validates changes with testing
 
 ### Performance Benchmarking
+
 - Measures current performance metrics
 - Estimates improvement impact
 - Compares before/after results
@@ -41,6 +45,7 @@ Autonomous agent specialized in analyzing and optimizing Cloudflare Workers KV u
 ## When to Use This Agent
 
 The agent triggers when users mention:
+
 - "optimize my kv usage"
 - "improve kv performance"
 - "reduce kv costs"
@@ -126,6 +131,7 @@ The agent triggers when users mention:
 **User:** "Optimize my KV usage in src/index.ts"
 
 **Agent Actions:**
+
 1. Read src/index.ts
 2. Run analyze-kv-usage.sh script
 3. Load best-practices.md
@@ -137,6 +143,7 @@ The agent triggers when users mention:
 6. Offer to apply fixes automatically
 
 **Agent Response:**
+
 ```
 I've analyzed your KV usage in src/index.ts and found several optimization opportunities:
 
@@ -161,6 +168,7 @@ Would you like me to proceed with these optimizations?
 **User:** "My Worker is slow, I think it's the KV calls"
 
 **Agent Actions:**
+
 1. Search codebase for KV operations
 2. Analyze patterns (sequential vs parallel)
 3. Check for cacheTtl usage
@@ -168,7 +176,8 @@ Would you like me to proceed with these optimizations?
 5. Provide specific recommendations
 
 **Agent Response:**
-```
+
+````
 I found the performance issue. Your Worker is making 12 sequential KV get() calls:
 
 ```typescript
@@ -178,7 +187,7 @@ const prefs = await env.KV.get('prefs');  // ~50ms
 const stats = await env.KV.get('stats');  // ~50ms
 ...
 // Total: ~600ms
-```
+````
 
 This can be parallelized:
 
@@ -196,6 +205,7 @@ const [user, prefs, stats, ...] = await Promise.all([
 Additionally, adding cacheTtl:300 will cache these at the edge, reducing to ~1ms for cached hits.
 
 Shall I apply these optimizations?
+
 ```
 
 ### Example 3: Cost Reduction
@@ -210,6 +220,7 @@ Shall I apply these optimizations?
 
 **Agent Response:**
 ```
+
 I found several cost optimization opportunities:
 
 1. Missing TTL on 25 put() operations
@@ -230,6 +241,7 @@ I found several cost optimization opportunities:
 Estimated total savings: $150/month (based on current usage)
 
 Would you like me to implement these optimizations?
+
 ```
 
 ## Best Practices Applied by Agent
@@ -278,7 +290,9 @@ Track these outcomes:
 
 After optimization, recommend:
 ```
+
 /test-kv - Verify optimizations didn't break functionality
+
 ```
 
 ## Implementation Notes
@@ -289,3 +303,4 @@ After optimization, recommend:
 - Always get user approval before applying changes
 - Test optimizations when possible
 - Provide rollback instructions if needed
+```

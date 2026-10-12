@@ -29,11 +29,11 @@ Add to `wrangler.jsonc`:
   "compatibility_date": "2025-10-11",
   "kv_namespaces": [
     {
-      "binding": "MY_NAMESPACE",      // env.MY_NAMESPACE
+      "binding": "MY_NAMESPACE", // env.MY_NAMESPACE
       "id": "<PRODUCTION_ID>",
-      "preview_id": "<PREVIEW_ID>"
-    }
-  ]
+      "preview_id": "<PREVIEW_ID>",
+    },
+  ],
 }
 ```
 
@@ -45,17 +45,17 @@ Add to `wrangler.jsonc`:
 export default {
   async fetch(request, env, ctx) {
     // Write
-    await env.MY_NAMESPACE.put('key', 'value');
+    await env.MY_NAMESPACE.put("key", "value")
 
     // Read
-    const value = await env.MY_NAMESPACE.get('key');
+    const value = await env.MY_NAMESPACE.get("key")
 
     // Delete
-    await env.MY_NAMESPACE.delete('key');
+    await env.MY_NAMESPACE.delete("key")
 
-    return new Response(value);
-  }
-};
+    return new Response(value)
+  },
+}
 ```
 
 ---
@@ -65,28 +65,28 @@ export default {
 ### With TTL
 
 ```typescript
-await env.MY_NAMESPACE.put('key', 'value', {
-  expirationTtl: 3600  // 1 hour
-});
+await env.MY_NAMESPACE.put("key", "value", {
+  expirationTtl: 3600, // 1 hour
+})
 ```
 
 ### With Metadata
 
 ```typescript
-await env.MY_NAMESPACE.put('user:123', JSON.stringify({ name: 'Alice' }), {
-  metadata: { role: 'admin', created: Date.now() }
-});
+await env.MY_NAMESPACE.put("user:123", JSON.stringify({ name: "Alice" }), {
+  metadata: { role: "admin", created: Date.now() },
+})
 
-const { value, metadata } = await env.MY_NAMESPACE.getWithMetadata('user:123');
+const { value, metadata } = await env.MY_NAMESPACE.getWithMetadata("user:123")
 ```
 
 ### List Keys
 
 ```typescript
 const { keys } = await env.MY_NAMESPACE.list({
-  prefix: 'user:',
-  limit: 100
-});
+  prefix: "user:",
+  limit: 100,
+})
 ```
 
 ---

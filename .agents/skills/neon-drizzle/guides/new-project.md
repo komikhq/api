@@ -6,12 +6,13 @@
 Complete guide for setting up Drizzle ORM with Neon from scratch.
 
 ### Important:
+
 - Remember to run the neon-plugin:add-neon-docs skill with the parameter SKILL_NAME="neon-drizzle" after completing the guide.
 
 ## Table of Contents
 
 - [New Project Setup](#new-project-setup)
-    - [Important:](#important)
+  - [Important:](#important)
   - [Table of Contents](#table-of-contents)
   - [Workflow Checklist](#workflow-checklist)
   - [Phase 1: Context Detection](#phase-1-context-detection)
@@ -52,6 +53,7 @@ When following this guide, I will track these high-level tasks:
 Auto-detect project context:
 
 **Check Package Manager:**
+
 ```bash
 ls package-lock.json  # → npm
 ls bun.lockb          # → bun
@@ -60,6 +62,7 @@ ls yarn.lock          # → yarn
 ```
 
 **Check Framework:**
+
 ```bash
 grep '"next"' package.json      # → Next.js
 grep '"express"' package.json   # → Express
@@ -67,12 +70,14 @@ grep '"vite"' package.json      # → Vite
 ```
 
 **Check Existing Setup:**
+
 ```bash
 ls drizzle.config.ts   # Already configured?
 ls src/db/schema.ts    # Schema exists?
 ```
 
 **Check Environment Files:**
+
 ```bash
 ls .env .env.local .env.production
 ```
@@ -82,12 +87,14 @@ ls .env .env.local .env.production
 Based on detection, install dependencies:
 
 **For Vercel/Edge Environments (Next.js, Vite on Vercel):**
+
 ```bash
 [package-manager] add drizzle-orm @neondatabase/serverless
 [package-manager] add -D drizzle-kit dotenv @vercel/node
 ```
 
 **For Node.js Servers (Express, Fastify, standard Node):**
+
 ```bash
 [package-manager] add drizzle-orm @neondatabase/serverless ws
 [package-manager] add -D drizzle-kit dotenv @types/ws
@@ -104,6 +111,7 @@ Create configuration files in dependency order:
 Use MCP tools to list or create a Neon project and get its connection string. Write the actual credentials to the environment file (`.env.local` for Next.js, `.env` for other projects). Add the file to `.gitignore`.
 
 **Environment file format:**
+
 ```bash
 DATABASE_URL=postgresql://user:password@host/database?sslmode=require
 ```
@@ -115,42 +123,45 @@ Create `drizzle.config.ts` with explicit environment loading:
 **CRITICAL:** The `config({ path: '...' })` line must match the environment file from Step 3.1.
 
 **For Next.js (using .env.local):**
+
 ```typescript
-import { defineConfig } from 'drizzle-kit';
-import { config } from 'dotenv';
+import { defineConfig } from "drizzle-kit"
+import { config } from "dotenv"
 
 // Load .env.local explicitly
-config({ path: '.env.local' });
+config({ path: ".env.local" })
 
 export default defineConfig({
-  schema: './src/db/schema.ts',
-  out: './src/db/migrations',
-  dialect: 'postgresql',
+  schema: "./src/db/schema.ts",
+  out: "./src/db/migrations",
+  dialect: "postgresql",
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-});
+})
 ```
 
 **For other projects (using .env):**
+
 ```typescript
-import { defineConfig } from 'drizzle-kit';
-import { config } from 'dotenv';
+import { defineConfig } from "drizzle-kit"
+import { config } from "dotenv"
 
 // Load .env explicitly
-config({ path: '.env' });
+config({ path: ".env" })
 
 export default defineConfig({
-  schema: './src/db/schema.ts',
-  out: './src/db/migrations',
-  dialect: 'postgresql',
+  schema: "./src/db/schema.ts",
+  out: "./src/db/migrations",
+  dialect: "postgresql",
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-});
+})
 ```
 
 **Why this matters:**
+
 - Without explicit `config({ path: '...' })`, drizzle-kit may not load environment variables
 - This prevents "url: undefined" errors during migrations
 - The path must match your environment file name from Phase 3.1
@@ -160,23 +171,25 @@ export default defineConfig({
 Create `src/db/index.ts` with appropriate adapter (see `references/adapters.md` for decision guide):
 
 **For Vercel/Edge:**
-```typescript
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
 
-const sql = neon(process.env.DATABASE_URL!);
-export const db = drizzle(sql);
+```typescript
+import { drizzle } from "drizzle-orm/neon-http"
+import { neon } from "@neondatabase/serverless"
+
+const sql = neon(process.env.DATABASE_URL!)
+export const db = drizzle(sql)
 ```
 
 **For Node.js:**
-```typescript
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import ws from 'ws';
 
-neonConfig.webSocketConstructor = ws;
-const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
-export const db = drizzle(pool);
+```typescript
+import { drizzle } from "drizzle-orm/neon-serverless"
+import { Pool, neonConfig } from "@neondatabase/serverless"
+import ws from "ws"
+
+neonConfig.webSocketConstructor = ws
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! })
+export const db = drizzle(pool)
 ```
 
 See `templates/db-http.ts` and `templates/db-websocket.ts` for complete examples.
@@ -188,57 +201,81 @@ Based on app type, create appropriate schema:
 ### 4.1. Common Patterns
 
 **Todo App:**
+
 ```typescript
-import { pgTable, serial, text, boolean, timestamp, varchar } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  serial,
+  text,
+  boolean,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core"
 
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  name: varchar('name', { length: 255 }).notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
-});
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+})
 
-export const todos = pgTable('todos', {
-  id: serial('id').primaryKey(),
-  userId: serial('user_id').notNull().references(() => users.id),
-  title: text('title').notNull(),
-  completed: boolean('completed').default(false),
-  createdAt: timestamp('created_at').defaultNow(),
-});
+export const todos = pgTable("todos", {
+  id: serial("id").primaryKey(),
+  userId: serial("user_id")
+    .notNull()
+    .references(() => users.id),
+  title: text("title").notNull(),
+  completed: boolean("completed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+})
 ```
 
 **Blog App:**
+
 ```typescript
-import { pgTable, serial, text, timestamp, varchar, index } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import {
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  varchar,
+  index,
+} from "drizzle-orm/pg-core"
+import { relations } from "drizzle-orm"
 
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  name: varchar('name', { length: 255 }).notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
-});
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+})
 
-export const posts = pgTable('posts', {
-  id: serial('id').primaryKey(),
-  userId: serial('user_id').notNull().references(() => users.id),
-  title: text('title').notNull(),
-  content: text('content').notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
-}, (table) => ({
-  userIdIdx: index('posts_user_id_idx').on(table.userId),
-}));
+export const posts = pgTable(
+  "posts",
+  {
+    id: serial("id").primaryKey(),
+    userId: serial("user_id")
+      .notNull()
+      .references(() => users.id),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => ({
+    userIdIdx: index("posts_user_id_idx").on(table.userId),
+  })
+)
 
 export const usersRelations = relations(users, ({ many }) => ({
   posts: many(posts),
-}));
+}))
 
 export const postsRelations = relations(posts, ({ one }) => ({
   author: one(users, {
     fields: [posts.userId],
     references: [users.id],
   }),
-}));
+}))
 ```
 
 See `templates/schema-example.ts` for more complex examples.
@@ -258,6 +295,7 @@ This creates SQL files in `src/db/migrations/`.
 ### 5.2. Apply Migration
 
 **Recommended approach (explicit env loading):**
+
 ```bash
 export DATABASE_URL="$(grep DATABASE_URL .env.local | cut -d '=' -f2)" && \
 [package-manager] drizzle-kit migrate
@@ -281,6 +319,7 @@ Add these convenience scripts to your `package.json`:
 ```
 
 **Usage:**
+
 ```bash
 npm run db:generate  # Generate migrations from schema changes
 npm run db:migrate   # Apply pending migrations
@@ -309,4 +348,3 @@ This will add reference links to Neon + Drizzle best practices documentation in 
 ## ✅ Setup Complete!
 
 Your Drizzle + Neon integration is ready to use.
-
