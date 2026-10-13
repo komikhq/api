@@ -7,6 +7,9 @@
   "workers_dev": true,
   "preview_urls": true,
   "keep_vars": true,
+  "assets": { 
+    "directory": "public" 
+  },
   "routes": [
     {
       "pattern": "api.komikhq.dpdns.org",
