@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Hono } from "hono";
-import { authMiddleware, type AppEnv } from "../../src/middleware/auth";
+import { requireSession, sessionMiddleware, type AppEnv } from "../../src/middleware/auth";
 import { createGenreRoutes } from "../../src/routes/genres";
 
 const genreList = [
@@ -25,12 +25,12 @@ const genreResponse = {
 
 function createTestApp() {
   const app = new Hono<AppEnv>();
-  app.use("*", authMiddleware());
+  app.use("*", sessionMiddleware());
   app.route(
     "/v1/genres",
     createGenreRoutes(async () => genreList),
   );
-  app.get("/v1/private", (c) => c.json({ ok: true }));
+  app.get("/v1/private", requireSession, (c) => c.json({ ok: true }));
   return app;
 }
 

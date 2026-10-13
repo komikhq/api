@@ -1,6 +1,6 @@
 # API Contract and OpenAPI Conventions
 
-The canonical API reference is served at `/openapi.json` and rendered by Swagger UI at `/`. Keep the OpenAPI contract in `src/routes/api-docs.ts` synchronized with the runtime handlers and mounts in `src/index.ts` and `src/routes/`.
+The canonical API reference is served at `/openapi.json` and rendered by Swagger UI at `/`. Each route module owns its OpenAPI schemas, route definitions, and handlers. The root application in `src/index.ts` mounts those modules, and `src/routes/api-docs.ts` only configures the document metadata, security schemes, and Swagger UI.
 
 ## Naming and organization
 
@@ -16,7 +16,7 @@ The canonical API reference is served at `/openapi.json` and rendered by Swagger
 - Public operations omit a security requirement.
 - Operations that require a signed-in user declare the session cookie and bearer token as alternative security schemes.
 - Administrator operations use the same session mechanisms and state the administrator role requirement in their descriptions.
-- Better Auth is mounted as a catch-all handler. Its configured core operations are listed explicitly; if authentication configuration or plugins add operations, update this catalog and its tests.
+- Better Auth is mounted as a catch-all handler in `src/routes/auth.ts`; document its supported operations in that module when its configuration changes.
 
 ## Request and response schemas
 
@@ -28,7 +28,9 @@ The canonical API reference is served at `/openapi.json` and rendered by Swagger
 
 ## Adding or changing a route
 
-1. Update the runtime route handler and its mount.
-2. Add or update the matching operation in `src/routes/api-docs.ts`, including parameters, body, access requirements, status codes, and English descriptions.
-3. Run `node --import tsx --test tests/routes/docs.test.ts`, `pnpm test`, and `pnpm typecheck`.
-4. Inspect `/openapi.json` locally and confirm Swagger UI can exercise the operation with the documented inputs.
+1. Define the route's Zod request and response schemas and its `createRoute` contract in the owning route module.
+2. Register the handler with `app.openapi(route, handler)` in that module. Keep authentication middleware at the module or route boundary, as appropriate.
+3. Mount the module in `src/index.ts` without duplicating endpoint metadata in the API docs module.
+4. Add or update OpenAPI coverage assertions in `tests/routes/docs.test.ts`.
+5. Run `node --import tsx --test tests/routes/docs.test.ts`, `pnpm test`, and `pnpm typecheck`.
+6. Inspect `/openapi.json` locally and confirm Swagger UI can exercise the operation with the documented inputs.

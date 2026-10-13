@@ -1,19 +1,132 @@
-import { Hono } from "hono";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { AppEnv } from "@/middleware/auth";
 import { ComicService } from "@/services/comic.service";
 import { ChapterService } from "@/services/chapter.service";
 import { successResponse, errorResponse } from "@/utils/response";
+import { CommonErrorResponses } from "@/schemas/common";
 
-export const comicRoutes = new Hono<AppEnv>();
+const ComicDataSchema = z
+  .unknown()
+  .openapi({ type: "object", description: "Comic response data." });
+const TrendingRoute = createRoute({
+  method: "get",
+  path: "/trending",
+  tags: ["Comics"],
+  operationId: "listTrendingComics",
+  summary: "List trending comics",
+  description: "Returns daily, weekly, or all-time popular comics.",
+  request: { query: z.object({ period: z.string().optional(), limit: z.string().optional() }) },
+  responses: {
+    200: {
+      description: "Trending comics and the selected period.",
+      content: {
+        "application/json": {
+          schema: z.object({ period: z.string(), comics: z.array(z.unknown()), total: z.number() }),
+        },
+      },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+const BrowseComicsRoute = createRoute({
+  method: "get",
+  path: "/browse",
+  tags: ["Comics"],
+  operationId: "browseComics",
+  summary: "Browse and search comics",
+  description: "Filters the public comic catalog and returns paginated results.",
+  request: {
+    query: z.object({
+      search: z.string().optional(),
+      q: z.string().optional(),
+      genre: z.string().optional(),
+      status: z.string().optional(),
+      type: z.string().optional(),
+      sort: z.string().optional(),
+      page: z.string().optional(),
+      limit: z.string().optional(),
+    }),
+  },
+  responses: {
+    200: {
+      description: "The matching comics and pagination metadata.",
+      content: {
+        "application/json": {
+          schema: z.object({
+            query: z.unknown(),
+            comics: z.array(z.unknown()),
+            pagination: z.unknown(),
+          }),
+        },
+      },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+const GetPublicChapterRoute = createRoute({
+  method: "get",
+  path: "/{slug}/chapters/{chapterSlug}",
+  tags: ["Chapters"],
+  operationId: "getPublicChapter",
+  summary: "Get a public comic chapter",
+  description: "Returns chapter reader data for the specified comic and chapter slugs.",
+  request: { params: z.object({ slug: z.string(), chapterSlug: z.string() }) },
+  responses: {
+    200: {
+      description: "The chapter and reader data.",
+      content: { "application/json": { schema: ComicDataSchema } },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+const GetComicRoute = createRoute({
+  method: "get",
+  path: "/{slug}",
+  tags: ["Comics"],
+  operationId: "getComicBySlug",
+  summary: "Get a comic by slug",
+  description: "Returns public comic details for the specified slug.",
+  request: { params: z.object({ slug: z.string() }) },
+  responses: {
+    200: {
+      description: "Comic details.",
+      content: { "application/json": { schema: ComicDataSchema } },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+
+export const comicRoutes = new OpenAPIHono<AppEnv>();
 
 // GET /v1/comics/trending - Get trending / featured comics (period: daily, weekly, popular)
-comicRoutes.get("/trending", async (c) => {
+comicRoutes.openapi(TrendingRoute, async (c) => {
   try {
-    const periodParam = c.req.query("period") || "daily";
+    const { period: queryPeriod, limit: queryLimit } = c.req.valid("query");
+    const periodParam = queryPeriod || "daily";
     const period = (
       ["daily", "weekly", "popular"].includes(periodParam) ? periodParam : "daily"
     ) as "daily" | "weekly" | "popular";
-    const limit = parseInt(c.req.query("limit") || "20", 10);
+    const limit = parseInt(queryLimit || "20", 10);
 
     const service = new ComicService(c.env.DATABASE_URL, c.env);
     const result = await service.getTrendingComics(period, limit);
@@ -29,15 +142,16 @@ comicRoutes.get("/trending", async (c) => {
 });
 
 // GET /v1/comics/browse - Browse & search comics with filters
-comicRoutes.get("/browse", async (c) => {
+comicRoutes.openapi(BrowseComicsRoute, async (c) => {
   try {
-    const search = c.req.query("search") || c.req.query("q") || "";
-    const genre = c.req.query("genre") || "";
-    const status = c.req.query("status") || "";
-    const type = c.req.query("type") || "";
-    const sort = c.req.query("sort") || "";
-    const page = parseInt(c.req.query("page") || "1", 10);
-    const limit = parseInt(c.req.query("limit") || "20", 10);
+    const query = c.req.valid("query");
+    const search = query.search || query.q || "";
+    const genre = query.genre || "";
+    const status = query.status || "";
+    const type = query.type || "";
+    const sort = query.sort || "";
+    const page = parseInt(query.page || "1", 10);
+    const limit = parseInt(query.limit || "20", 10);
 
     const service = new ComicService(c.env.DATABASE_URL, c.env);
     const result = await service.getComicsList({
@@ -66,10 +180,9 @@ comicRoutes.get("/browse", async (c) => {
 });
 
 // GET /v1/comics/:slug/chapters/:chapterSlug - Public chapter detail & reader pages
-comicRoutes.get("/:slug/chapters/:chapterSlug", async (c) => {
+comicRoutes.openapi(GetPublicChapterRoute, async (c) => {
   try {
-    const comicSlug = c.req.param("slug");
-    const chapterSlug = c.req.param("chapterSlug");
+    const { slug: comicSlug, chapterSlug } = c.req.valid("param");
 
     const chapterService = new ChapterService(c.env.DATABASE_URL, c.env);
     const data = await chapterService.getPublicChapterBySlugs(comicSlug, chapterSlug);
@@ -81,9 +194,9 @@ comicRoutes.get("/:slug/chapters/:chapterSlug", async (c) => {
 });
 
 // GET /v1/comics/:slug - Get single comic details by slug
-comicRoutes.get("/:slug", async (c) => {
+comicRoutes.openapi(GetComicRoute, async (c) => {
   try {
-    const slug = c.req.param("slug");
+    const { slug } = c.req.valid("param");
     const service = new ComicService(c.env.DATABASE_URL, c.env);
     const comicData = await service.getComicBySlug(slug);
 

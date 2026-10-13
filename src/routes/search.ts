@@ -1,13 +1,64 @@
-import { Hono } from "hono";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { AppEnv } from "@/middleware/auth";
 import { ComicSearchService, type ComicSuggestion } from "@/services/comic-search.service";
 import { normalizeComicSearchText } from "@/lib/comic-search";
 import { errorResponse, successResponse } from "@/utils/response";
+import { CommonErrorResponses } from "@/schemas/common";
 
 const DEFAULT_LIMIT = 6;
 const MAX_LIMIT = 6;
 const MAX_QUERY_LENGTH = 80;
 const CACHE_TTL_SECONDS = 300;
+
+const SuggestionSchema = z
+  .object({
+    uuid: z.string(),
+    slug: z.string(),
+    title: z.string(),
+    matchedTitle: z.string(),
+    coverUrl: z.string().nullable(),
+    type: z.string().nullable(),
+    status: z.string().nullable(),
+  })
+  .openapi("ComicSuggestion");
+
+const SuggestionsRoute = createRoute({
+  method: "get",
+  path: "/suggestions",
+  tags: ["Search"],
+  operationId: "getComicSearchSuggestions",
+  summary: "Get comic search suggestions",
+  description:
+    "Returns up to six title suggestions. Queries shorter than two characters return an empty list.",
+  request: {
+    query: z.object({
+      q: z.string().optional().openapi({ description: "Search text.", example: "solo leveling" }),
+      limit: z.coerce.number().int().min(1).optional().openapi({
+        description: "Maximum number of suggestions. Values are capped at six.",
+        example: 6,
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      description: "Matching comic suggestions.",
+      content: {
+        "application/json": {
+          schema: z.object({
+            query: z.string(),
+            suggestions: z.array(SuggestionSchema),
+          }),
+        },
+      },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
 
 type SuggestionLoader = (
   databaseUrl: string,
@@ -20,10 +71,11 @@ export function createSearchRoutes(
   loadSuggestions: SuggestionLoader = (databaseUrl, query, limit, env) =>
     new ComicSearchService(databaseUrl, env).getSuggestions(query, limit),
 ) {
-  const routes = new Hono<AppEnv>();
+  const routes = new OpenAPIHono<AppEnv>();
 
-  routes.get("/suggestions", async (c) => {
-    const query = normalizeComicSearchText(c.req.query("q") || "");
+  routes.openapi(SuggestionsRoute, async (c) => {
+    const { q, limit: rawLimit } = c.req.valid("query");
+    const query = normalizeComicSearchText(q || "");
     const queryLength = Array.from(query).length;
     if (queryLength < 2) {
       return successResponse(c, { query, suggestions: [] });
@@ -32,7 +84,6 @@ export function createSearchRoutes(
       return errorResponse(c, "Query must not exceed 80 characters.", 400);
     }
 
-    const rawLimit = c.req.query("limit");
     const requestedLimit = rawLimit === undefined ? DEFAULT_LIMIT : Number(rawLimit);
     const limit = Number.isInteger(requestedLimit)
       ? Math.max(1, Math.min(requestedLimit, MAX_LIMIT))

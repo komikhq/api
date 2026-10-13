@@ -1,17 +1,214 @@
-import { Hono } from "hono";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { AppEnv } from "@/middleware/auth";
 import { requireAdmin } from "@/middleware/admin";
 import { ChapterService } from "@/services/chapter.service";
 import { successResponse, errorResponse } from "@/utils/response";
+import { AdminSecurity, CommonErrorResponses } from "@/schemas/common";
 
-export const adminChapterRoutes = new Hono<AppEnv>();
+const ChapterDataSchema = z.unknown().openapi({ type: "object", description: "Chapter data." });
+const ComicChapterParams = z.object({ comicId: z.string() });
+const ChapterParams = z.object({ comicId: z.string(), id: z.string() });
+const ChapterInitBody = z.object({
+  chapterNumber: z.union([z.string(), z.number()]),
+  title: z.string().optional(),
+  accessTier: z.string().optional(),
+  isEarlyAccess: z.boolean().optional(),
+  totalPages: z.number().int().optional(),
+});
+const ChapterFinalizeBody = z.object({ totalPages: z.number().int() });
+const ChapterResponses = {
+  400: CommonErrorResponses[400],
+  401: CommonErrorResponses[401],
+  403: CommonErrorResponses[403],
+  404: CommonErrorResponses[404],
+  409: CommonErrorResponses[409],
+  500: CommonErrorResponses[500],
+};
+const ListChaptersRoute = createRoute({
+  method: "get",
+  path: "/comics/{comicId}/chapters",
+  tags: ["Administration"],
+  operationId: "adminListChapters",
+  summary: "List comic chapters",
+  description: "Lists chapters for a comic. Requires administrator access.",
+  security: AdminSecurity,
+  request: { params: ComicChapterParams },
+  responses: {
+    200: {
+      description: "The comic's chapters.",
+      content: { "application/json": { schema: ChapterDataSchema } },
+    },
+    ...ChapterResponses,
+  },
+});
+const InitializeChapterRoute = createRoute({
+  method: "post",
+  path: "/comics/{comicId}/chapters/init",
+  tags: ["Administration"],
+  operationId: "adminInitializeChapter",
+  summary: "Initialize a chapter upload",
+  description: "Creates chapter metadata before pages are uploaded.",
+  security: AdminSecurity,
+  request: {
+    params: ComicChapterParams,
+    body: { content: { "application/json": { schema: ChapterInitBody } } },
+  },
+  responses: {
+    201: {
+      description: "The chapter upload was initialized.",
+      content: { "application/json": { schema: ChapterDataSchema } },
+    },
+    ...ChapterResponses,
+  },
+});
+const UploadChapterPageRoute = createRoute({
+  method: "post",
+  path: "/comics/{comicId}/chapters/{id}/pages/upload",
+  tags: ["Administration"],
+  operationId: "adminUploadChapterPage",
+  summary: "Upload a chapter page",
+  description: "Uploads a single page image for a chapter.",
+  security: AdminSecurity,
+  request: {
+    params: ChapterParams,
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: z.object({
+            pageNumber: z.number().int().optional(),
+            file: z.file().openapi({ type: "string", format: "binary" }),
+            width: z.number().int().optional(),
+            height: z.number().int().optional(),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: "The page was uploaded.",
+      content: { "application/json": { schema: ChapterDataSchema } },
+    },
+    ...ChapterResponses,
+  },
+});
+const FinalizeChapterRoute = createRoute({
+  method: "post",
+  path: "/comics/{comicId}/chapters/{id}/finalize",
+  tags: ["Administration"],
+  operationId: "adminFinalizeChapter",
+  summary: "Finalize a chapter",
+  description: "Sets the final page count for a chapter.",
+  security: AdminSecurity,
+  request: {
+    params: ChapterParams,
+    body: { content: { "application/json": { schema: ChapterFinalizeBody } } },
+  },
+  responses: {
+    200: {
+      description: "The chapter was finalized.",
+      content: { "application/json": { schema: ChapterDataSchema } },
+    },
+    ...ChapterResponses,
+  },
+});
+const CreateChapterRoute = createRoute({
+  method: "post",
+  path: "/comics/{comicId}/chapters",
+  tags: ["Administration"],
+  operationId: "adminCreateChapter",
+  summary: "Create a chapter with pages",
+  description: "Creates a chapter and uploads its pages in one request.",
+  security: AdminSecurity,
+  request: {
+    params: ComicChapterParams,
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: z.object({
+            chapterNumber: z.string(),
+            title: z.string().optional(),
+            accessTier: z.string().optional(),
+            isEarlyAccess: z.boolean().optional(),
+            pages: z
+              .array(z.file())
+              .openapi({ type: "array", items: { type: "string", format: "binary" } }),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: "The chapter and pages were created.",
+      content: { "application/json": { schema: ChapterDataSchema } },
+    },
+    ...ChapterResponses,
+  },
+});
+const GetChapterRoute = createRoute({
+  method: "get",
+  path: "/comics/{comicId}/chapters/{id}",
+  tags: ["Administration"],
+  operationId: "adminGetChapter",
+  summary: "Get chapter details",
+  description: "Gets chapter metadata and pages by ID.",
+  security: AdminSecurity,
+  request: { params: ChapterParams },
+  responses: {
+    200: {
+      description: "The chapter and its pages.",
+      content: { "application/json": { schema: ChapterDataSchema } },
+    },
+    ...ChapterResponses,
+  },
+});
+const UpdateChapterRoute = createRoute({
+  method: "put",
+  path: "/comics/{comicId}/chapters/{id}",
+  tags: ["Administration"],
+  operationId: "adminUpdateChapter",
+  summary: "Update chapter metadata",
+  description: "Updates chapter metadata by ID.",
+  security: AdminSecurity,
+  request: {
+    params: ChapterParams,
+    body: { content: { "application/json": { schema: z.object({}).passthrough() } } },
+  },
+  responses: {
+    200: {
+      description: "The chapter was updated.",
+      content: { "application/json": { schema: ChapterDataSchema } },
+    },
+    ...ChapterResponses,
+  },
+});
+const DeleteChapterRoute = createRoute({
+  method: "delete",
+  path: "/comics/{comicId}/chapters/{id}",
+  tags: ["Administration"],
+  operationId: "adminDeleteChapter",
+  summary: "Delete a chapter",
+  description: "Deletes a chapter and its associated pages.",
+  security: AdminSecurity,
+  request: { params: ChapterParams },
+  responses: {
+    200: {
+      description: "The chapter was deleted.",
+      content: { "application/json": { schema: ChapterDataSchema } },
+    },
+    ...ChapterResponses,
+  },
+});
 
-adminChapterRoutes.use("*", requireAdmin());
+export const adminChapterRoutes = new OpenAPIHono<AppEnv>();
+
+adminChapterRoutes.use("*", requireAdmin);
 
 // GET /v1/admin/comics/:comicId/chapters - List chapters for comic
-adminChapterRoutes.get("/comics/:comicId/chapters", async (c) => {
+adminChapterRoutes.openapi(ListChaptersRoute, async (c) => {
   try {
-    const comicId = c.req.param("comicId");
+    const { comicId } = c.req.valid("param");
     const service = new ChapterService(c.env.DATABASE_URL, c.env);
 
     const chapterList = await service.getChaptersByComicId(comicId);
@@ -22,10 +219,10 @@ adminChapterRoutes.get("/comics/:comicId/chapters", async (c) => {
 });
 
 // POST /v1/admin/comics/:comicId/chapters/init - Initialize new chapter
-adminChapterRoutes.post("/comics/:comicId/chapters/init", async (c) => {
+adminChapterRoutes.openapi(InitializeChapterRoute, async (c) => {
   try {
-    const comicId = c.req.param("comicId");
-    const body = await c.req.json();
+    const { comicId } = c.req.valid("param");
+    const body = c.req.valid("json");
     const service = new ChapterService(c.env.DATABASE_URL, c.env);
 
     const result = await service.initChapter({
@@ -44,9 +241,9 @@ adminChapterRoutes.post("/comics/:comicId/chapters/init", async (c) => {
 });
 
 // POST /v1/admin/comics/:comicId/chapters/:id/pages/upload - Upload single page image
-adminChapterRoutes.post("/comics/:comicId/chapters/:id/pages/upload", async (c) => {
+adminChapterRoutes.openapi(UploadChapterPageRoute, async (c) => {
   try {
-    const chapterId = c.req.param("id");
+    const { id: chapterId } = c.req.valid("param");
     const formData = await c.req.formData();
     const service = new ChapterService(c.env.DATABASE_URL, c.env);
 
@@ -73,11 +270,10 @@ adminChapterRoutes.post("/comics/:comicId/chapters/:id/pages/upload", async (c) 
 });
 
 // POST /v1/admin/comics/:comicId/chapters/:id/finalize - Finalize chapter total pages
-adminChapterRoutes.post("/comics/:comicId/chapters/:id/finalize", async (c) => {
+adminChapterRoutes.openapi(FinalizeChapterRoute, async (c) => {
   try {
-    const comicId = c.req.param("comicId");
-    const chapterId = c.req.param("id");
-    const body = await c.req.json();
+    const { comicId, id: chapterId } = c.req.valid("param");
+    const body = c.req.valid("json");
     const service = new ChapterService(c.env.DATABASE_URL, c.env);
 
     const totalPages = Number(body.totalPages) || 0;
@@ -90,9 +286,9 @@ adminChapterRoutes.post("/comics/:comicId/chapters/:id/finalize", async (c) => {
 });
 
 // POST /v1/admin/comics/:comicId/chapters - Legacy single-request multi-page upload
-adminChapterRoutes.post("/comics/:comicId/chapters", async (c) => {
+adminChapterRoutes.openapi(CreateChapterRoute, async (c) => {
   try {
-    const comicId = c.req.param("comicId");
+    const { comicId } = c.req.valid("param");
     const formData = await c.req.formData();
     const service = new ChapterService(c.env.DATABASE_URL, c.env);
 
@@ -120,9 +316,9 @@ adminChapterRoutes.post("/comics/:comicId/chapters", async (c) => {
 });
 
 // GET /v1/admin/comics/:comicId/chapters/:id - Get chapter detail + pages
-adminChapterRoutes.get("/comics/:comicId/chapters/:id", async (c) => {
+adminChapterRoutes.openapi(GetChapterRoute, async (c) => {
   try {
-    const chapterId = c.req.param("id");
+    const { id: chapterId } = c.req.valid("param");
     const service = new ChapterService(c.env.DATABASE_URL, c.env);
 
     const result = await service.getChapterById(chapterId);
@@ -133,10 +329,10 @@ adminChapterRoutes.get("/comics/:comicId/chapters/:id", async (c) => {
 });
 
 // PUT /v1/admin/comics/:comicId/chapters/:id - Update chapter metadata
-adminChapterRoutes.put("/comics/:comicId/chapters/:id", async (c) => {
+adminChapterRoutes.openapi(UpdateChapterRoute, async (c) => {
   try {
-    const chapterId = c.req.param("id");
-    const body = await c.req.json();
+    const { id: chapterId } = c.req.valid("param");
+    const body = c.req.valid("json");
     const service = new ChapterService(c.env.DATABASE_URL, c.env);
 
     const updated = await service.updateChapter(chapterId, body);
@@ -147,10 +343,9 @@ adminChapterRoutes.put("/comics/:comicId/chapters/:id", async (c) => {
 });
 
 // DELETE /v1/admin/comics/:comicId/chapters/:id - Delete chapter
-adminChapterRoutes.delete("/comics/:comicId/chapters/:id", async (c) => {
+adminChapterRoutes.openapi(DeleteChapterRoute, async (c) => {
   try {
-    const comicId = c.req.param("comicId");
-    const chapterId = c.req.param("id");
+    const { comicId, id: chapterId } = c.req.valid("param");
     const service = new ChapterService(c.env.DATABASE_URL, c.env);
 
     const chNum = await service.deleteChapter(comicId, chapterId);

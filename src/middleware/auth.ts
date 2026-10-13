@@ -50,30 +50,16 @@ export interface AppEnv {
   };
 }
 
-export function authMiddleware(): MiddlewareHandler<AppEnv> {
+export function sessionMiddleware(): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
-    const publicPaths = [
-      "/v1/auth",
-      "/v1/view",
-      "/v1/comics",
-      "/v1/search",
-      "/v1/comments",
-      "/v1/genres",
-      "/v1/sitemaps",
-      "/v1/realtime",
-    ];
-
-    const isPublic = publicPaths.some((path) => c.req.path.startsWith(path));
+    if (c.req.path.startsWith("/v1/auth/")) return next();
 
     const token =
       getCookie(c, "komikhq.session_token") ||
       getCookie(c, "better-auth.session_token") ||
       c.req.header("Authorization")?.replace("Bearer ", "");
 
-    if (!token) {
-      if (isPublic) return next();
-      return c.json({ error: "Unauthorized" }, 401);
-    }
+    if (!token) return next();
 
     // 1. Edge KV Lookup (< 1ms CPU)
     const cachedSession = await c.env.KV_KOMIKHQ.get<UserSessionPayload>(
@@ -93,10 +79,7 @@ export function authMiddleware(): MiddlewareHandler<AppEnv> {
         headers: c.req.raw.headers,
       });
 
-      if (!sessionData || !sessionData.user) {
-        if (isPublic) return next();
-        return c.json({ error: "Session expired or invalid" }, 401);
-      }
+      if (!sessionData || !sessionData.user) return next();
 
       const userPayload: UserSessionPayload = {
         id: sessionData.user.id,
@@ -114,10 +97,18 @@ export function authMiddleware(): MiddlewareHandler<AppEnv> {
 
       c.set("user", userPayload);
       c.set("session", sessionData.session);
-      return next();
     } catch (err) {
-      if (isPublic) return next();
-      return c.json({ error: "Authentication failed" }, 401);
+      console.warn("[Auth Middleware] Failed to resolve optional session:", err);
     }
+
+    return next();
   };
 }
+
+export const requireSession: MiddlewareHandler<AppEnv> = async (c, next) => {
+  if (!c.get("user")) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  await next();
+};

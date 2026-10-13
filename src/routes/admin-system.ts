@@ -1,16 +1,82 @@
-import { Hono } from "hono";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { AppEnv } from "@/middleware/auth";
 import { requireAdmin } from "@/middleware/admin";
 import { syncViewsDelta } from "@/cron/sync-views-delta";
 import { refreshRankings } from "@/cron/refresh-rankings";
 import { successResponse, errorResponse } from "@/utils/response";
+import { AdminSecurity, CommonErrorResponses } from "@/schemas/common";
 
-export const adminSystemRoutes = new Hono<AppEnv>();
+const MaintenanceStatusRoute = createRoute({
+  method: "get",
+  path: "/system/maintenance-status",
+  tags: ["Administration"],
+  operationId: "getSystemMaintenanceStatus",
+  summary: "Get system maintenance status",
+  description:
+    "Returns KV, analytics, storage, and synchronization status. Requires administrator access.",
+  security: AdminSecurity,
+  responses: {
+    200: {
+      description: "Current maintenance status.",
+      content: { "application/json": { schema: z.unknown().openapi({ type: "object" }) } },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+const SyncViewsRoute = createRoute({
+  method: "post",
+  path: "/system/sync-views",
+  tags: ["Administration"],
+  operationId: "synchronizeViewCounts",
+  summary: "Synchronize view counts",
+  description: "Synchronizes view deltas and refreshes rankings. Requires administrator access.",
+  security: AdminSecurity,
+  responses: {
+    200: {
+      description: "View counts and rankings were synchronized.",
+      content: { "application/json": { schema: z.unknown().openapi({ type: "object" }) } },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+const ClearSearchCacheRoute = createRoute({
+  method: "post",
+  path: "/system/clear-search-cache",
+  tags: ["Administration"],
+  operationId: "clearSearchSuggestionCache",
+  summary: "Clear the search suggestion cache",
+  description: "Invalidates cached comic search suggestions. Requires administrator access.",
+  security: AdminSecurity,
+  responses: {
+    200: {
+      description: "Search suggestion cache was cleared.",
+      content: { "application/json": { schema: z.unknown().openapi({ type: "object" }) } },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
 
-adminSystemRoutes.use("*", requireAdmin());
+export const adminSystemRoutes = new OpenAPIHono<AppEnv>();
+
+adminSystemRoutes.use("*", requireAdmin);
 
 // GET /v1/admin/system/maintenance-status - Get live metrics for KV queues & storage
-adminSystemRoutes.get("/system/maintenance-status", async (c) => {
+adminSystemRoutes.openapi(MaintenanceStatusRoute, async (c) => {
   try {
     let cachedSearchKeysCount = 0;
     let kvHealthy = true;
@@ -66,7 +132,7 @@ adminSystemRoutes.get("/system/maintenance-status", async (c) => {
 });
 
 // POST /v1/admin/system/sync-views - Force sync view deltas & refresh rankings
-adminSystemRoutes.post("/system/sync-views", async (c) => {
+adminSystemRoutes.openapi(SyncViewsRoute, async (c) => {
   try {
     const syncResult = await syncViewsDelta(c.env);
     const rankingResult = await refreshRankings(c.env);
@@ -87,7 +153,7 @@ adminSystemRoutes.post("/system/sync-views", async (c) => {
 });
 
 // POST /v1/admin/system/clear-search-cache - Invalidate search suggestions cache in KV
-adminSystemRoutes.post("/system/clear-search-cache", async (c) => {
+adminSystemRoutes.openapi(ClearSearchCacheRoute, async (c) => {
   try {
     if (!c.env.KV_KOMIKHQ) {
       return errorResponse(c, "KV_KOMIKHQ binding is not available.", 500);

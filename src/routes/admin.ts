@@ -1,20 +1,211 @@
-import { Hono } from "hono";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { AppEnv } from "@/middleware/auth";
 import { requireAdmin } from "@/middleware/admin";
 import { AdminService } from "@/services/admin.service";
 import { successResponse, errorResponse } from "@/utils/response";
+import { AdminSecurity, CommonErrorResponses } from "@/schemas/common";
 
-export const adminRoutes = new Hono<AppEnv>();
+const AdminDataSchema = z
+  .unknown()
+  .openapi({ type: "object", description: "Administrative response data." });
+const AdminUsersRoute = createRoute({
+  method: "get",
+  path: "/users",
+  tags: ["Administration"],
+  operationId: "adminListUsers",
+  summary: "List users",
+  description: "Searches and returns a paginated user list. Requires administrator access.",
+  security: AdminSecurity,
+  request: {
+    query: z.object({
+      q: z.string().optional(),
+      page: z.coerce.number().int().optional(),
+      limit: z.coerce.number().int().optional(),
+    }),
+  },
+  responses: {
+    200: {
+      description: "Matching users and pagination metadata.",
+      content: { "application/json": { schema: AdminDataSchema } },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+const AdminCreateUserRoute = createRoute({
+  method: "post",
+  path: "/users",
+  tags: ["Administration"],
+  operationId: "adminCreateUser",
+  summary: "Create a user",
+  description: "Creates a user account. Requires administrator access.",
+  security: AdminSecurity,
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: z
+            .object({ name: z.string(), email: z.string().email(), password: z.string() })
+            .passthrough(),
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: "The user was created.",
+      content: { "application/json": { schema: AdminDataSchema } },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+const AdminUpdateUserRoute = createRoute({
+  method: "put",
+  path: "/users/{id}",
+  tags: ["Administration"],
+  operationId: "adminUpdateUser",
+  summary: "Update a user",
+  description: "Updates user details by ID. Requires administrator access.",
+  security: AdminSecurity,
+  request: {
+    params: z.object({ id: z.string() }),
+    body: { content: { "application/json": { schema: z.object({}).passthrough() } } },
+  },
+  responses: {
+    200: {
+      description: "The user was updated.",
+      content: { "application/json": { schema: AdminDataSchema } },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+const AdminDeleteUserRoute = createRoute({
+  method: "delete",
+  path: "/users/{id}",
+  tags: ["Administration"],
+  operationId: "adminDeleteUser",
+  summary: "Delete a user",
+  description: "Permanently deletes a user account by ID. Requires administrator access.",
+  security: AdminSecurity,
+  request: { params: z.object({ id: z.string() }) },
+  responses: {
+    200: {
+      description: "The user was deleted.",
+      content: { "application/json": { schema: AdminDataSchema } },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+const AdminStatsRoute = createRoute({
+  method: "get",
+  path: "/stats",
+  tags: ["Administration"],
+  operationId: "adminGetPlatformStats",
+  summary: "Get platform statistics",
+  description: "Returns administrative platform statistics.",
+  security: AdminSecurity,
+  responses: {
+    200: {
+      description: "Platform statistics.",
+      content: { "application/json": { schema: AdminDataSchema } },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+const AdminReportsRoute = createRoute({
+  method: "get",
+  path: "/reports",
+  tags: ["Moderation"],
+  operationId: "adminListModerationReports",
+  summary: "List moderation reports",
+  description: "Returns paginated moderation reports, optionally filtered by status.",
+  security: AdminSecurity,
+  request: {
+    query: z.object({
+      page: z.coerce.number().int().optional(),
+      limit: z.coerce.number().int().optional(),
+      status: z.string().optional(),
+    }),
+  },
+  responses: {
+    200: {
+      description: "Matching reports and pagination metadata.",
+      content: { "application/json": { schema: AdminDataSchema } },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+const AdminReportActionRoute = createRoute({
+  method: "post",
+  path: "/reports/{id}/action",
+  tags: ["Moderation"],
+  operationId: "adminResolveModerationReport",
+  summary: "Resolve a moderation report",
+  description: "Performs a moderation action on a report. Requires administrator access.",
+  security: AdminSecurity,
+  request: {
+    params: z.object({ id: z.string() }),
+    body: {
+      content: {
+        "application/json": { schema: z.object({ action: z.enum(["delete_comment", "dismiss"]) }) },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "The report action was completed.",
+      content: { "application/json": { schema: AdminDataSchema } },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
+
+export const adminRoutes = new OpenAPIHono<AppEnv>();
 
 // Apply admin guard to all /v1/admin/* routes
-adminRoutes.use("*", requireAdmin());
+adminRoutes.use("*", requireAdmin);
 
 // GET /v1/admin/users - Get paginated & searchable users list
-adminRoutes.get("/users", async (c) => {
+adminRoutes.openapi(AdminUsersRoute, async (c) => {
   try {
-    const query = c.req.query("q") || "";
-    const page = parseInt(c.req.query("page") || "1", 10);
-    const limit = parseInt(c.req.query("limit") || "20", 10);
+    const params = c.req.valid("query");
+    const query = params.q || "";
+    const page = params.page || 1;
+    const limit = params.limit || 20;
 
     const service = new AdminService(c.env.DATABASE_URL, c.env);
     const result = await service.listUsers({ query, page, limit });
@@ -26,9 +217,9 @@ adminRoutes.get("/users", async (c) => {
 });
 
 // POST /v1/admin/users - Create new user remotely
-adminRoutes.post("/users", async (c) => {
+adminRoutes.openapi(AdminCreateUserRoute, async (c) => {
   try {
-    const body = await c.req.json();
+    const body = c.req.valid("json");
     const service = new AdminService(c.env.DATABASE_URL, c.env);
 
     const user = await service.createUser(body);
@@ -39,10 +230,10 @@ adminRoutes.post("/users", async (c) => {
 });
 
 // PUT /v1/admin/users/:id - Update user details
-adminRoutes.put("/users/:id", async (c) => {
+adminRoutes.openapi(AdminUpdateUserRoute, async (c) => {
   try {
-    const userId = c.req.param("id");
-    const body = await c.req.json();
+    const { id: userId } = c.req.valid("param");
+    const body = c.req.valid("json");
     const service = new AdminService(c.env.DATABASE_URL, c.env);
 
     const updatedUser = await service.updateUser(userId, body, c.req.raw.headers);
@@ -53,9 +244,9 @@ adminRoutes.put("/users/:id", async (c) => {
 });
 
 // DELETE /v1/admin/users/:id - Remove user permanently
-adminRoutes.delete("/users/:id", async (c) => {
+adminRoutes.openapi(AdminDeleteUserRoute, async (c) => {
   try {
-    const userId = c.req.param("id");
+    const { id: userId } = c.req.valid("param");
     const currentUser = c.get("user");
     const service = new AdminService(c.env.DATABASE_URL, c.env);
 
@@ -70,7 +261,7 @@ adminRoutes.delete("/users/:id", async (c) => {
 });
 
 // GET /v1/admin/stats - System stats overview
-adminRoutes.get("/stats", async (c) => {
+adminRoutes.openapi(AdminStatsRoute, async (c) => {
   try {
     const service = new AdminService(c.env.DATABASE_URL, c.env);
     const stats = await service.getStats();
@@ -81,11 +272,12 @@ adminRoutes.get("/stats", async (c) => {
 });
 
 // GET /v1/admin/reports - Get moderation reports
-adminRoutes.get("/reports", async (c) => {
+adminRoutes.openapi(AdminReportsRoute, async (c) => {
   try {
-    const page = parseInt(c.req.query("page") || "1", 10);
-    const limit = parseInt(c.req.query("limit") || "20", 10);
-    const status = c.req.query("status") || undefined;
+    const params = c.req.valid("query");
+    const page = params.page || 1;
+    const limit = params.limit || 20;
+    const status = params.status || undefined;
 
     const service = new AdminService(c.env.DATABASE_URL, c.env);
     const result = await service.listReports(page, limit, status);
@@ -97,10 +289,10 @@ adminRoutes.get("/reports", async (c) => {
 });
 
 // POST /v1/admin/reports/:id/action - Take action on moderation report
-adminRoutes.post("/reports/:id/action", async (c) => {
+adminRoutes.openapi(AdminReportActionRoute, async (c) => {
   try {
-    const reportId = c.req.param("id");
-    const body = await c.req.json();
+    const { id: reportId } = c.req.valid("param");
+    const body = c.req.valid("json");
     const service = new AdminService(c.env.DATABASE_URL, c.env);
 
     const result = await service.resolveReport(reportId, body.action);

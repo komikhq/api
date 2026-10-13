@@ -1,6 +1,6 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { corsMiddleware } from "./middleware/cors";
-import { authMiddleware, type AppEnv } from "./middleware/auth";
+import { sessionMiddleware, type AppEnv } from "./middleware/auth";
 import { authRoutes } from "./routes/auth";
 import { viewRoutes } from "./routes/views";
 import { comicRoutes } from "./routes/comics";
@@ -27,16 +27,16 @@ import { registerApiDocs } from "./routes/api-docs";
 
 const app = new OpenAPIHono<AppEnv>();
 
+// Global Middlewares
+app.use("*", corsMiddleware());
+app.use("*", sessionMiddleware());
+
 // Public documentation and service routes
 app.route("/", healthRoutes);
 app.route("/", sitemapXmlRoutes);
 registerApiDocs(app);
 
-// Global Middlewares
-app.use("*", corsMiddleware());
-app.use("*", authMiddleware());
-
-// Clean Subdomain Route Mounting (No /api Prefix!)
+// Versioned application routes
 app.route("/v1/auth", authRoutes);
 app.route("/v1/user", userRoutes);
 app.route("/v1/admin", adminRoutes);

@@ -7,8 +7,8 @@
   "workers_dev": true,
   "preview_urls": true,
   "keep_vars": true,
-  "assets": { 
-    "directory": "public" 
+  "assets": {
+    "directory": "public",
   },
   "routes": [
     {
