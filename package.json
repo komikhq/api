@@ -39,6 +39,7 @@
     "@hono/swagger-ui": "^0.6.1",
     "@hono/zod-openapi": "^1.6.3",
     "@neondatabase/serverless": "^1.1.0",
+    "@scalar/hono-api-reference": "^0.12.11",
     "better-auth": "^1.7.2",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.13.7",

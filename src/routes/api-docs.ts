@@ -1,4 +1,5 @@
 import { swaggerUI } from "@hono/swagger-ui";
+import { Scalar } from "@scalar/hono-api-reference";
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import type { AppEnv } from "@/middleware/auth";
 
@@ -14,7 +15,8 @@ export function registerApiDocs(app: OpenAPIHono<AppEnv>) {
     scheme: "bearer",
     description: "A valid KomikHQ session token.",
   });
-  app.get("/", swaggerUI({ url: "/openapi.json" }));
+  app.get("/", Scalar({ url: "/openapi.json", pageTitle: "KomikHQ API Reference" }));
+  app.get("/docs/swagger", swaggerUI({ url: "/openapi.json" }));
   app.doc("/openapi.json", {
     openapi: "3.0.0",
     info: {

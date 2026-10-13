@@ -49,12 +49,24 @@ function createApp() {
   return app;
 }
 
-test("serves Swagger UI at the API root", async () => {
+test("serves Scalar API Reference at the API root", async () => {
   const response = await createApp().request("/");
+  const body = await response.text();
 
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /text\/html/);
-  assert.match(await response.text(), /\/openapi\.json/);
+  assert.match(body, /\/openapi\.json/);
+  assert.match(body, /scalar/i);
+});
+
+test("keeps Swagger UI available at /docs/swagger", async () => {
+  const response = await createApp().request("/docs/swagger");
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("content-type") ?? "", /text\/html/);
+  assert.match(body, /swagger/i);
+  assert.match(body, /\/openapi\.json/);
 });
 
 test("serves an OpenAPI document with the health endpoint", async () => {

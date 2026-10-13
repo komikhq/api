@@ -1,6 +1,6 @@
 # API Contract and OpenAPI Conventions
 
-The canonical API reference is served at `/openapi.json` and rendered by Swagger UI at `/`. Each route module owns its OpenAPI schemas, route definitions, and handlers. The root application in `src/index.ts` mounts those modules, and `src/routes/api-docs.ts` only configures the document metadata, security schemes, and Swagger UI.
+The canonical API reference is served at `/openapi.json`, rendered by Scalar at `/`, and also available through Swagger UI at `/docs/swagger` during evaluation. Each route module owns its OpenAPI schemas, route definitions, and handlers. The root application in `src/index.ts` mounts those modules, and `src/routes/api-docs.ts` configures the document metadata, security schemes, and API documentation UIs.
 
 ## Naming and organization
 
