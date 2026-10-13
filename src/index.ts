@@ -1,4 +1,4 @@
-import { Hono } from "hono"
+import { OpenAPIHono } from "@hono/zod-openapi"
 import { corsMiddleware } from "./middleware/cors"
 import { authMiddleware, type AppEnv } from "./middleware/auth"
 import { authRoutes } from "./routes/auth"
@@ -23,12 +23,14 @@ import { refreshRankings } from "./cron/refresh-rankings"
 import { syncViewsDelta } from "./cron/sync-views-delta"
 
 import { sitemapRoutes, sitemapXmlRoutes } from "./routes/sitemaps"
+import { registerApiDocs } from "./routes/api-docs"
 
-const app = new Hono<AppEnv>()
+const app = new OpenAPIHono<AppEnv>()
 
-// Open Public Route (Unconstrained by CORS & Auth)
+// Public documentation and service routes
 app.route("/", healthRoutes)
 app.route("/", sitemapXmlRoutes)
+registerApiDocs(app)
 
 // Global Middlewares
 app.use("*", corsMiddleware())
