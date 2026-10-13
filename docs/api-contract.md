@@ -34,3 +34,5 @@ The canonical API reference is served at `/openapi.json` and rendered by Swagger
 4. Add or update OpenAPI coverage assertions in `tests/routes/docs.test.ts`.
 5. Run `node --import tsx --test tests/routes/docs.test.ts`, `pnpm test`, and `pnpm typecheck`.
 6. Inspect `/openapi.json` locally and confirm Swagger UI can exercise the operation with the documented inputs.
+
+The public comic catalog is available from `GET /v1/comics` with optional filters and pagination. `GET /v1/comics/browse` remains available for clients already using the browse endpoint.

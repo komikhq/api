@@ -97,6 +97,7 @@ test("includes route-local operations from every mounted feature module", async 
   assert.ok(paths["/v1/auth/get-session"]?.get);
   assert.ok(paths["/v1/auth/sign-in/email"]?.post);
   assert.ok(paths["/v1/bookmarks"]?.get);
+  assert.ok(paths["/v1/comics"]?.get);
   assert.ok(paths["/v1/comics/{slug}"]?.get);
   assert.ok(paths["/v1/realtime/auth"]?.post);
   assert.ok(paths["/v1/search/suggestions"]?.get);

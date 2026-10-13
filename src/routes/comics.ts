@@ -8,6 +8,16 @@ import { CommonErrorResponses } from "@/schemas/common";
 const ComicDataSchema = z
   .unknown()
   .openapi({ type: "object", description: "Comic response data." });
+const ComicListQuerySchema = z.object({
+  search: z.string().optional(),
+  q: z.string().optional(),
+  genre: z.string().optional(),
+  status: z.string().optional(),
+  type: z.string().optional(),
+  sort: z.string().optional(),
+  page: z.string().optional(),
+  limit: z.string().optional(),
+});
 const TrendingRoute = createRoute({
   method: "get",
   path: "/trending",
@@ -33,6 +43,35 @@ const TrendingRoute = createRoute({
     500: CommonErrorResponses[500],
   },
 });
+const ListComicsRoute = createRoute({
+  method: "get",
+  path: "/",
+  tags: ["Comics"],
+  operationId: "listComics",
+  summary: "List comics",
+  description: "Returns the public comic catalog with optional filters and pagination.",
+  request: { query: ComicListQuerySchema },
+  responses: {
+    200: {
+      description: "The matching comics and pagination metadata.",
+      content: {
+        "application/json": {
+          schema: z.object({
+            query: z.unknown(),
+            comics: z.array(z.unknown()),
+            pagination: z.unknown(),
+          }),
+        },
+      },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    404: CommonErrorResponses[404],
+    409: CommonErrorResponses[409],
+    500: CommonErrorResponses[500],
+  },
+});
 const BrowseComicsRoute = createRoute({
   method: "get",
   path: "/browse",
@@ -40,18 +79,7 @@ const BrowseComicsRoute = createRoute({
   operationId: "browseComics",
   summary: "Browse and search comics",
   description: "Filters the public comic catalog and returns paginated results.",
-  request: {
-    query: z.object({
-      search: z.string().optional(),
-      q: z.string().optional(),
-      genre: z.string().optional(),
-      status: z.string().optional(),
-      type: z.string().optional(),
-      sort: z.string().optional(),
-      page: z.string().optional(),
-      limit: z.string().optional(),
-    }),
-  },
+  request: { query: ComicListQuerySchema },
   responses: {
     200: {
       description: "The matching comics and pagination metadata.",
@@ -117,6 +145,40 @@ const GetComicRoute = createRoute({
 });
 
 export const comicRoutes = new OpenAPIHono<AppEnv>();
+
+// GET /v1/comics - List comics with optional filters and pagination
+comicRoutes.openapi(ListComicsRoute, async (c) => {
+  try {
+    const query = c.req.valid("query");
+    const search = query.search || query.q || "";
+    const genre = query.genre || "";
+    const status = query.status || "";
+    const type = query.type || "";
+    const sort = query.sort || "";
+    const page = parseInt(query.page || "1", 10);
+    const limit = parseInt(query.limit || "20", 10);
+
+    const service = new ComicService(c.env.DATABASE_URL, c.env);
+    const result = await service.getComicsList({
+      q: search,
+      genre,
+      status,
+      type,
+      sort,
+      page,
+      limit,
+    });
+
+    return successResponse(c, {
+      query: { search, genre, status, type, sort },
+      comics: result.comics,
+      pagination: result.pagination,
+    });
+  } catch (err: any) {
+    console.error("[Public API] Failed to list comics:", err);
+    return errorResponse(c, err.message || "Failed to fetch comics.", 500);
+  }
+});
 
 // GET /v1/comics/trending - Get trending / featured comics (period: daily, weekly, popular)
 comicRoutes.openapi(TrendingRoute, async (c) => {
