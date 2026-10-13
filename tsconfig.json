@@ -11,5 +11,6 @@
     "paths": {
       "@/*": ["./src/*"]
     }
-  }
+  },
+  "exclude": ["node_modules", "dist", "revanced-api"]
 }

@@ -1,0 +1,14 @@
+# Ignore artifacts:
+build
+coverage
+
+node_modules/
+dist/
+build/
+.output/
+coverage/
+.wrangler/
+pnpm-lock.yaml
+revanced-api/
+
+worker-configuration.d.ts

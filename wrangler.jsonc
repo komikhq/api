@@ -3,17 +3,15 @@
   "name": "komikhq-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-05",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
+  "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "preview_urls": true,
   "keep_vars": true,
   "routes": [
     {
       "pattern": "api.komikhq.dpdns.org",
-      "custom_domain": true
-    }
+      "custom_domain": true,
+    },
   ],
   // "vars": {
   //   "MY_VAR": "my-variable"
@@ -21,22 +19,22 @@
   "kv_namespaces": [
     {
       "binding": "KV_KOMIKHQ",
-      "id": "8e9495dce11d4e21a5103d30e96dddca"
+      "id": "8e9495dce11d4e21a5103d30e96dddca",
     },
     {
       "binding": "KV_VIEWS",
-      "id": "6999df4c38084567ac172dbf65ae7395"
-    }
+      "id": "6999df4c38084567ac172dbf65ae7395",
+    },
   ],
   "r2_buckets": [
     {
       "binding": "BUCKET_USERS",
-      "bucket_name": "komikhq-users"
+      "bucket_name": "komikhq-users",
     },
     {
       "binding": "BUCKET_MEDIA",
-      "bucket_name": "komikhq-media"
-    }
+      "bucket_name": "komikhq-media",
+    },
   ],
   // "d1_databases": [
   //   {
@@ -51,38 +49,32 @@
   "analytics_engine_datasets": [
     {
       "binding": "AE_COMIC_VIEWS",
-      "dataset": "komikhq_views"
-    }
+      "dataset": "komikhq_views",
+    },
   ],
   "triggers": {
-    "crons": [
-      "0 * * * *",
-      "0 */6 * * *"
-    ]
+    "crons": ["0 * * * *", "0 */6 * * *"],
   },
   "durable_objects": {
     "bindings": [
       {
         "name": "GLOBAL_PRESENCE_DO",
-        "class_name": "GlobalPresenceDO"
+        "class_name": "GlobalPresenceDO",
       },
       {
         "name": "COMMENT_STREAM_DO",
-        "class_name": "CommentStreamDO"
-      }
-    ]
+        "class_name": "CommentStreamDO",
+      },
+    ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": [
-        "GlobalPresenceDO",
-        "CommentStreamDO"
-      ]
-    }
+      "new_sqlite_classes": ["GlobalPresenceDO", "CommentStreamDO"],
+    },
   ],
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1
-  }
+    "head_sampling_rate": 1,
+  },
 }

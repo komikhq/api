@@ -37,14 +37,7 @@ When following this guide, I will track these high-level tasks:
 ### 1.1. Basic Table Structure
 
 ```typescript
-import {
-  pgTable,
-  serial,
-  text,
-  varchar,
-  timestamp,
-  boolean,
-} from "drizzle-orm/pg-core"
+import { pgTable, serial, text, varchar, timestamp, boolean } from "drizzle-orm/pg-core";
 
 export const tableName = pgTable("table_name", {
   id: serial("id").primaryKey(),
@@ -53,7 +46,7 @@ export const tableName = pgTable("table_name", {
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-})
+});
 ```
 
 **Key conventions:**
@@ -69,12 +62,12 @@ export const tableName = pgTable("table_name", {
 **One-to-Many:**
 
 ```typescript
-import { pgTable, serial, text, timestamp, index } from "drizzle-orm/pg-core"
+import { pgTable, serial, text, timestamp, index } from "drizzle-orm/pg-core";
 
 export const authors = pgTable("authors", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-})
+});
 
 export const posts = pgTable(
   "posts",
@@ -88,8 +81,8 @@ export const posts = pgTable(
   },
   (table) => ({
     authorIdIdx: index("posts_author_id_idx").on(table.authorId),
-  })
-)
+  }),
+);
 ```
 
 **Important:** Always add index on foreign keys for query performance.
@@ -100,12 +93,12 @@ export const posts = pgTable(
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
-})
+});
 
 export const tags = pgTable("tags", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-})
+});
 
 export const postsTags = pgTable(
   "posts_tags",
@@ -119,8 +112,8 @@ export const postsTags = pgTable(
   },
   (table) => ({
     pk: index("posts_tags_pk").on(table.postId, table.tagId),
-  })
-)
+  }),
+);
 ```
 
 ### 1.3. Type-Safe Relations
@@ -128,18 +121,18 @@ export const postsTags = pgTable(
 Enable relational queries:
 
 ```typescript
-import { relations } from "drizzle-orm"
+import { relations } from "drizzle-orm";
 
 export const authorsRelations = relations(authors, ({ many }) => ({
   posts: many(posts),
-}))
+}));
 
 export const postsRelations = relations(posts, ({ one }) => ({
   author: one(authors, {
     fields: [posts.authorId],
     references: [authors.id],
   }),
-}))
+}));
 ```
 
 **Benefits:**
@@ -153,13 +146,7 @@ export const postsRelations = relations(posts, ({ one }) => ({
 ### 2.1. User Authentication
 
 ```typescript
-import {
-  pgTable,
-  serial,
-  varchar,
-  timestamp,
-  boolean,
-} from "drizzle-orm/pg-core"
+import { pgTable, serial, varchar, timestamp, boolean } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -169,7 +156,7 @@ export const users = pgTable("users", {
   emailVerified: boolean("email_verified").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   lastLoginAt: timestamp("last_login_at"),
-})
+});
 ```
 
 ### 2.2. Soft Deletes
@@ -181,43 +168,43 @@ export const posts = pgTable("posts", {
   content: text("content").notNull(),
   deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow(),
-})
+});
 ```
 
 Query with soft deletes:
 
 ```typescript
-const activePosts = await db.select().from(posts).where(isNull(posts.deletedAt))
+const activePosts = await db.select().from(posts).where(isNull(posts.deletedAt));
 ```
 
 ### 2.3. Enums
 
 ```typescript
-import { pgEnum, pgTable, serial, text } from "drizzle-orm/pg-core"
+import { pgEnum, pgTable, serial, text } from "drizzle-orm/pg-core";
 
-export const statusEnum = pgEnum("status", ["draft", "published", "archived"])
+export const statusEnum = pgEnum("status", ["draft", "published", "archived"]);
 
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   status: statusEnum("status").default("draft"),
-})
+});
 ```
 
 ### 2.4. JSON Fields
 
 ```typescript
-import { pgTable, serial, jsonb } from "drizzle-orm/pg-core"
+import { pgTable, serial, jsonb } from "drizzle-orm/pg-core";
 
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   metadata: jsonb("metadata").$type<{
-    color?: string
-    size?: string
-    tags?: string[]
+    color?: string;
+    size?: string;
+    tags?: string[];
   }>(),
-})
+});
 ```
 
 ## Phase 3: Schema Modifications
@@ -231,7 +218,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull(),
   phoneNumber: varchar("phone_number", { length: 20 }), // NEW
-})
+});
 ```
 
 **Step 2:** Generate migration:
@@ -257,7 +244,7 @@ export DATABASE_URL="$(grep DATABASE_URL .env.local | cut -d '=' -f2)" && \
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   fullName: varchar("full_name", { length: 255 }), // was 'name'
-})
+});
 ```
 
 **Step 2:** Generate migration (will create drop + add):
@@ -292,7 +279,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull(),
   // removed: phoneNumber
-})
+});
 ```
 
 **Step 2:** Generate and apply:
@@ -312,7 +299,7 @@ export const users = pgTable("users", {
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
   views: bigint("views", { mode: "number" }), // was: integer
-})
+});
 ```
 
 **Step 2:** Generate migration:
@@ -330,7 +317,7 @@ export const posts = pgTable("posts", {
 **Single column:**
 
 ```typescript
-import { pgTable, serial, text, index } from "drizzle-orm/pg-core"
+import { pgTable, serial, text, index } from "drizzle-orm/pg-core";
 
 export const posts = pgTable(
   "posts",
@@ -342,8 +329,8 @@ export const posts = pgTable(
   (table) => ({
     titleIdx: index("posts_title_idx").on(table.title),
     authorIdIdx: index("posts_author_id_idx").on(table.authorId),
-  })
-)
+  }),
+);
 ```
 
 **Composite index:**
@@ -357,12 +344,9 @@ export const posts = pgTable(
     status: text("status").notNull(),
   },
   (table) => ({
-    authorStatusIdx: index("posts_author_status_idx").on(
-      table.authorId,
-      table.status
-    ),
-  })
-)
+    authorStatusIdx: index("posts_author_status_idx").on(table.authorId, table.status),
+  }),
+);
 ```
 
 ### 4.2. Unique Constraints
@@ -373,13 +357,13 @@ export const posts = pgTable(
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull().unique(),
-})
+});
 ```
 
 **Multiple columns:**
 
 ```typescript
-import { pgTable, serial, text, unique } from "drizzle-orm/pg-core"
+import { pgTable, serial, text, unique } from "drizzle-orm/pg-core";
 
 export const postsTags = pgTable(
   "posts_tags",
@@ -389,14 +373,14 @@ export const postsTags = pgTable(
   },
   (table) => ({
     unq: unique("posts_tags_unique").on(table.postId, table.tagId),
-  })
-)
+  }),
+);
 ```
 
 ### 4.3. Check Constraints
 
 ```typescript
-import { pgTable, serial, integer, check } from "drizzle-orm/pg-core"
+import { pgTable, serial, integer, check } from "drizzle-orm/pg-core";
 
 export const products = pgTable(
   "products",
@@ -408,8 +392,8 @@ export const products = pgTable(
   (table) => ({
     priceCheck: check("price_check", "price >= 0"),
     discountCheck: check("discount_check", "discounted_price < price"),
-  })
-)
+  }),
+);
 ```
 
 ## Phase 5: Generate and Apply Changes
@@ -450,11 +434,11 @@ psql $DATABASE_URL -c "\d table_name"
 **Test with queries:**
 
 ```typescript
-import { db } from "./src/db"
-import { tableName } from "./src/db/schema"
+import { db } from "./src/db";
+import { tableName } from "./src/db/schema";
 
-const result = await db.select().from(tableName)
-console.log("Schema works:", result)
+const result = await db.select().from(tableName);
+console.log("Schema works:", result);
 ```
 
 ## Phase 6: Advanced Patterns

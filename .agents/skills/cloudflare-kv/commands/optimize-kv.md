@@ -252,7 +252,7 @@ Based on the report:
 
 ```typescript
 // ❌ Data persists forever
-await env.KV.put("session", sessionData)
+await env.KV.put("session", sessionData);
 ```
 
 ### After: With TTL
@@ -261,7 +261,7 @@ await env.KV.put("session", sessionData)
 // ✅ Auto-expires after 1 hour
 await env.KV.put("session", sessionData, {
   expirationTtl: 3600,
-})
+});
 ```
 
 **Impact:** Prevents storage bloat, reduces costs
@@ -272,9 +272,9 @@ await env.KV.put("session", sessionData, {
 
 ```typescript
 // ❌ Each await blocks execution
-const user = await env.KV.get("user:123")
-const prefs = await env.KV.get("prefs:123")
-const stats = await env.KV.get("stats:123")
+const user = await env.KV.get("user:123");
+const prefs = await env.KV.get("prefs:123");
+const stats = await env.KV.get("stats:123");
 ```
 
 ### After: Parallel Reads
@@ -285,7 +285,7 @@ const [user, prefs, stats] = await Promise.all([
   env.KV.get("user:123"),
   env.KV.get("prefs:123"),
   env.KV.get("stats:123"),
-])
+]);
 ```
 
 **Impact:** 3x faster execution
@@ -296,16 +296,16 @@ const [user, prefs, stats] = await Promise.all([
 
 ```typescript
 // ❌ Response waits for write
-await env.KV.put("analytics", data)
-return new Response("OK")
+await env.KV.put("analytics", data);
+return new Response("OK");
 ```
 
 ### After: Non-blocking Writes
 
 ```typescript
 // ✅ Response returns immediately
-ctx.waitUntil(env.KV.put("analytics", data))
-return new Response("OK")
+ctx.waitUntil(env.KV.put("analytics", data));
+return new Response("OK");
 ```
 
 **Impact:** 50-100ms faster responses

@@ -27,7 +27,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull(),
   phoneNumber: varchar("phone_number", { length: 20 }), // NEW
-})
+});
 ```
 
 ### 2. Generate Migration
@@ -96,10 +96,10 @@ Error: url is undefined in dbCredentials
 **drizzle.config.ts:**
 
 ```typescript
-import { defineConfig } from "drizzle-kit"
-import { config } from "dotenv"
+import { defineConfig } from "drizzle-kit";
+import { config } from "dotenv";
 
-config({ path: ".env.local" })
+config({ path: ".env.local" });
 
 export default defineConfig({
   schema: "./src/db/schema.ts",
@@ -108,7 +108,7 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-})
+});
 ```
 
 **Key:** `config({ path: '.env.local' })` loads before exporting config.
@@ -161,18 +161,18 @@ npm add -D dotenv-cli
 **scripts/migrate.ts:**
 
 ```typescript
-import { drizzle } from "drizzle-orm/neon-http"
-import { neon } from "@neondatabase/serverless"
-import { migrate } from "drizzle-orm/neon-http/migrator"
-import { config } from "dotenv"
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
+import { migrate } from "drizzle-orm/neon-http/migrator";
+import { config } from "dotenv";
 
-config({ path: ".env.local" })
+config({ path: ".env.local" });
 
-const sql = neon(process.env.DATABASE_URL!)
-const db = drizzle(sql)
+const sql = neon(process.env.DATABASE_URL!);
+const db = drizzle(sql);
 
-await migrate(db, { migrationsFolder: "./src/db/migrations" })
-console.log("Migrations complete")
+await migrate(db, { migrationsFolder: "./src/db/migrations" });
+console.log("Migrations complete");
 ```
 
 **Run:**
@@ -216,7 +216,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull(),
   phoneNumber: varchar("phone_number", { length: 20 }), // NEW
-})
+});
 ```
 
 **Generated:**
@@ -234,7 +234,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull(),
   // removed: phoneNumber
-})
+});
 ```
 
 **Generated:**
@@ -255,7 +255,7 @@ ALTER TABLE users DROP COLUMN phone_number;
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   fullName: varchar("full_name", { length: 255 }), // was 'name'
-})
+});
 ```
 
 **Generated (WRONG):**
@@ -280,7 +280,7 @@ ALTER TABLE users RENAME COLUMN name TO full_name;
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
   views: bigint("views", { mode: "number" }), // was integer
-})
+});
 ```
 
 **Generated:**
@@ -304,8 +304,8 @@ export const posts = pgTable(
   },
   (table) => ({
     titleIdx: index("posts_title_idx").on(table.title), // NEW
-  })
-)
+  }),
+);
 ```
 
 **Generated:**
@@ -325,7 +325,7 @@ export const comments = pgTable("comments", {
     .notNull()
     .references(() => posts.id), // NEW
   content: text("content").notNull(),
-})
+});
 ```
 
 **Generated:**
@@ -344,7 +344,7 @@ ALTER TABLE comments
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull().unique(),
-})
+});
 ```
 
 **Generated:**
@@ -364,8 +364,8 @@ export const products = pgTable(
   },
   (table) => ({
     priceCheck: check("price_check", "price >= 0"),
-  })
-)
+  }),
+);
 ```
 
 **Generated:**
@@ -539,31 +539,31 @@ jobs:
 
 ```typescript
 // scripts/pre-migrate.ts
-import { drizzle } from "drizzle-orm/neon-http"
-import { neon } from "@neondatabase/serverless"
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
 
-const sql = neon(process.env.DATABASE_URL!)
-const db = drizzle(sql)
+const sql = neon(process.env.DATABASE_URL!);
+const db = drizzle(sql);
 
 async function preMigrationChecks() {
   try {
-    await sql`SELECT 1`
-    console.log("✅ Database connection successful")
+    await sql`SELECT 1`;
+    console.log("✅ Database connection successful");
 
     const tables = await sql`
       SELECT tablename FROM pg_tables
       WHERE schemaname = 'public'
-    `
-    console.log(`✅ Found ${tables.length} tables`)
+    `;
+    console.log(`✅ Found ${tables.length} tables`);
 
-    return true
+    return true;
   } catch (err) {
-    console.error("❌ Pre-migration check failed:", err)
-    process.exit(1)
+    console.error("❌ Pre-migration check failed:", err);
+    process.exit(1);
   }
 }
 
-preMigrationChecks()
+preMigrationChecks();
 ```
 
 ## Common Migration Errors

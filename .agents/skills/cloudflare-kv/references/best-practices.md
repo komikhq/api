@@ -24,16 +24,16 @@ This document contains production-tested best practices for Cloudflare Workers K
 **❌ Bad: Individual reads**
 
 ```typescript
-const value1 = await kv.get("key1") // 1 operation
-const value2 = await kv.get("key2") // 1 operation
-const value3 = await kv.get("key3") // 1 operation
+const value1 = await kv.get("key1"); // 1 operation
+const value2 = await kv.get("key2"); // 1 operation
+const value3 = await kv.get("key3"); // 1 operation
 // Total: 3 operations
 ```
 
 **✅ Good: Bulk read**
 
 ```typescript
-const values = await kv.get(["key1", "key2", "key3"]) // 1 operation
+const values = await kv.get(["key1", "key2", "key3"]); // 1 operation
 // Total: 1 operation
 ```
 
@@ -50,7 +50,7 @@ const values = await kv.get(["key1", "key2", "key3"]) // 1 operation
 **❌ Bad: No edge caching**
 
 ```typescript
-const value = await kv.get("config") // Fetches from KV every time
+const value = await kv.get("config"); // Fetches from KV every time
 ```
 
 **✅ Good: Edge caching**
@@ -58,7 +58,7 @@ const value = await kv.get("config") // Fetches from KV every time
 ```typescript
 const value = await kv.get("config", {
   cacheTtl: 300, // Cache at edge for 5 minutes
-})
+});
 ```
 
 **Guidelines:**
@@ -79,14 +79,14 @@ const value = await kv.get("config", {
 **❌ Bad: Many small keys**
 
 ```typescript
-await kv.put("user:123:name", "John")
-await kv.put("user:123:email", "john@example.com")
-await kv.put("user:123:age", "30")
+await kv.put("user:123:name", "John");
+await kv.put("user:123:email", "john@example.com");
+await kv.put("user:123:age", "30");
 
 // Reading requires 3 operations
-const name = await kv.get("user:123:name")
-const email = await kv.get("user:123:email")
-const age = await kv.get("user:123:age")
+const name = await kv.get("user:123:name");
+const email = await kv.get("user:123:email");
+const age = await kv.get("user:123:age");
 ```
 
 **✅ Good: Coalesced key**
@@ -98,11 +98,11 @@ await kv.put(
     name: "John",
     email: "john@example.com",
     age: 30,
-  })
-)
+  }),
+);
 
 // Reading requires 1 operation
-const user = await kv.get<User>("user:123", { type: "json" })
+const user = await kv.get<User>("user:123", { type: "json" });
 ```
 
 **Benefits:**
@@ -124,13 +124,13 @@ const user = await kv.get<User>("user:123", { type: "json" })
 **❌ Bad: Separate keys for metadata**
 
 ```typescript
-await kv.put("user:123", "data")
-await kv.put("user:123:status", "active")
+await kv.put("user:123", "data");
+await kv.put("user:123:status", "active");
 
 // List requires additional get() calls
-const users = await kv.list({ prefix: "user:" })
+const users = await kv.list({ prefix: "user:" });
 for (const key of users.keys) {
-  const status = await kv.get(`${key.name}:status`) // Extra operation!
+  const status = await kv.get(`${key.name}:status`); // Extra operation!
 }
 ```
 
@@ -139,12 +139,12 @@ for (const key of users.keys) {
 ```typescript
 await kv.put("user:123", "data", {
   metadata: { status: "active", plan: "pro" },
-})
+});
 
 // List includes metadata, no extra get() calls!
-const users = await kv.list({ prefix: "user:" })
+const users = await kv.list({ prefix: "user:" });
 for (const key of users.keys) {
-  console.log(key.name, key.metadata.status) // No extra operations
+  console.log(key.name, key.metadata.status); // No extra operations
 }
 ```
 
@@ -165,21 +165,21 @@ async function getCached<T>(
   kv: KVNamespace,
   key: string,
   fetchFn: () => Promise<T>,
-  ttl = 3600
+  ttl = 3600,
 ): Promise<T> {
   // Try cache
   const cached = await kv.get<T>(key, {
     type: "json",
     cacheTtl: 300,
-  })
+  });
 
-  if (cached !== null) return cached
+  if (cached !== null) return cached;
 
   // Cache miss - fetch and store
-  const data = await fetchFn()
-  await kv.put(key, JSON.stringify(data), { expirationTtl: ttl })
+  const data = await fetchFn();
+  await kv.put(key, JSON.stringify(data), { expirationTtl: ttl });
 
-  return data
+  return data;
 }
 ```
 
@@ -194,17 +194,12 @@ async function getCached<T>(
 ### 2. Write-Through Cache
 
 ```typescript
-async function updateCached<T>(
-  kv: KVNamespace,
-  key: string,
-  data: T,
-  ttl = 3600
-): Promise<void> {
+async function updateCached<T>(kv: KVNamespace, key: string, data: T, ttl = 3600): Promise<void> {
   // Update database
-  await database.update(data)
+  await database.update(data);
 
   // Update cache immediately
-  await kv.put(key, JSON.stringify(data), { expirationTtl: ttl })
+  await kv.put(key, JSON.stringify(data), { expirationTtl: ttl });
 }
 ```
 
@@ -224,38 +219,37 @@ async function staleWhileRevalidate<T>(
   key: string,
   fetchFn: () => Promise<T>,
   ctx: ExecutionContext,
-  staleThreshold = 300
+  staleThreshold = 300,
 ): Promise<T> {
-  const { value, metadata } = await kv.getWithMetadata<
-    T,
-    { timestamp: number }
-  >(key, { type: "json" })
+  const { value, metadata } = await kv.getWithMetadata<T, { timestamp: number }>(key, {
+    type: "json",
+  });
 
   if (value !== null && metadata) {
-    const age = Date.now() - metadata.timestamp
+    const age = Date.now() - metadata.timestamp;
 
     // Refresh in background if stale
     if (age > staleThreshold * 1000) {
       ctx.waitUntil(
         (async () => {
-          const fresh = await fetchFn()
+          const fresh = await fetchFn();
           await kv.put(key, JSON.stringify(fresh), {
             metadata: { timestamp: Date.now() },
-          })
-        })()
-      )
+          });
+        })(),
+      );
     }
 
-    return value
+    return value;
   }
 
   // Cache miss
-  const data = await fetchFn()
+  const data = await fetchFn();
   await kv.put(key, JSON.stringify(data), {
     metadata: { timestamp: Date.now() },
-  })
+  });
 
-  return data
+  return data;
 }
 ```
 
@@ -300,18 +294,18 @@ Keys are always sorted lexicographically, so design keys to take advantage:
 
 ```typescript
 // Date-based keys (ISO format sorts correctly)
-"log:2025-10-21:entry1"
-"log:2025-10-22:entry1"
+"log:2025-10-21:entry1";
+"log:2025-10-22:entry1";
 
 // Numeric IDs (zero-padded)
-"user:00000001"
-"user:00000123"
-"user:00001000"
+"user:00000001";
+"user:00000123";
+"user:00001000";
 
 // Priority-based (prefix with number)
-"task:1:high-priority"
-"task:2:medium-priority"
-"task:3:low-priority"
+"task:1:high-priority";
+"task:2:medium-priority";
+"task:3:low-priority";
 ```
 
 ---
@@ -347,7 +341,7 @@ await kv.put("config", JSON.stringify(data), {
     updatedAt: Date.now(),
     updatedBy: "admin",
   },
-})
+});
 ```
 
 ---
@@ -361,7 +355,7 @@ await kv.put(key, value, {
     createdBy: userId,
     accessCount: 0,
   },
-})
+});
 ```
 
 ---
@@ -375,10 +369,10 @@ await kv.put(`flag:${name}`, JSON.stringify(config), {
     enabled: true,
     rolloutPercentage: 50,
   },
-})
+});
 
 // List all flags without additional get() calls
-const flags = await kv.list({ prefix: "flag:" })
+const flags = await kv.list({ prefix: "flag:" });
 ```
 
 ---
@@ -392,28 +386,28 @@ async function putWithRetry(
   kv: KVNamespace,
   key: string,
   value: string,
-  maxAttempts = 5
+  maxAttempts = 5,
 ): Promise<void> {
-  let attempts = 0
-  let delay = 1000
+  let attempts = 0;
+  let delay = 1000;
 
   while (attempts < maxAttempts) {
     try {
-      await kv.put(key, value)
-      return
+      await kv.put(key, value);
+      return;
     } catch (error) {
-      const message = (error as Error).message
+      const message = (error as Error).message;
 
       if (message.includes("429") || message.includes("Too Many Requests")) {
-        attempts++
+        attempts++;
         if (attempts >= maxAttempts) {
-          throw new Error("Max retry attempts reached")
+          throw new Error("Max retry attempts reached");
         }
 
-        await new Promise((resolve) => setTimeout(resolve, delay))
-        delay *= 2 // Exponential backoff
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
       } else {
-        throw error
+        throw error;
       }
     }
   }
@@ -426,17 +420,17 @@ async function putWithRetry(
 
 ```typescript
 // ❌ Bad
-const value = await kv.get("key")
-console.log(value.toUpperCase()) // Error if key doesn't exist
+const value = await kv.get("key");
+console.log(value.toUpperCase()); // Error if key doesn't exist
 
 // ✅ Good
-const value = await kv.get("key")
+const value = await kv.get("key");
 if (value !== null) {
-  console.log(value.toUpperCase())
+  console.log(value.toUpperCase());
 }
 
 // ✅ Good: Default value
-const value = (await kv.get("key")) ?? "default"
+const value = (await kv.get("key")) ?? "default";
 ```
 
 ---
@@ -447,19 +441,19 @@ const value = (await kv.get("key")) ?? "default"
 function validateKVInput(key: string, value: string, metadata?: any): void {
   // Key size
   if (new TextEncoder().encode(key).length > 512) {
-    throw new Error("Key exceeds 512 bytes")
+    throw new Error("Key exceeds 512 bytes");
   }
 
   // Value size
   if (new TextEncoder().encode(value).length > 25 * 1024 * 1024) {
-    throw new Error("Value exceeds 25 MiB")
+    throw new Error("Value exceeds 25 MiB");
   }
 
   // Metadata size
   if (metadata) {
-    const serialized = JSON.stringify(metadata)
+    const serialized = JSON.stringify(metadata);
     if (new TextEncoder().encode(serialized).length > 1024) {
-      throw new Error("Metadata exceeds 1024 bytes")
+      throw new Error("Metadata exceeds 1024 bytes");
     }
   }
 }
@@ -503,12 +497,12 @@ function validateKVInput(key: string, value: string, metadata?: any): void {
 
 ```typescript
 // Encrypt before storing
-const encrypted = await encrypt(sensitiveData, encryptionKey)
-await kv.put("sensitive:123", encrypted)
+const encrypted = await encrypt(sensitiveData, encryptionKey);
+await kv.put("sensitive:123", encrypted);
 
 // Decrypt after reading
-const encrypted = await kv.get("sensitive:123")
-const decrypted = await decrypt(encrypted, encryptionKey)
+const encrypted = await kv.get("sensitive:123");
+const decrypted = await decrypt(encrypted, encryptionKey);
 ```
 
 ---
@@ -551,9 +545,9 @@ const decrypted = await decrypt(encrypted, encryptionKey)
 **❌ Expensive: 3 writes, 3 reads**
 
 ```typescript
-await kv.put("user:123:status", "active")
-await kv.put("user:123:plan", "pro")
-await kv.put("user:123:updated", Date.now().toString())
+await kv.put("user:123:status", "active");
+await kv.put("user:123:plan", "pro");
+await kv.put("user:123:updated", Date.now().toString());
 ```
 
 **✅ Cheaper: 1 write, 1 read**
@@ -561,7 +555,7 @@ await kv.put("user:123:updated", Date.now().toString())
 ```typescript
 await kv.put("user:123", "", {
   metadata: { status: "active", plan: "pro", updated: Date.now() },
-})
+});
 ```
 
 ---
@@ -572,10 +566,10 @@ Longer TTLs = fewer rewrites = lower costs
 
 ```typescript
 // ❌ Expensive: Rewrites every minute
-await kv.put("cache:data", data, { expirationTtl: 60 })
+await kv.put("cache:data", data, { expirationTtl: 60 });
 
 // ✅ Better: Rewrites every hour
-await kv.put("cache:data", data, { expirationTtl: 3600 })
+await kv.put("cache:data", data, { expirationTtl: 3600 });
 ```
 
 ---
@@ -585,31 +579,31 @@ await kv.put("cache:data", data, { expirationTtl: 3600 })
 ### 1. Track Cache Hit Rates
 
 ```typescript
-let stats = { hits: 0, misses: 0 }
+let stats = { hits: 0, misses: 0 };
 
 async function getCached<T>(kv: KVNamespace, key: string): Promise<T | null> {
-  const value = await kv.get<T>(key, { type: "json" })
+  const value = await kv.get<T>(key, { type: "json" });
 
   if (value !== null) {
-    stats.hits++
+    stats.hits++;
   } else {
-    stats.misses++
+    stats.misses++;
   }
 
-  return value
+  return value;
 }
 
 // View stats
 app.get("/stats", (c) => {
-  const total = stats.hits + stats.misses
-  const hitRate = total > 0 ? (stats.hits / total) * 100 : 0
+  const total = stats.hits + stats.misses;
+  const hitRate = total > 0 ? (stats.hits / total) * 100 : 0;
 
   return c.json({
     hits: stats.hits,
     misses: stats.misses,
     hitRate: `${hitRate.toFixed(2)}%`,
-  })
-})
+  });
+});
 ```
 
 ---
@@ -618,18 +612,18 @@ app.get("/stats", (c) => {
 
 ```typescript
 async function loggedGet<T>(kv: KVNamespace, key: string): Promise<T | null> {
-  const start = Date.now()
-  const value = await kv.get<T>(key, { type: "json" })
-  const duration = Date.now() - start
+  const start = Date.now();
+  const value = await kv.get<T>(key, { type: "json" });
+  const duration = Date.now() - start;
 
   console.log({
     operation: "get",
     key,
     found: value !== null,
     duration,
-  })
+  });
 
-  return value
+  return value;
 }
 ```
 
@@ -638,19 +632,19 @@ async function loggedGet<T>(kv: KVNamespace, key: string): Promise<T | null> {
 ### 3. Use Namespace Prefixes for Testing
 
 ```typescript
-const namespace = env.ENVIRONMENT === "production" ? "prod" : "test"
+const namespace = env.ENVIRONMENT === "production" ? "prod" : "test";
 
-await kv.put(`${namespace}:user:123`, data)
+await kv.put(`${namespace}:user:123`, data);
 
 // Cleanup test data
 if (env.ENVIRONMENT === "test") {
   // Delete all test: keys
-  let cursor: string | undefined
+  let cursor: string | undefined;
   do {
-    const result = await kv.list({ prefix: "test:", cursor })
-    await Promise.all(result.keys.map((k) => kv.delete(k.name)))
-    cursor = result.list_complete ? undefined : result.cursor
-  } while (cursor)
+    const result = await kv.list({ prefix: "test:", cursor });
+    await Promise.all(result.keys.map((k) => kv.delete(k.name)));
+    cursor = result.list_complete ? undefined : result.cursor;
+  } while (cursor);
 }
 ```
 
@@ -684,13 +678,13 @@ Before deploying to production:
 await kv.put(`session:${sessionId}`, JSON.stringify(sessionData), {
   expirationTtl: 3600, // 1 hour
   metadata: { userId, createdAt: Date.now() },
-})
+});
 
 // Read session
 const session = await kv.get<SessionData>(`session:${sessionId}`, {
   type: "json",
   cacheTtl: 60, // Cache for 1 minute
-})
+});
 ```
 
 ---
@@ -698,21 +692,21 @@ const session = await kv.get<SessionData>(`session:${sessionId}`, {
 ### 2. API Response Caching
 
 ```typescript
-const cacheKey = `api:${endpoint}:${JSON.stringify(params)}`
+const cacheKey = `api:${endpoint}:${JSON.stringify(params)}`;
 
 let response = await kv.get<ApiResponse>(cacheKey, {
   type: "json",
   cacheTtl: 300,
-})
+});
 
 if (!response) {
-  response = await fetchFromAPI(endpoint, params)
+  response = await fetchFromAPI(endpoint, params);
   await kv.put(cacheKey, JSON.stringify(response), {
     expirationTtl: 600,
-  })
+  });
 }
 
-return response
+return response;
 ```
 
 ---
@@ -727,13 +721,13 @@ await kv.put("config:app", JSON.stringify(config), {
     updatedAt: Date.now(),
     updatedBy: adminId,
   },
-})
+});
 
 // Read config (with long cache)
 const config = await kv.get<AppConfig>("config:app", {
   type: "json",
   cacheTtl: 3600, // Cache for 1 hour
-})
+});
 ```
 
 ---

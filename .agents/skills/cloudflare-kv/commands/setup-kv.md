@@ -158,11 +158,11 @@ Once setup completes:
    ```typescript
    export default {
      async fetch(request, env: Env) {
-       await env.MY_KV_NAMESPACE.put("key", "value")
-       const value = await env.MY_KV_NAMESPACE.get("key")
-       return new Response(value)
+       await env.MY_KV_NAMESPACE.put("key", "value");
+       const value = await env.MY_KV_NAMESPACE.get("key");
+       return new Response(value);
      },
-   }
+   };
    ```
 
 4. **Run Locally**

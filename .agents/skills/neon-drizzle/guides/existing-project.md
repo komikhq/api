@@ -133,11 +133,11 @@ Create `drizzle.config.ts` with explicit environment loading:
 **For Next.js (using .env.local):**
 
 ```typescript
-import { defineConfig } from "drizzle-kit"
-import { config } from "dotenv"
+import { defineConfig } from "drizzle-kit";
+import { config } from "dotenv";
 
 // Load .env.local explicitly
-config({ path: ".env.local" })
+config({ path: ".env.local" });
 
 export default defineConfig({
   schema: "./src/drizzle/schema.ts",
@@ -146,17 +146,17 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-})
+});
 ```
 
 **For other projects (using .env):**
 
 ```typescript
-import { defineConfig } from "drizzle-kit"
-import { config } from "dotenv"
+import { defineConfig } from "drizzle-kit";
+import { config } from "dotenv";
 
 // Load .env explicitly
-config({ path: ".env" })
+config({ path: ".env" });
 
 export default defineConfig({
   schema: "./src/drizzle/schema.ts",
@@ -165,7 +165,7 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-})
+});
 ```
 
 **Notes:**
@@ -180,23 +180,23 @@ export default defineConfig({
 **HTTP (Vercel/Edge):**
 
 ```typescript
-import { drizzle } from "drizzle-orm/neon-http"
-import { neon } from "@neondatabase/serverless"
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
 
-const sql = neon(process.env.DATABASE_URL!)
-export const drizzleDb = drizzle(sql)
+const sql = neon(process.env.DATABASE_URL!);
+export const drizzleDb = drizzle(sql);
 ```
 
 **WebSocket (Node.js):**
 
 ```typescript
-import { drizzle } from "drizzle-orm/neon-serverless"
-import { Pool, neonConfig } from "@neondatabase/serverless"
-import ws from "ws"
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
 
-neonConfig.webSocketConstructor = ws
-const pool = new Pool({ connectionString: process.env.DATABASE_URL! })
-export const drizzleDb = drizzle(pool)
+neonConfig.webSocketConstructor = ws;
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+export const drizzleDb = drizzle(pool);
 ```
 
 **Important:** Name export as `drizzleDb` to avoid conflicts with existing `db` exports.
@@ -212,13 +212,13 @@ Create schemas for new features only, leave existing tables alone:
 `src/drizzle/schema.ts`:
 
 ```typescript
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core"
+import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const newFeatureTable = pgTable("new_feature", {
   id: serial("id").primaryKey(),
   data: text("data").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-})
+});
 ```
 
 **Pros:**
@@ -237,14 +237,14 @@ export const newFeatureTable = pgTable("new_feature", {
 Define schemas for existing tables to gradually migrate queries:
 
 ```typescript
-import { pgTable, serial, varchar, timestamp } from "drizzle-orm/pg-core"
+import { pgTable, serial, varchar, timestamp } from "drizzle-orm/pg-core";
 
 export const existingUsers = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull(),
   name: varchar("name", { length: 255 }),
   createdAt: timestamp("created_at"),
-})
+});
 ```
 
 **Pros:**
@@ -284,10 +284,10 @@ export DATABASE_URL="$(grep DATABASE_URL .env.local | cut -d '=' -f2)" && \
 Instead, use Drizzle schemas for querying only:
 
 ```typescript
-import { drizzleDb } from "./drizzle"
-import { existingUsers } from "./drizzle/schema"
+import { drizzleDb } from "./drizzle";
+import { existingUsers } from "./drizzle/schema";
 
-const users = await drizzleDb.select().from(existingUsers)
+const users = await drizzleDb.select().from(existingUsers);
 ```
 
 ### 5.3. Mixed Scenario
@@ -334,11 +334,11 @@ npm run db:studio    # Open Drizzle Studio
 Keep clear separation:
 
 ```typescript
-import { db as prismaDb } from "./lib/prisma"
-import { drizzleDb } from "./drizzle"
+import { db as prismaDb } from "./lib/prisma";
+import { drizzleDb } from "./drizzle";
 
-const prismaUsers = await prismaDb.user.findMany()
-const drizzleFeatures = await drizzleDb.select().from(newFeatureTable)
+const prismaUsers = await prismaDb.user.findMany();
+const drizzleFeatures = await drizzleDb.select().from(newFeatureTable);
 ```
 
 ### 6.2. Gradual Migration
@@ -347,7 +347,7 @@ const drizzleFeatures = await drizzleDb.select().from(newFeatureTable)
 
 ```typescript
 async function createFeature(data: NewFeatureInput) {
-  return drizzleDb.insert(newFeatureTable).values(data).returning()
+  return drizzleDb.insert(newFeatureTable).values(data).returning();
 }
 ```
 
@@ -355,7 +355,7 @@ async function createFeature(data: NewFeatureInput) {
 
 ```typescript
 async function getUsers() {
-  return drizzleDb.select().from(existingUsers)
+  return drizzleDb.select().from(existingUsers);
 }
 ```
 
@@ -363,10 +363,7 @@ async function getUsers() {
 
 ```typescript
 async function updateUser(id: number, data: UserUpdate) {
-  return drizzleDb
-    .update(existingUsers)
-    .set(data)
-    .where(eq(existingUsers.id, id))
+  return drizzleDb.update(existingUsers).set(data).where(eq(existingUsers.id, id));
 }
 ```
 
@@ -379,34 +376,31 @@ Test integration without breaking existing functionality:
 ### 7.1. Test New Tables
 
 ```typescript
-import { drizzleDb } from "./drizzle"
-import { newFeatureTable } from "./drizzle/schema"
+import { drizzleDb } from "./drizzle";
+import { newFeatureTable } from "./drizzle/schema";
 
-const result = await drizzleDb
-  .insert(newFeatureTable)
-  .values({ data: "test" })
-  .returning()
+const result = await drizzleDb.insert(newFeatureTable).values({ data: "test" }).returning();
 
-console.log("New table works:", result)
+console.log("New table works:", result);
 ```
 
 ### 7.2. Test Existing Tables (if mirrored)
 
 ```typescript
-import { drizzleDb } from "./drizzle"
-import { existingUsers } from "./drizzle/schema"
+import { drizzleDb } from "./drizzle";
+import { existingUsers } from "./drizzle/schema";
 
-const users = await drizzleDb.select().from(existingUsers)
-console.log("Existing table accessible:", users)
+const users = await drizzleDb.select().from(existingUsers);
+console.log("Existing table accessible:", users);
 ```
 
 ### 7.3. Verify Old ORM Still Works
 
 ```typescript
-import { db as oldDb } from "./lib/your-orm"
+import { db as oldDb } from "./lib/your-orm";
 
-const oldQuery = await oldDb.users.findMany()
-console.log("Old ORM still works:", oldQuery)
+const oldQuery = await oldDb.users.findMany();
+console.log("Old ORM still works:", oldQuery);
 ```
 
 ## Phase 8: Add Best Practices References

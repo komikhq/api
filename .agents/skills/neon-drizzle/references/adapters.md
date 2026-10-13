@@ -61,11 +61,11 @@ npm add -D drizzle-kit
 **Connection:**
 
 ```typescript
-import { drizzle } from "drizzle-orm/neon-http"
-import { neon } from "@neondatabase/serverless"
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
 
-const sql = neon(process.env.DATABASE_URL!)
-export const db = drizzle(sql)
+const sql = neon(process.env.DATABASE_URL!);
+export const db = drizzle(sql);
 ```
 
 **Complete example:** See `templates/db-http.ts`
@@ -108,19 +108,15 @@ export const db = drizzle(sql)
 await db.batch([
   db.insert(users).values({ email: "test@example.com" }),
   db.insert(posts).values({ title: "Test" }),
-])
+]);
 ```
 
 **2. Cache query results:**
 
 ```typescript
-import { unstable_cache } from "next/cache"
+import { unstable_cache } from "next/cache";
 
-const getUsers = unstable_cache(
-  async () => db.select().from(users),
-  ["users"],
-  { revalidate: 60 }
-)
+const getUsers = unstable_cache(async () => db.select().from(users), ["users"], { revalidate: 60 });
 ```
 
 **3. Minimize round trips:**
@@ -128,7 +124,7 @@ const getUsers = unstable_cache(
 ```typescript
 const usersWithPosts = await db.query.users.findMany({
   with: { posts: true },
-})
+});
 ```
 
 ## WebSocket Adapter (@neondatabase/serverless with neon-serverless)
@@ -162,20 +158,20 @@ npm add -D drizzle-kit @types/ws
 **Connection:**
 
 ```typescript
-import { drizzle } from "drizzle-orm/neon-serverless"
-import { Pool, neonConfig } from "@neondatabase/serverless"
-import ws from "ws"
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
 
-neonConfig.webSocketConstructor = ws
+neonConfig.webSocketConstructor = ws;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL!,
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
-})
+});
 
-export const db = drizzle(pool)
+export const db = drizzle(pool);
 ```
 
 **Complete example:** See `templates/db-websocket.ts`
@@ -219,46 +215,43 @@ const pool = new Pool({
   max: 10, // Max connections
   idleTimeoutMillis: 30000, // Close idle after 30s
   connectionTimeoutMillis: 5000, // Timeout after 5s
-})
+});
 ```
 
 **2. Graceful shutdown:**
 
 ```typescript
 process.on("SIGTERM", async () => {
-  await pool.end()
-  process.exit(0)
-})
+  await pool.end();
+  process.exit(0);
+});
 
 process.on("SIGINT", async () => {
-  await pool.end()
-  process.exit(0)
-})
+  await pool.end();
+  process.exit(0);
+});
 ```
 
 **3. Use transactions:**
 
 ```typescript
 await db.transaction(async (tx) => {
-  const user = await tx
-    .insert(users)
-    .values({ email: "test@example.com" })
-    .returning()
+  const user = await tx.insert(users).values({ email: "test@example.com" }).returning();
 
-  await tx.insert(posts).values({ userId: user[0].id, title: "First post" })
-})
+  await tx.insert(posts).values({ userId: user[0].id, title: "First post" });
+});
 ```
 
 **4. Handle connection errors:**
 
 ```typescript
 pool.on("error", (err) => {
-  console.error("Unexpected pool error:", err)
-})
+  console.error("Unexpected pool error:", err);
+});
 
 pool.on("connect", () => {
-  console.log("Pool connection established")
-})
+  console.log("Pool connection established");
+});
 ```
 
 ## Framework-Specific Recommendations
@@ -280,13 +273,13 @@ pool.on("connect", () => {
 
 ```typescript
 // app/actions/users.ts
-"use server"
+"use server";
 
-import { db } from "@/db" // HTTP adapter
-import { users } from "@/db/schema"
+import { db } from "@/db"; // HTTP adapter
+import { users } from "@/db/schema";
 
 export async function createUser(email: string) {
-  return db.insert(users).values({ email }).returning()
+  return db.insert(users).values({ email }).returning();
 }
 ```
 
@@ -301,22 +294,22 @@ export async function createUser(email: string) {
 **Example:**
 
 ```typescript
-import express from "express"
-import { db } from "./db" // WebSocket adapter
-import { users } from "./db/schema"
+import express from "express";
+import { db } from "./db"; // WebSocket adapter
+import { users } from "./db/schema";
 
-const app = express()
+const app = express();
 
 app.get("/health", async (req, res) => {
   try {
-    await db.select().from(users).limit(1)
-    res.json({ status: "healthy" })
+    await db.select().from(users).limit(1);
+    res.json({ status: "healthy" });
   } catch (err) {
-    res.status(500).json({ status: "unhealthy", error: err.message })
+    res.status(500).json({ status: "unhealthy", error: err.message });
   }
-})
+});
 
-app.listen(3000)
+app.listen(3000);
 ```
 
 ### Vite/React (SPA)
@@ -344,11 +337,11 @@ app.listen(3000)
 **Setup:**
 
 ```typescript
-import { drizzle } from "drizzle-orm/neon-serverless"
-import { Pool } from "@neondatabase/serverless"
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { Pool } from "@neondatabase/serverless";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL! })
-export const db = drizzle(pool)
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+export const db = drizzle(pool);
 ```
 
 ## Mixed Environments
@@ -371,34 +364,34 @@ src/
 
 ```typescript
 // src/db/http.ts
-import { drizzle } from "drizzle-orm/neon-http"
-import { neon } from "@neondatabase/serverless"
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
 
-const sql = neon(process.env.DATABASE_URL!)
-export const httpDb = drizzle(sql)
+const sql = neon(process.env.DATABASE_URL!);
+export const httpDb = drizzle(sql);
 ```
 
 **WebSocket adapter:**
 
 ```typescript
 // src/db/ws.ts
-import { drizzle } from "drizzle-orm/neon-serverless"
-import { Pool, neonConfig } from "@neondatabase/serverless"
-import ws from "ws"
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
 
-neonConfig.webSocketConstructor = ws
-const pool = new Pool({ connectionString: process.env.DATABASE_URL! })
-export const wsDb = drizzle(pool)
+neonConfig.webSocketConstructor = ws;
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+export const wsDb = drizzle(pool);
 ```
 
 **Usage:**
 
 ```typescript
 // Vercel Edge Function
-import { httpDb as db } from "@/db/http"
+import { httpDb as db } from "@/db/http";
 
 // Express route
-import { wsDb as db } from "@/db/ws"
+import { wsDb as db } from "@/db/ws";
 ```
 
 ## Feature Comparison Table

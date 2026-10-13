@@ -9,15 +9,15 @@
     {
       "binding": "SESSIONS",
       "id": "YOUR_PRODUCTION_NAMESPACE_ID",
-      "preview_id": "YOUR_PREVIEW_NAMESPACE_ID"
-    }
+      "preview_id": "YOUR_PREVIEW_NAMESPACE_ID",
+    },
   ],
 
   // Development settings
   "dev": {
     "port": 8787,
-    "inspector_port": 9229
-  }
+    "inspector_port": 9229,
+  },
 }
 
 /*

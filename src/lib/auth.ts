@@ -1,23 +1,23 @@
-import { betterAuth } from "better-auth"
-import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { createDbClient } from "@/db"
-import * as schema from "@/db/schema"
-import { sendEmail, type EmailBindings } from "./email"
-import { renderVerificationEmailTemplate } from "./email/templates/verification"
-import { renderResetPasswordEmailTemplate } from "./email/templates/reset-password"
-import { uploadToR2, type StorageEnv } from "./storage"
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { createDbClient } from "@/db";
+import * as schema from "@/db/schema";
+import { sendEmail, type EmailBindings } from "./email";
+import { renderVerificationEmailTemplate } from "./email/templates/verification";
+import { renderResetPasswordEmailTemplate } from "./email/templates/reset-password";
+import { uploadToR2, type StorageEnv } from "./storage";
 
 export interface AuthEnv extends EmailBindings, Partial<StorageEnv> {
-  DATABASE_URL: string
-  BETTER_AUTH_SECRET: string
-  BETTER_AUTH_URL?: string
-  GOOGLE_CLIENT_ID?: string
-  GOOGLE_CLIENT_SECRET?: string
-  BUCKET_URL_USERS?: string
+  DATABASE_URL: string;
+  BETTER_AUTH_SECRET: string;
+  BETTER_AUTH_URL?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  BUCKET_URL_USERS?: string;
 }
 
 export function getAuth(env: AuthEnv) {
-  const db = createDbClient(env.DATABASE_URL)
+  const db = createDbClient(env.DATABASE_URL);
 
   return betterAuth({
     database: drizzleAdapter(db, {
@@ -57,14 +57,10 @@ export function getAuth(env: AuthEnv) {
       useSecureCookies: false,
       crossSubDomainCookies: {
         enabled: true,
-        domain: env.BETTER_AUTH_URL?.includes("localhost")
-          ? undefined
-          : ".komikhq.com",
+        domain: env.BETTER_AUTH_URL?.includes("localhost") ? undefined : ".komikhq.com",
       },
       defaultCookieAttributes: {
-        domain: env.BETTER_AUTH_URL?.includes("localhost")
-          ? undefined
-          : ".komikhq.com",
+        domain: env.BETTER_AUTH_URL?.includes("localhost") ? undefined : ".komikhq.com",
         sameSite: "lax",
         secure: true,
         httpOnly: true,
@@ -74,31 +70,26 @@ export function getAuth(env: AuthEnv) {
       user: {
         create: {
           before: async (user) => {
-            if (!user.image) return
+            if (!user.image) return;
 
             const isExternalAvatar =
-              /googleusercontent\.com|ggpht\.com|google\.com/i.test(
-                user.image
-              ) ||
+              /googleusercontent\.com|ggpht\.com|google\.com/i.test(user.image) ||
               (user.image.startsWith("http") &&
                 Boolean(env.BUCKET_URL_USERS || env.USERS_BUCKET_URL) &&
-                !user.image.includes(
-                  (env.BUCKET_URL_USERS || env.USERS_BUCKET_URL)!
-                ))
+                !user.image.includes((env.BUCKET_URL_USERS || env.USERS_BUCKET_URL)!));
 
             if (isExternalAvatar && (env.BUCKET_USERS || env.USERS_BUCKET)) {
               try {
-                const res = await fetch(user.image)
+                const res = await fetch(user.image);
                 if (res.ok) {
-                  const contentType =
-                    res.headers.get("content-type") || "image/jpeg"
+                  const contentType = res.headers.get("content-type") || "image/jpeg";
                   const ext = contentType.includes("png")
                     ? "png"
                     : contentType.includes("webp")
                       ? "webp"
-                      : "jpg"
-                  const arrayBuffer = await res.arrayBuffer()
-                  const objectKey = `avatars/google-${user.id || Date.now()}.${ext}`
+                      : "jpg";
+                  const arrayBuffer = await res.arrayBuffer();
+                  const objectKey = `avatars/google-${user.id || Date.now()}.${ext}`;
 
                   // uploadToR2 returns relative object key
                   const imageKey = await uploadToR2(
@@ -106,21 +97,18 @@ export function getAuth(env: AuthEnv) {
                     "users",
                     objectKey,
                     arrayBuffer,
-                    { contentType }
-                  )
+                    { contentType },
+                  );
 
                   return {
                     data: {
                       ...user,
                       image: imageKey,
                     },
-                  }
+                  };
                 }
               } catch (e) {
-                console.error(
-                  "[Auth] Failed to mirror external Google avatar to R2:",
-                  e
-                )
+                console.error("[Auth] Failed to mirror external Google avatar to R2:", e);
               }
             }
           },
@@ -133,19 +121,19 @@ export function getAuth(env: AuthEnv) {
         user,
         url,
       }: {
-        user: { name?: string | null; email: string }
-        url: string
+        user: { name?: string | null; email: string };
+        url: string;
       }) => {
         const { subject, html, text } = renderResetPasswordEmailTemplate({
           userName: user.name || "Pembaca KomikHQ",
           resetUrl: url,
-        })
+        });
         await sendEmail(env, {
           to: user.email,
           subject,
           html,
           text,
-        })
+        });
       },
     },
     emailVerification: {
@@ -155,29 +143,24 @@ export function getAuth(env: AuthEnv) {
         user,
         url,
       }: {
-        user: { name?: string | null; email: string }
-        url: string
+        user: { name?: string | null; email: string };
+        url: string;
       }) => {
         try {
           const { subject, html, text } = renderVerificationEmailTemplate({
             userName: user.name || "Pembaca KomikHQ",
             verificationUrl: url,
-          })
+          });
           await sendEmail(env, {
             to: user.email,
             subject,
             html,
             text,
-          })
-          console.log(
-            `[Auth] Verification email successfully sent to ${user.email}`
-          )
+          });
+          console.log(`[Auth] Verification email successfully sent to ${user.email}`);
         } catch (err) {
-          console.error(
-            `[Auth Error] Failed to send verification email to ${user.email}:`,
-            err
-          )
-          throw err
+          console.error(`[Auth Error] Failed to send verification email to ${user.email}:`, err);
+          throw err;
         }
       },
     },
@@ -192,9 +175,9 @@ export function getAuth(env: AuthEnv) {
         mapProfileToUser: async (profile) => {
           return {
             image: profile.picture || (profile as any).avatar_url || null,
-          }
+          };
         },
       },
     },
-  })
+  });
 }

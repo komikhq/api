@@ -8,46 +8,38 @@ This document provides the complete Workers KV API reference based on official C
 
 ```typescript
 interface KVNamespace {
-  get(
-    key: string,
-    options?: Partial<KVGetOptions<undefined>>
-  ): Promise<string | null>
-  get(key: string, type: "text"): Promise<string | null>
-  get<ExpectedValue = unknown>(
-    key: string,
-    type: "json"
-  ): Promise<ExpectedValue | null>
-  get(key: string, type: "arrayBuffer"): Promise<ArrayBuffer | null>
-  get(key: string, type: "stream"): Promise<ReadableStream | null>
-  get(keys: string[]): Promise<Map<string, string | null>>
+  get(key: string, options?: Partial<KVGetOptions<undefined>>): Promise<string | null>;
+  get(key: string, type: "text"): Promise<string | null>;
+  get<ExpectedValue = unknown>(key: string, type: "json"): Promise<ExpectedValue | null>;
+  get(key: string, type: "arrayBuffer"): Promise<ArrayBuffer | null>;
+  get(key: string, type: "stream"): Promise<ReadableStream | null>;
+  get(keys: string[]): Promise<Map<string, string | null>>;
   get<ExpectedValue = unknown>(
     keys: string[],
-    type: "json"
-  ): Promise<Map<string, ExpectedValue | null>>
+    type: "json",
+  ): Promise<Map<string, ExpectedValue | null>>;
 
   getWithMetadata<Metadata = unknown>(
     key: string,
-    options?: Partial<KVGetOptions<undefined>>
-  ): Promise<KVGetWithMetadataResult<string, Metadata>>
+    options?: Partial<KVGetOptions<undefined>>,
+  ): Promise<KVGetWithMetadataResult<string, Metadata>>;
   getWithMetadata<ExpectedValue = unknown, Metadata = unknown>(
     key: string,
-    type: "json"
-  ): Promise<KVGetWithMetadataResult<ExpectedValue, Metadata>>
+    type: "json",
+  ): Promise<KVGetWithMetadataResult<ExpectedValue, Metadata>>;
   getWithMetadata<Metadata = unknown>(
-    keys: string[]
-  ): Promise<Map<string, KVGetWithMetadataResult<string, Metadata>>>
+    keys: string[],
+  ): Promise<Map<string, KVGetWithMetadataResult<string, Metadata>>>;
 
   put(
     key: string,
     value: string | ArrayBuffer | ArrayBufferView | ReadableStream,
-    options?: KVPutOptions
-  ): Promise<void>
+    options?: KVPutOptions,
+  ): Promise<void>;
 
-  delete(key: string): Promise<void>
+  delete(key: string): Promise<void>;
 
-  list<Metadata = unknown>(
-    options?: KVListOptions
-  ): Promise<KVListResult<Metadata>>
+  list<Metadata = unknown>(options?: KVListOptions): Promise<KVListResult<Metadata>>;
 }
 ```
 
@@ -80,22 +72,22 @@ get(key: string, options?: KVGetOptions): Promise<T | null>
 
 ```typescript
 // Text (default)
-const value = await env.MY_KV.get("my-key")
+const value = await env.MY_KV.get("my-key");
 
 // JSON
-const data = await env.MY_KV.get<MyType>("my-key", { type: "json" })
+const data = await env.MY_KV.get<MyType>("my-key", { type: "json" });
 
 // With cache optimization
 const value = await env.MY_KV.get("my-key", {
   type: "text",
   cacheTtl: 300, // Cache for 5 minutes
-})
+});
 
 // ArrayBuffer
-const buffer = await env.MY_KV.get("binary-key", { type: "arrayBuffer" })
+const buffer = await env.MY_KV.get("binary-key", { type: "arrayBuffer" });
 
 // Stream (for large values)
-const stream = await env.MY_KV.get("large-file", { type: "stream" })
+const stream = await env.MY_KV.get("large-file", { type: "stream" });
 ```
 
 ---
@@ -129,18 +121,18 @@ get(keys: string[], type?: 'text' | 'json'): Promise<Map<string, T | null>>
 
 ```typescript
 // Read multiple keys
-const keys = ["key1", "key2", "key3"]
-const values = await env.MY_KV.get(keys)
+const keys = ["key1", "key2", "key3"];
+const values = await env.MY_KV.get(keys);
 
 // Access values
-const value1 = values.get("key1")
-const value2 = values.get("key2")
+const value1 = values.get("key1");
+const value2 = values.get("key2");
 
 // Convert to object
-const obj = Object.fromEntries(values)
+const obj = Object.fromEntries(values);
 
 // Read as JSON
-const values = await env.MY_KV.get<MyType>(keys, "json")
+const values = await env.MY_KV.get<MyType>(keys, "json");
 ```
 
 ---
@@ -175,17 +167,17 @@ getWithMetadata<Value, Metadata>(
 
 ```typescript
 // Get with metadata
-const { value, metadata } = await env.MY_KV.getWithMetadata("my-key")
+const { value, metadata } = await env.MY_KV.getWithMetadata("my-key");
 
 // Get as JSON with metadata
 const { value, metadata } = await env.MY_KV.getWithMetadata<MyType>("my-key", {
   type: "json",
   cacheTtl: 300,
-})
+});
 
 if (value !== null) {
-  console.log("Value:", value)
-  console.log("Metadata:", metadata)
+  console.log("Value:", value);
+  console.log("Metadata:", metadata);
 }
 ```
 
@@ -207,11 +199,11 @@ getWithMetadata<Metadata>(
 **Examples:**
 
 ```typescript
-const keys = ["key1", "key2"]
-const results = await env.MY_KV.getWithMetadata(keys)
+const keys = ["key1", "key2"];
+const results = await env.MY_KV.getWithMetadata(keys);
 
 for (const [key, data] of results) {
-  console.log(key, data.value, data.metadata)
+  console.log(key, data.value, data.metadata);
 }
 ```
 
@@ -250,21 +242,21 @@ put(
 
 ```typescript
 // Simple write
-await env.MY_KV.put("key", "value")
+await env.MY_KV.put("key", "value");
 
 // Write JSON
-await env.MY_KV.put("user:123", JSON.stringify({ name: "John" }))
+await env.MY_KV.put("user:123", JSON.stringify({ name: "John" }));
 
 // Write with TTL
 await env.MY_KV.put("session", sessionData, {
   expirationTtl: 3600, // Expire in 1 hour
-})
+});
 
 // Write with absolute expiration
-const expirationTime = Math.floor(Date.now() / 1000) + 86400 // 24 hours
+const expirationTime = Math.floor(Date.now() / 1000) + 86400; // 24 hours
 await env.MY_KV.put("token", tokenValue, {
   expiration: expirationTime,
-})
+});
 
 // Write with metadata
 await env.MY_KV.put("config", configData, {
@@ -273,13 +265,13 @@ await env.MY_KV.put("config", configData, {
     updatedBy: "admin",
     version: 2,
   },
-})
+});
 
 // Write with everything
 await env.MY_KV.put("key", "value", {
   expirationTtl: 600,
   metadata: { source: "api" },
-})
+});
 ```
 
 **Limits:**
@@ -316,11 +308,11 @@ delete(key: string): Promise<void>
 
 ```typescript
 // Delete single key
-await env.MY_KV.delete("my-key")
+await env.MY_KV.delete("my-key");
 
 // Delete multiple keys
-const keys = ["key1", "key2", "key3"]
-await Promise.all(keys.map((key) => env.MY_KV.delete(key)))
+const keys = ["key1", "key2", "key3"];
+await Promise.all(keys.map((key) => env.MY_KV.delete(key)));
 ```
 
 **Note:** For bulk delete of >10,000 keys, use the REST API.
@@ -343,9 +335,9 @@ list<Metadata>(options?: KVListOptions): Promise<KVListResult<Metadata>>
 
 ```typescript
 interface KVListOptions {
-  prefix?: string // Filter keys by prefix
-  limit?: number // Max keys to return (default: 1000, max: 1000)
-  cursor?: string // Pagination cursor
+  prefix?: string; // Filter keys by prefix
+  limit?: number; // Max keys to return (default: 1000, max: 1000)
+  cursor?: string; // Pagination cursor
 }
 ```
 
@@ -354,12 +346,12 @@ interface KVListOptions {
 ```typescript
 interface KVListResult<Metadata> {
   keys: {
-    name: string
-    expiration?: number // Seconds since epoch
-    metadata?: Metadata
-  }[]
-  list_complete: boolean // true if no more keys
-  cursor?: string // Use for next page
+    name: string;
+    expiration?: number; // Seconds since epoch
+    metadata?: Metadata;
+  }[];
+  list_complete: boolean; // true if no more keys
+  cursor?: string; // Use for next page
 }
 ```
 
@@ -367,24 +359,24 @@ interface KVListResult<Metadata> {
 
 ```typescript
 // List all keys (up to 1000)
-const result = await env.MY_KV.list()
+const result = await env.MY_KV.list();
 
 // List with prefix
-const users = await env.MY_KV.list({ prefix: "user:" })
+const users = await env.MY_KV.list({ prefix: "user:" });
 
 // List with limit
-const recent = await env.MY_KV.list({ limit: 100 })
+const recent = await env.MY_KV.list({ limit: 100 });
 
 // Pagination
-let cursor: string | undefined
+let cursor: string | undefined;
 do {
-  const result = await env.MY_KV.list({ cursor })
+  const result = await env.MY_KV.list({ cursor });
 
   // Process keys
-  console.log(result.keys)
+  console.log(result.keys);
 
-  cursor = result.list_complete ? undefined : result.cursor
-} while (cursor)
+  cursor = result.list_complete ? undefined : result.cursor;
+} while (cursor);
 ```
 
 **Important:**
@@ -402,8 +394,8 @@ do {
 
 ```typescript
 interface KVGetOptions<Type> {
-  type: Type // "text" | "json" | "arrayBuffer" | "stream"
-  cacheTtl?: number // Edge cache duration (minimum: 60 seconds)
+  type: Type; // "text" | "json" | "arrayBuffer" | "stream"
+  cacheTtl?: number; // Edge cache duration (minimum: 60 seconds)
 }
 ```
 
@@ -411,9 +403,9 @@ interface KVGetOptions<Type> {
 
 ```typescript
 interface KVPutOptions {
-  expiration?: number // Seconds since epoch
-  expirationTtl?: number // Seconds from now (minimum: 60)
-  metadata?: any // Max 1024 bytes serialized
+  expiration?: number; // Seconds since epoch
+  expirationTtl?: number; // Seconds from now (minimum: 60)
+  metadata?: any; // Max 1024 bytes serialized
 }
 ```
 
@@ -421,8 +413,8 @@ interface KVPutOptions {
 
 ```typescript
 interface KVGetWithMetadataResult<Value, Metadata> {
-  value: Value | null
-  metadata: Metadata | null
+  value: Value | null;
+  metadata: Metadata | null;
 }
 ```
 
@@ -430,9 +422,9 @@ interface KVGetWithMetadataResult<Value, Metadata> {
 
 ```typescript
 interface KVListOptions {
-  prefix?: string
-  limit?: number // Default: 1000, max: 1000
-  cursor?: string
+  prefix?: string;
+  limit?: number; // Default: 1000, max: 1000
+  cursor?: string;
 }
 ```
 
@@ -441,12 +433,12 @@ interface KVListOptions {
 ```typescript
 interface KVListResult<Metadata = unknown> {
   keys: {
-    name: string
-    expiration?: number
-    metadata?: Metadata
-  }[]
-  list_complete: boolean
-  cursor?: string
+    name: string;
+    expiration?: number;
+    metadata?: Metadata;
+  }[];
+  list_complete: boolean;
+  cursor?: string;
 }
 ```
 
@@ -487,14 +479,14 @@ interface KVListResult<Metadata = unknown> {
 
 ```typescript
 // Tokyo datacenter
-await env.KV.put("counter", "1")
-const value1 = await env.KV.get("counter") // "1" ✅
+await env.KV.put("counter", "1");
+const value1 = await env.KV.get("counter"); // "1" ✅
 
 // London datacenter (within 60 seconds)
-const value2 = await env.KV.get("counter") // Might be old value ⚠️
+const value2 = await env.KV.get("counter"); // Might be old value ⚠️
 
 // After 60+ seconds globally
-const value3 = await env.KV.get("counter") // "1" ✅
+const value3 = await env.KV.get("counter"); // "1" ✅
 ```
 
 **For strong consistency, use [Durable Objects](https://developers.cloudflare.com/durable-objects/).**

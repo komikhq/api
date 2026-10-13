@@ -25,7 +25,7 @@ Advanced performance optimization techniques for Workers KV.
 The `cacheTtl` parameter controls edge caching for KV reads:
 
 ```typescript
-const value = await env.KV.get("key", { cacheTtl: 300 })
+const value = await env.KV.get("key", { cacheTtl: 300 });
 ```
 
 **How it works**:
@@ -56,29 +56,29 @@ const value = await env.KV.get("key", { cacheTtl: 300 })
 ```typescript
 // Adaptive caching based on data freshness
 async function getWithAdaptiveCacheTtl(kv: KVNamespace, key: string) {
-  const { value, metadata } = await kv.getWithMetadata(key)
+  const { value, metadata } = await kv.getWithMetadata(key);
 
   if (!metadata?.updatedAt) {
     // No metadata, use default cacheTtl
-    return kv.get(key, { cacheTtl: 300 })
+    return kv.get(key, { cacheTtl: 300 });
   }
 
-  const age = Date.now() - metadata.updatedAt
+  const age = Date.now() - metadata.updatedAt;
 
   // Older data can be cached longer
-  let cacheTtl: number
+  let cacheTtl: number;
   if (age < 60000) {
     // <1 minute old
-    cacheTtl = 60
+    cacheTtl = 60;
   } else if (age < 3600000) {
     // <1 hour old
-    cacheTtl = 300
+    cacheTtl = 300;
   } else {
     // >1 hour old
-    cacheTtl = 3600
+    cacheTtl = 3600;
   }
 
-  return kv.get(key, { cacheTtl })
+  return kv.get(key, { cacheTtl });
 }
 ```
 
@@ -87,12 +87,12 @@ async function getWithAdaptiveCacheTtl(kv: KVNamespace, key: string) {
 ```typescript
 // Pre-warm cache for frequently accessed keys
 async function warmCache(env: Bindings) {
-  const hotKeys = ["config:theme", "config:features", "pricing:plans"]
+  const hotKeys = ["config:theme", "config:features", "pricing:plans"];
 
   // Fetch all hot keys with long cacheTtl
-  await Promise.all(hotKeys.map((key) => env.KV.get(key, { cacheTtl: 3600 })))
+  await Promise.all(hotKeys.map((key) => env.KV.get(key, { cacheTtl: 3600 })));
 
-  console.log("Cache warmed")
+  console.log("Cache warmed");
 }
 
 // Call during Worker initialization or scheduled job
@@ -108,9 +108,9 @@ async function warmCache(env: Bindings) {
 
 ```typescript
 // ❌ Slow: 600ms (3 × 200ms)
-const user = await env.KV.get("user:123")
-const prefs = await env.KV.get("prefs:123")
-const stats = await env.KV.get("stats:123")
+const user = await env.KV.get("user:123");
+const prefs = await env.KV.get("prefs:123");
+const stats = await env.KV.get("stats:123");
 ```
 
 **Solution**: Parallel reads
@@ -121,7 +121,7 @@ const [user, prefs, stats] = await Promise.all([
   env.KV.get("user:123"),
   env.KV.get("prefs:123"),
   env.KV.get("stats:123"),
-])
+]);
 ```
 
 ### Batched Writes with waitUntil()
@@ -157,20 +157,20 @@ async function getAllUserPreferences(kv: KVNamespace, userId: string) {
   const { keys } = await kv.list({
     prefix: `user:${userId}:pref:`,
     limit: 100,
-  })
+  });
 
   // 2. Batch get all values (parallel)
-  const values = await Promise.all(keys.map(({ name }) => kv.get(name, "json")))
+  const values = await Promise.all(keys.map(({ name }) => kv.get(name, "json")));
 
   // 3. Combine into object
   return keys.reduce(
     (acc, key, i) => {
-      const prefName = key.name.split(":").pop()!
-      acc[prefName] = values[i]
-      return acc
+      const prefName = key.name.split(":").pop()!;
+      acc[prefName] = values[i];
+      return acc;
     },
-    {} as Record<string, any>
-  )
+    {} as Record<string, any>,
+  );
 }
 ```
 
@@ -184,22 +184,22 @@ async function getAllUserPreferences(kv: KVNamespace, userId: string) {
 
 ```typescript
 // ✅ Good: Hierarchical structure
-"user:123:preferences"
-"user:123:stats"
-"user:124:preferences"
-"user:124:stats"
+"user:123:preferences";
+"user:123:stats";
+"user:124:preferences";
+"user:124:stats";
 
 // Efficient listing
-await env.KV.list({ prefix: "user:123:" }) // All user 123 data
+await env.KV.list({ prefix: "user:123:" }); // All user 123 data
 ```
 
 **Bad key design**: Random structure
 
 ```typescript
 // ❌ Bad: Random structure
-"preferences_user_123"
-"stats_for_user_123"
-"user124_preferences"
+"preferences_user_123";
+"stats_for_user_123";
+"user124_preferences";
 
 // Cannot efficiently list all user 123 data
 ```
@@ -210,10 +210,10 @@ await env.KV.list({ prefix: "user:123:" }) // All user 123 data
 
 ```typescript
 // ❌ Wasteful (64 bytes)
-const key = `user_preferences_for_user_id_${userId}_setting_${settingName}`
+const key = `user_preferences_for_user_id_${userId}_setting_${settingName}`;
 
 // ✅ Efficient (24 bytes)
-const key = `u:${userId}:s:${settingName}`
+const key = `u:${userId}:s:${settingName}`;
 
 // Benefits:
 // - Faster list operations (less data transfer)
@@ -227,11 +227,11 @@ const key = `u:${userId}:s:${settingName}`
 
 ```typescript
 // ❌ 5 KV operations
-await env.KV.put("user:123:name", "Alice")
-await env.KV.put("user:123:email", "alice@example.com")
-await env.KV.put("user:123:age", "30")
-await env.KV.put("user:123:city", "NYC")
-await env.KV.put("user:123:country", "USA")
+await env.KV.put("user:123:name", "Alice");
+await env.KV.put("user:123:email", "alice@example.com");
+await env.KV.put("user:123:age", "30");
+await env.KV.put("user:123:city", "NYC");
+await env.KV.put("user:123:country", "USA");
 ```
 
 **Solution**: Coalesce into single key
@@ -246,8 +246,8 @@ await env.KV.put(
     age: 30,
     city: "NYC",
     country: "USA",
-  })
-)
+  }),
+);
 
 // Trade-off:
 // - Fewer operations = faster, cheaper
@@ -276,11 +276,11 @@ await env.KV.put("article:123", articleContent, {
     views: 0,
     tags: ["tech", "cloudflare"],
   },
-})
+});
 
 // Single operation retrieves both
-const { value, metadata } = await env.KV.getWithMetadata("article:123")
-console.log(metadata.author) // No extra KV read!
+const { value, metadata } = await env.KV.getWithMetadata("article:123");
+console.log(metadata.author); // No extra KV read!
 ```
 
 ### Metadata Size Limits
@@ -288,31 +288,26 @@ console.log(metadata.author) // No extra KV read!
 ```typescript
 // Check metadata size before put()
 function validateMetadata(metadata: any) {
-  const size = new Blob([JSON.stringify(metadata)]).size
+  const size = new Blob([JSON.stringify(metadata)]).size;
 
   if (size > 1024) {
-    throw new Error(`Metadata too large: ${size} bytes (max 1024)`)
+    throw new Error(`Metadata too large: ${size} bytes (max 1024)`);
   }
 
-  return metadata
+  return metadata;
 }
 
 // Split large metadata into value
-async function putWithLargeMetadata(
-  kv: KVNamespace,
-  key: string,
-  value: string,
-  metadata: any
-) {
-  const metadataSize = new Blob([JSON.stringify(metadata)]).size
+async function putWithLargeMetadata(kv: KVNamespace, key: string, value: string, metadata: any) {
+  const metadataSize = new Blob([JSON.stringify(metadata)]).size;
 
   if (metadataSize <= 1024) {
     // Fits in metadata
-    await kv.put(key, value, { metadata })
+    await kv.put(key, value, { metadata });
   } else {
     // Too large, store as separate key
-    await kv.put(key, value)
-    await kv.put(`${key}:metadata`, JSON.stringify(metadata))
+    await kv.put(key, value);
+    await kv.put(`${key}:metadata`, JSON.stringify(metadata));
   }
 }
 ```
@@ -326,21 +321,21 @@ async function putWithLargeMetadata(
 ```typescript
 // ✅ Efficient pagination
 async function listAllKeys(kv: KVNamespace, prefix: string) {
-  const allKeys: KVNamespaceListKey[] = []
-  let cursor: string | undefined
+  const allKeys: KVNamespaceListKey[] = [];
+  let cursor: string | undefined;
 
   do {
     const result = await kv.list({
       prefix,
       limit: 1000, // Max limit for efficiency
       cursor,
-    })
+    });
 
-    allKeys.push(...result.keys)
-    cursor = result.cursor
-  } while (cursor)
+    allKeys.push(...result.keys);
+    cursor = result.cursor;
+  } while (cursor);
 
-  return allKeys
+  return allKeys;
 }
 ```
 
@@ -350,7 +345,7 @@ async function listAllKeys(kv: KVNamespace, prefix: string) {
 
 ```typescript
 // ❌ Dangerous: Could list millions of keys
-const { keys } = await env.KV.list()
+const { keys } = await env.KV.list();
 ```
 
 **Solution**: Always use limits
@@ -360,7 +355,7 @@ const { keys } = await env.KV.list()
 const { keys } = await env.KV.list({
   limit: 100,
   prefix: "user:",
-})
+});
 
 // For large result sets, paginate
 ```
@@ -373,10 +368,10 @@ async function findRecentArticles(kv: KVNamespace, minDate: number) {
   const { keys } = await kv.list({
     prefix: "article:",
     limit: 1000,
-  })
+  });
 
   // Filter using metadata (no additional reads!)
-  return keys.filter((key) => key.metadata?.publishedAt > minDate)
+  return keys.filter((key) => key.metadata?.publishedAt > minDate);
 }
 ```
 
@@ -390,23 +385,19 @@ async function findRecentArticles(kv: KVNamespace, minDate: number) {
 // Automatic invalidation via TTL
 await env.KV.put("cache:api-response", data, {
   expirationTtl: 300, // Auto-delete after 5 minutes
-})
+});
 ```
 
 ### Manual Invalidation
 
 ```typescript
 // Invalidate on data change
-async function updateUserProfile(
-  kv: KVNamespace,
-  userId: string,
-  profile: any
-) {
+async function updateUserProfile(kv: KVNamespace, userId: string, profile: any) {
   // 1. Delete old cache
-  await kv.delete(`cache:user:${userId}`)
+  await kv.delete(`cache:user:${userId}`);
 
   // 2. Update source data
-  await kv.put(`user:${userId}`, JSON.stringify(profile))
+  await kv.put(`user:${userId}`, JSON.stringify(profile));
 
   // Cache will be rebuilt on next read
 }
@@ -416,16 +407,16 @@ async function updateUserProfile(
 
 ```typescript
 // Use version in key for invalidation
-let CACHE_VERSION = 1
+let CACHE_VERSION = 1;
 
 async function getCachedData(kv: KVNamespace) {
-  const key = `cache:data:v${CACHE_VERSION}`
-  return await kv.get(key, "json")
+  const key = `cache:data:v${CACHE_VERSION}`;
+  return await kv.get(key, "json");
 }
 
 // Invalidate all caches by incrementing version
 function invalidateAll() {
-  CACHE_VERSION++ // Old caches now orphaned, will expire via TTL
+  CACHE_VERSION++; // Old caches now orphaned, will expire via TTL
 }
 ```
 
@@ -481,22 +472,22 @@ async function getWithSWR(
 
 ```typescript
 // 1. Aggressive cacheTtl
-const config = await env.KV.get("config", { cacheTtl: 3600 })
+const config = await env.KV.get("config", { cacheTtl: 3600 });
 
 // 2. Pre-warming
 async function warmReadHeavyCache(env: Bindings) {
-  const hotKeys = ["config", "pricing", "features"]
-  await Promise.all(hotKeys.map((k) => env.KV.get(k, { cacheTtl: 3600 })))
+  const hotKeys = ["config", "pricing", "features"];
+  await Promise.all(hotKeys.map((k) => env.KV.get(k, { cacheTtl: 3600 })));
 }
 
 // 3. Deduplicate reads
-const cache = new Map<string, Promise<string | null>>()
+const cache = new Map<string, Promise<string | null>>();
 
 async function deduplicatedGet(kv: KVNamespace, key: string) {
   if (!cache.has(key)) {
-    cache.set(key, kv.get(key))
+    cache.set(key, kv.get(key));
   }
-  return cache.get(key)!
+  return cache.get(key)!;
 }
 ```
 
@@ -511,25 +502,25 @@ async function deduplicatedGet(kv: KVNamespace, key: string) {
 async function batchWrite(
   kv: KVNamespace,
   writes: Array<{ key: string; value: string }>,
-  ctx: ExecutionContext
+  ctx: ExecutionContext,
 ) {
-  ctx.waitUntil(Promise.all(writes.map(({ key, value }) => kv.put(key, value))))
+  ctx.waitUntil(Promise.all(writes.map(({ key, value }) => kv.put(key, value))));
 }
 
 // 2. Coalesce rapid updates
-let pendingWrites = new Map<string, string>()
-let writeTimer: any
+let pendingWrites = new Map<string, string>();
+let writeTimer: any;
 
 function coalescedPut(kv: KVNamespace, key: string, value: string) {
-  pendingWrites.set(key, value)
+  pendingWrites.set(key, value);
 
-  clearTimeout(writeTimer)
+  clearTimeout(writeTimer);
   writeTimer = setTimeout(async () => {
-    const writes = Array.from(pendingWrites.entries())
-    pendingWrites.clear()
+    const writes = Array.from(pendingWrites.entries());
+    pendingWrites.clear();
 
-    await Promise.all(writes.map(([k, v]) => kv.put(k, v)))
-  }, 1000) // Flush every second
+    await Promise.all(writes.map(([k, v]) => kv.put(k, v)));
+  }, 1000); // Flush every second
 }
 
 // 3. Use Durable Objects for high-frequency writes
@@ -544,30 +535,30 @@ function coalescedPut(kv: KVNamespace, key: string, value: string) {
 
 ```typescript
 async function benchmarkRead(kv: KVNamespace, key: string) {
-  const iterations = 100
+  const iterations = 100;
 
   // Warm up
-  await kv.get(key)
+  await kv.get(key);
 
   // Benchmark without cacheTtl
-  const start1 = Date.now()
+  const start1 = Date.now();
   for (let i = 0; i < iterations; i++) {
-    await kv.get(key)
+    await kv.get(key);
   }
-  const withoutCache = (Date.now() - start1) / iterations
+  const withoutCache = (Date.now() - start1) / iterations;
 
   // Benchmark with cacheTtl
-  const start2 = Date.now()
+  const start2 = Date.now();
   for (let i = 0; i < iterations; i++) {
-    await kv.get(key, { cacheTtl: 300 })
+    await kv.get(key, { cacheTtl: 300 });
   }
-  const withCache = (Date.now() - start2) / iterations
+  const withCache = (Date.now() - start2) / iterations;
 
   console.log({
     withoutCache: `${withoutCache.toFixed(2)}ms`,
     withCache: `${withCache.toFixed(2)}ms`,
     improvement: `${((1 - withCache / withoutCache) * 100).toFixed(1)}%`,
-  })
+  });
 }
 ```
 
@@ -575,27 +566,25 @@ async function benchmarkRead(kv: KVNamespace, key: string) {
 
 ```typescript
 async function benchmarkWrite(kv: KVNamespace) {
-  const iterations = 100
+  const iterations = 100;
 
   // Sequential writes
-  const start1 = Date.now()
+  const start1 = Date.now();
   for (let i = 0; i < iterations; i++) {
-    await kv.put(`bench:${i}`, "value")
+    await kv.put(`bench:${i}`, "value");
   }
-  const sequential = Date.now() - start1
+  const sequential = Date.now() - start1;
 
   // Parallel writes
-  const start2 = Date.now()
-  await Promise.all(
-    Array.from({ length: iterations }, (_, i) => kv.put(`bench:${i}`, "value"))
-  )
-  const parallel = Date.now() - start2
+  const start2 = Date.now();
+  await Promise.all(Array.from({ length: iterations }, (_, i) => kv.put(`bench:${i}`, "value")));
+  const parallel = Date.now() - start2;
 
   console.log({
     sequential: `${sequential}ms`,
     parallel: `${parallel}ms`,
     speedup: `${(sequential / parallel).toFixed(1)}x`,
-  })
+  });
 }
 ```
 
@@ -604,46 +593,42 @@ async function benchmarkWrite(kv: KVNamespace) {
 ```typescript
 // Complete performance test suite
 export async function performanceTest(env: Bindings) {
-  console.log("KV Performance Test Suite")
+  console.log("KV Performance Test Suite");
 
   // Test 1: Read latency
-  await env.KV.put("test:latency", "value")
-  const readStart = Date.now()
-  await env.KV.get("test:latency")
-  console.log(`Read latency: ${Date.now() - readStart}ms`)
+  await env.KV.put("test:latency", "value");
+  const readStart = Date.now();
+  await env.KV.get("test:latency");
+  console.log(`Read latency: ${Date.now() - readStart}ms`);
 
   // Test 2: cacheTtl benefit
-  const cachedStart = Date.now()
-  await env.KV.get("test:latency", { cacheTtl: 60 })
-  console.log(`Cached read: ${Date.now() - cachedStart}ms`)
+  const cachedStart = Date.now();
+  await env.KV.get("test:latency", { cacheTtl: 60 });
+  console.log(`Cached read: ${Date.now() - cachedStart}ms`);
 
   // Test 3: Parallel vs Sequential
-  const parallelStart = Date.now()
-  await Promise.all([
-    env.KV.get("test:1"),
-    env.KV.get("test:2"),
-    env.KV.get("test:3"),
-  ])
-  const parallelTime = Date.now() - parallelStart
+  const parallelStart = Date.now();
+  await Promise.all([env.KV.get("test:1"), env.KV.get("test:2"), env.KV.get("test:3")]);
+  const parallelTime = Date.now() - parallelStart;
 
-  const seqStart = Date.now()
-  await env.KV.get("test:1")
-  await env.KV.get("test:2")
-  await env.KV.get("test:3")
-  const seqTime = Date.now() - seqStart
+  const seqStart = Date.now();
+  await env.KV.get("test:1");
+  await env.KV.get("test:2");
+  await env.KV.get("test:3");
+  const seqTime = Date.now() - seqStart;
 
   console.log({
     parallel: `${parallelTime}ms`,
     sequential: `${seqTime}ms`,
     speedup: `${(seqTime / parallelTime).toFixed(1)}x`,
-  })
+  });
 
   // Test 4: List performance
-  const listStart = Date.now()
-  const { keys } = await env.KV.list({ limit: 1000 })
-  console.log(`List 1000 keys: ${Date.now() - listStart}ms`)
+  const listStart = Date.now();
+  const { keys } = await env.KV.list({ limit: 1000 });
+  console.log(`List 1000 keys: ${Date.now() - listStart}ms`);
 
-  return { success: true }
+  return { success: true };
 }
 ```
 
@@ -658,21 +643,21 @@ export async function performanceTest(env: Bindings) {
 ```typescript
 // Without cacheTtl: 1M reads/day = $0.50
 // With cacheTtl=300: ~10K reads/day = $0.005 (99% savings)
-const config = await env.KV.get("config", { cacheTtl: 300 })
+const config = await env.KV.get("config", { cacheTtl: 300 });
 ```
 
 **Strategy 2: Coalesce writes**
 
 ```typescript
 // ❌ Expensive: 5 write operations = $0.025 per million users
-await env.KV.put("user:name", name)
-await env.KV.put("user:email", email)
-await env.KV.put("user:age", age)
-await env.KV.put("user:city", city)
-await env.KV.put("user:country", country)
+await env.KV.put("user:name", name);
+await env.KV.put("user:email", email);
+await env.KV.put("user:age", age);
+await env.KV.put("user:city", city);
+await env.KV.put("user:country", country);
 
 // ✅ Cheap: 1 write operation = $0.005 per million users
-await env.KV.put("user", JSON.stringify({ name, email, age, city, country }))
+await env.KV.put("user", JSON.stringify({ name, email, age, city, country }));
 ```
 
 **Strategy 3: Use TTL to reduce storage costs**
@@ -681,7 +666,7 @@ await env.KV.put("user", JSON.stringify({ name, email, age, city, country }))
 // Auto-expire temporary data
 await env.KV.put("session:123", data, {
   expirationTtl: 86400, // 24 hours
-})
+});
 
 // Storage freed automatically, no ongoing costs
 ```
@@ -696,14 +681,14 @@ const [user, prefs, stats] = await Promise.all([
   env.KV.get("user:123"),
   env.KV.get("prefs:123"),
   env.KV.get("stats:123"),
-])
+]);
 ```
 
 **Strategy 2: Aggressive caching**
 
 ```typescript
 // Long cacheTtl = faster reads (slight staleness acceptable)
-const pricing = await env.KV.get("pricing", { cacheTtl: 3600 })
+const pricing = await env.KV.get("pricing", { cacheTtl: 3600 });
 ```
 
 **Strategy 3: Pre-computation**
@@ -711,17 +696,17 @@ const pricing = await env.KV.get("pricing", { cacheTtl: 3600 })
 ```typescript
 // Compute once, cache result
 async function getExpensiveComputation(kv: KVNamespace) {
-  let result = await kv.get("computed:result", "json")
+  let result = await kv.get("computed:result", "json");
 
   if (!result) {
     // Expensive computation
-    result = await computeExpensiveResult()
+    result = await computeExpensiveResult();
     await kv.put("computed:result", JSON.stringify(result), {
       expirationTtl: 3600,
-    })
+    });
   }
 
-  return result
+  return result;
 }
 ```
 

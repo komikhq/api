@@ -18,9 +18,9 @@ Comprehensive reference for KV limits, quotas, and pricing.
 - **Recommendation:** Store large files in R2, use KV for metadata
 - **Calculation:**
   ```typescript
-  const sizeInBytes = new Blob([value]).size
+  const sizeInBytes = new Blob([value]).size;
   if (sizeInBytes > 25 * 1024 * 1024) {
-    throw new Error("Value exceeds 25MB limit")
+    throw new Error("Value exceeds 25MB limit");
   }
   ```
 
@@ -36,7 +36,7 @@ Comprehensive reference for KV limits, quotas, and pricing.
       author: "user123",
       version: "1.0",
     }, // Must be <1KB when JSON stringified
-  })
+  });
   ```
 
 ### Namespace Limits
@@ -58,12 +58,12 @@ Comprehensive reference for KV limits, quotas, and pricing.
   ```typescript
   // ❌ Will hit rate limit (>1000 writes/sec to same key)
   for (let i = 0; i < 2000; i++) {
-    await env.KV.put("counter", String(i))
+    await env.KV.put("counter", String(i));
   }
 
   // ✅ Won't hit rate limit (different keys)
   for (let i = 0; i < 2000; i++) {
-    await env.KV.put(`counter:${i}`, String(i))
+    await env.KV.put(`counter:${i}`, String(i));
   }
   ```
 
@@ -88,16 +88,16 @@ Comprehensive reference for KV limits, quotas, and pricing.
 
   ```typescript
   async function listAll(kv, prefix = "") {
-    let keys = []
-    let cursor
+    let keys = [];
+    let cursor;
 
     do {
-      const result = await kv.list({ prefix, cursor, limit: 1000 })
-      keys.push(...result.keys)
-      cursor = result.cursor
-    } while (cursor)
+      const result = await kv.list({ prefix, cursor, limit: 1000 });
+      keys.push(...result.keys);
+      cursor = result.cursor;
+    } while (cursor);
 
-    return keys
+    return keys;
   }
   ```
 
@@ -184,7 +184,7 @@ Comprehensive reference for KV limits, quotas, and pricing.
    // Auto-expire temporary data
    await env.KV.put("session", data, {
      expirationTtl: 86400, // 24 hours
-   })
+   });
    ```
 
 2. **Use cacheTtl to reduce read operations**
@@ -193,18 +193,18 @@ Comprehensive reference for KV limits, quotas, and pricing.
    // Cache at edge = fewer KV reads
    const config = await env.KV.get("config", {
      cacheTtl: 3600, // 1 hour
-   })
+   });
    ```
 
 3. **Coalesce small values**
 
    ```typescript
    // ❌ 5 write operations
-   await env.KV.put("user:name", name)
-   await env.KV.put("user:email", email)
-   await env.KV.put("user:age", age)
-   await env.KV.put("user:city", city)
-   await env.KV.put("user:country", country)
+   await env.KV.put("user:name", name);
+   await env.KV.put("user:email", email);
+   await env.KV.put("user:age", age);
+   await env.KV.put("user:city", city);
+   await env.KV.put("user:country", country);
 
    // ✅ 1 write operation
    await env.KV.put(
@@ -215,8 +215,8 @@ Comprehensive reference for KV limits, quotas, and pricing.
        age,
        city,
        country,
-     })
-   )
+     }),
+   );
    ```
 
 4. **Use metadata for small data**
@@ -225,16 +225,16 @@ Comprehensive reference for KV limits, quotas, and pricing.
    // Metadata is included in get() at no extra cost
    await env.KV.put("key", mainValue, {
      metadata: { count: 123, updated: Date.now() },
-   })
+   });
 
-   const { value, metadata } = await env.KV.getWithMetadata("key")
+   const { value, metadata } = await env.KV.getWithMetadata("key");
    // One operation, two pieces of data
    ```
 
 5. **Use waitUntil() for non-critical writes**
    ```typescript
    // Don't wait for analytics writes
-   ctx.waitUntil(env.KV.put("analytics", data))
+   ctx.waitUntil(env.KV.put("analytics", data));
    // Response returns immediately, write happens in background
    ```
 
@@ -281,17 +281,17 @@ Create alerts for approaching limits:
 1. **Use Durable Objects** (designed for high-frequency state)
 2. **Distribute across keys**
    ```typescript
-   const shardKey = `counter:shard${Math.floor(Math.random() * 10)}`
-   await env.KV.put(shardKey, newValue)
+   const shardKey = `counter:shard${Math.floor(Math.random() * 10)}`;
+   await env.KV.put(shardKey, newValue);
    ```
 3. **Batch updates**
    ```typescript
    // Accumulate in memory, write periodically
-   let batch = []
+   let batch = [];
    setInterval(() => {
-     env.KV.put("batch", JSON.stringify(batch))
-     batch = []
-   }, 1000)
+     env.KV.put("batch", JSON.stringify(batch));
+     batch = [];
+   }, 1000);
    ```
 
 ### For Large Values (>25 MB)
@@ -302,7 +302,7 @@ Create alerts for approaching limits:
 
 ```typescript
 // Upload large file to R2
-await env.R2.put("file.pdf", fileData)
+await env.R2.put("file.pdf", fileData);
 
 // Store metadata in KV
 await env.KV.put(
@@ -311,8 +311,8 @@ await env.KV.put(
     r2Key: "file.pdf",
     size: 100_000_000,
     type: "application/pdf",
-  })
-)
+  }),
+);
 ```
 
 ### For Strong Consistency
@@ -323,10 +323,10 @@ await env.KV.put(
 
 ```typescript
 // KV: Eventually consistent, optimized for reads
-await env.KV.put("config", value) // May take 60s to propagate
+await env.KV.put("config", value); // May take 60s to propagate
 
 // D1: Strongly consistent, optimized for transactions
-await env.DB.prepare("UPDATE config SET value = ?").bind(value).run()
+await env.DB.prepare("UPDATE config SET value = ?").bind(value).run();
 ```
 
 ---

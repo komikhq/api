@@ -6,10 +6,10 @@ import {
   boolean,
   timestamp,
   type AnyPgColumn,
-} from "drizzle-orm/pg-core"
-import { users } from "./users"
-import { comics } from "./comics"
-import { chapters } from "./chapters"
+} from "drizzle-orm/pg-core";
+import { users } from "./users";
+import { comics } from "./comics";
+import { chapters } from "./chapters";
 
 export const comments = pgTable("comments", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -39,13 +39,9 @@ export const comments = pgTable("comments", {
   replyCount: integer("reply_count").notNull().default(0),
   isEdited: boolean("is_edited").notNull().default(false),
   isDeleted: boolean("is_deleted").notNull().default(false),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-})
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
-export type Comment = typeof comments.$inferSelect
-export type NewComment = typeof comments.$inferInsert
+export type Comment = typeof comments.$inferSelect;
+export type NewComment = typeof comments.$inferInsert;

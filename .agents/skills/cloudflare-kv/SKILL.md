@@ -82,17 +82,17 @@ bunx wrangler kv namespace create MY_NAMESPACE --preview
 export default {
   async fetch(request, env, ctx) {
     // Write
-    await env.MY_NAMESPACE.put("key", "value")
+    await env.MY_NAMESPACE.put("key", "value");
 
     // Read
-    const value = await env.MY_NAMESPACE.get("key")
+    const value = await env.MY_NAMESPACE.get("key");
 
     // Delete
-    await env.MY_NAMESPACE.delete("key")
+    await env.MY_NAMESPACE.delete("key");
 
-    return new Response(value)
+    return new Response(value);
   },
-}
+};
 ```
 
 **Load `references/setup-guide.md` for complete setup.**
@@ -105,62 +105,62 @@ export default {
 
 ```typescript
 // Basic
-await env.MY_NAMESPACE.put("key", "value")
+await env.MY_NAMESPACE.put("key", "value");
 
 // With TTL (1 hour)
 await env.MY_NAMESPACE.put("key", "value", {
   expirationTtl: 3600,
-})
+});
 
 // With expiration timestamp
 await env.MY_NAMESPACE.put("key", "value", {
   expiration: Math.floor(Date.now() / 1000) + 3600,
-})
+});
 
 // With metadata
 await env.MY_NAMESPACE.put("key", "value", {
   metadata: { role: "admin", created: Date.now() },
-})
+});
 ```
 
 ### get() - Read
 
 ```typescript
 // Simple get
-const value = await env.MY_NAMESPACE.get("key")
+const value = await env.MY_NAMESPACE.get("key");
 
 // With type
-const text = await env.MY_NAMESPACE.get("key", "text")
-const json = await env.MY_NAMESPACE.get("key", "json")
-const buffer = await env.MY_NAMESPACE.get("key", "arrayBuffer")
-const stream = await env.MY_NAMESPACE.get("key", "stream")
+const text = await env.MY_NAMESPACE.get("key", "text");
+const json = await env.MY_NAMESPACE.get("key", "json");
+const buffer = await env.MY_NAMESPACE.get("key", "arrayBuffer");
+const stream = await env.MY_NAMESPACE.get("key", "stream");
 
 // With metadata
-const { value, metadata } = await env.MY_NAMESPACE.getWithMetadata("key")
+const { value, metadata } = await env.MY_NAMESPACE.getWithMetadata("key");
 ```
 
 ### delete() - Remove
 
 ```typescript
-await env.MY_NAMESPACE.delete("key")
+await env.MY_NAMESPACE.delete("key");
 ```
 
 ### list() - List Keys
 
 ```typescript
 // Basic list
-const { keys } = await env.MY_NAMESPACE.list()
+const { keys } = await env.MY_NAMESPACE.list();
 
 // With prefix
 const { keys } = await env.MY_NAMESPACE.list({
   prefix: "user:",
   limit: 100,
-})
+});
 
 // Pagination
 const { keys, cursor } = await env.MY_NAMESPACE.list({
   cursor: previousCursor,
-})
+});
 ```
 
 ---
@@ -200,50 +200,46 @@ const { keys, cursor } = await env.MY_NAMESPACE.list({
 ### Use Case 1: API Response Caching
 
 ```typescript
-const cacheKey = `api:${url}`
-let cached = await env.MY_NAMESPACE.get(cacheKey, "json")
+const cacheKey = `api:${url}`;
+let cached = await env.MY_NAMESPACE.get(cacheKey, "json");
 
 if (!cached) {
-  cached = await fetch(url).then((r) => r.json())
+  cached = await fetch(url).then((r) => r.json());
   await env.MY_NAMESPACE.put(cacheKey, JSON.stringify(cached), {
     expirationTtl: 300, // 5 minutes
-  })
+  });
 }
 
-return Response.json(cached)
+return Response.json(cached);
 ```
 
 ### Use Case 2: User Preferences
 
 ```typescript
-const userId = "123"
+const userId = "123";
 const preferences = {
   theme: "dark",
   language: "en",
-}
+};
 
-await env.MY_NAMESPACE.put(
-  `user:${userId}:preferences`,
-  JSON.stringify(preferences),
-  {
-    metadata: { updated: Date.now() },
-  }
-)
+await env.MY_NAMESPACE.put(`user:${userId}:preferences`, JSON.stringify(preferences), {
+  metadata: { updated: Date.now() },
+});
 ```
 
 ### Use Case 3: Rate Limiting
 
 ```typescript
-const key = `ratelimit:${ip}`
-const count = parseInt((await env.MY_NAMESPACE.get(key)) || "0")
+const key = `ratelimit:${ip}`;
+const count = parseInt((await env.MY_NAMESPACE.get(key)) || "0");
 
 if (count >= 100) {
-  return new Response("Rate limit exceeded", { status: 429 })
+  return new Response("Rate limit exceeded", { status: 429 });
 }
 
 await env.MY_NAMESPACE.put(key, String(count + 1), {
   expirationTtl: 60, // 1 minute window
-})
+});
 ```
 
 ### Use Case 4: List with Prefix
@@ -252,11 +248,9 @@ await env.MY_NAMESPACE.put(key, String(count + 1), {
 const { keys } = await env.MY_NAMESPACE.list({
   prefix: "user:",
   limit: 100,
-})
+});
 
-const users = await Promise.all(
-  keys.map(({ name }) => env.MY_NAMESPACE.get(name, "json"))
-)
+const users = await Promise.all(keys.map(({ name }) => env.MY_NAMESPACE.get(name, "json")));
 ```
 
 ### Use Case 5: waitUntil() Pattern
@@ -265,11 +259,11 @@ const users = await Promise.all(
 export default {
   async fetch(request, env, ctx) {
     // Don't wait for KV write
-    ctx.waitUntil(env.MY_NAMESPACE.put("analytics", JSON.stringify(data)))
+    ctx.waitUntil(env.MY_NAMESPACE.put("analytics", JSON.stringify(data)));
 
-    return new Response("OK")
+    return new Response("OK");
   },
-}
+};
 ```
 
 ---
@@ -304,10 +298,10 @@ KV is **eventually consistent**:
 
 ```typescript
 // Write
-await env.MY_NAMESPACE.put("key", "value")
+await env.MY_NAMESPACE.put("key", "value");
 
 // May not be visible immediately in other regions
-const value = await env.MY_NAMESPACE.get("key") // Might be null
+const value = await env.MY_NAMESPACE.get("key"); // Might be null
 ```
 
 ---

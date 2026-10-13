@@ -30,7 +30,9 @@
     "db:push": "drizzle-kit push",
     "db:drop": "tsx scripts/drop-tables.ts",
     "db:migrate-relative-urls": "tsx scripts/migrate-relative-urls.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.2",
@@ -50,6 +52,7 @@
     "ink": "^7.1.1",
     "ink-select-input": "^6.2.0",
     "ink-text-input": "^6.0.0",
+    "prettier": "3.9.10",
     "react": "^19.2.8",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2",

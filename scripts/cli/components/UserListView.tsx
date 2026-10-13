@@ -1,18 +1,18 @@
-import React from "react"
-import { Text as InkText, Box as InkBox } from "ink"
-import SelectInput from "ink-select-input"
-import type { UserItem } from "../service.js"
+import React from "react";
+import { Text as InkText, Box as InkBox } from "ink";
+import SelectInput from "ink-select-input";
+import type { UserItem } from "../service.js";
 
-const Box = InkBox as any
-const Text = InkText as any
-const InkSelectInput = SelectInput as any
+const Box = InkBox as any;
+const Text = InkText as any;
+const InkSelectInput = SelectInput as any;
 
 export function UserListView({
   userList,
   onSelectUser,
 }: {
-  userList: UserItem[]
-  onSelectUser: (item: { value: string; label: string }) => void
+  userList: UserItem[];
+  onSelectUser: (item: { value: string; label: string }) => void;
 }) {
   const selectItems = [
     { label: "🔍 [Cari / Filter Pengguna...]", value: "__SEARCH__" },
@@ -20,7 +20,7 @@ export function UserListView({
       label: `❯ [${u.role.toUpperCase()}] ${u.name} <${u.email}> ${u.emailVerified ? "✓ Verified" : "✗ Unverified"}`,
       value: u.id,
     })),
-  ]
+  ];
 
   return (
     <Box flexDirection="column">
@@ -65,18 +65,12 @@ export function UserListView({
           userList.slice(0, 8).map((u) => (
             <Box key={u.id} justifyContent="space-between">
               <Text color="white">
-                {u.name.length > 20
-                  ? u.name.slice(0, 18) + ".."
-                  : u.name.padEnd(20)}
+                {u.name.length > 20 ? u.name.slice(0, 18) + ".." : u.name.padEnd(20)}
               </Text>
               <Text color="gray">
-                {u.email.length > 25
-                  ? u.email.slice(0, 23) + ".."
-                  : u.email.padEnd(25)}
+                {u.email.length > 25 ? u.email.slice(0, 23) + ".." : u.email.padEnd(25)}
               </Text>
-              <Text color={u.role === "admin" ? "yellow" : "white"}>
-                [{u.role.toUpperCase()}]
-              </Text>
+              <Text color={u.role === "admin" ? "yellow" : "white"}>[{u.role.toUpperCase()}]</Text>
               <Text color={u.emailVerified ? "green" : "red"}>
                 {u.emailVerified ? "✓ Verified" : "✗ Pending"}
               </Text>
@@ -92,5 +86,5 @@ export function UserListView({
         <InkSelectInput items={selectItems} onSelect={onSelectUser} />
       </Box>
     </Box>
-  )
+  );
 }

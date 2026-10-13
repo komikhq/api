@@ -372,7 +372,7 @@ With cacheTtl optimization:
 ```typescript
 const value = await env.KV.get("config", {
   cacheTtl: 300, // Cache at edge for 5 min
-})
+});
 ```
 
 New performance:

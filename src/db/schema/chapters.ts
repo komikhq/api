@@ -7,8 +7,8 @@ import {
   boolean,
   timestamp,
   uniqueIndex,
-} from "drizzle-orm/pg-core"
-import { comics } from "./comics"
+} from "drizzle-orm/pg-core";
+import { comics } from "./comics";
 
 export const chapters = pgTable(
   "chapters",
@@ -28,23 +28,12 @@ export const chapters = pgTable(
     accessTier: varchar("access_tier", { length: 20 }),
     isEarlyAccess: boolean("is_early_access").notNull().default(false),
     freeReleaseAt: timestamp("free_release_at", { withTimezone: true }),
-    publishedAt: timestamp("published_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    publishedAt: timestamp("published_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [
-    uniqueIndex("comic_chapter_number_idx").on(
-      table.comicId,
-      table.chapterNumber
-    ),
-  ]
-)
+  (table) => [uniqueIndex("comic_chapter_number_idx").on(table.comicId, table.chapterNumber)],
+);
 
-export type Chapter = typeof chapters.$inferSelect
-export type NewChapter = typeof chapters.$inferInsert
+export type Chapter = typeof chapters.$inferSelect;
+export type NewChapter = typeof chapters.$inferInsert;

@@ -125,11 +125,11 @@ Create `drizzle.config.ts` with explicit environment loading:
 **For Next.js (using .env.local):**
 
 ```typescript
-import { defineConfig } from "drizzle-kit"
-import { config } from "dotenv"
+import { defineConfig } from "drizzle-kit";
+import { config } from "dotenv";
 
 // Load .env.local explicitly
-config({ path: ".env.local" })
+config({ path: ".env.local" });
 
 export default defineConfig({
   schema: "./src/db/schema.ts",
@@ -138,17 +138,17 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-})
+});
 ```
 
 **For other projects (using .env):**
 
 ```typescript
-import { defineConfig } from "drizzle-kit"
-import { config } from "dotenv"
+import { defineConfig } from "drizzle-kit";
+import { config } from "dotenv";
 
 // Load .env explicitly
-config({ path: ".env" })
+config({ path: ".env" });
 
 export default defineConfig({
   schema: "./src/db/schema.ts",
@@ -157,7 +157,7 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
-})
+});
 ```
 
 **Why this matters:**
@@ -173,23 +173,23 @@ Create `src/db/index.ts` with appropriate adapter (see `references/adapters.md` 
 **For Vercel/Edge:**
 
 ```typescript
-import { drizzle } from "drizzle-orm/neon-http"
-import { neon } from "@neondatabase/serverless"
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
 
-const sql = neon(process.env.DATABASE_URL!)
-export const db = drizzle(sql)
+const sql = neon(process.env.DATABASE_URL!);
+export const db = drizzle(sql);
 ```
 
 **For Node.js:**
 
 ```typescript
-import { drizzle } from "drizzle-orm/neon-serverless"
-import { Pool, neonConfig } from "@neondatabase/serverless"
-import ws from "ws"
+import { drizzle } from "drizzle-orm/neon-serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
 
-neonConfig.webSocketConstructor = ws
-const pool = new Pool({ connectionString: process.env.DATABASE_URL! })
-export const db = drizzle(pool)
+neonConfig.webSocketConstructor = ws;
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+export const db = drizzle(pool);
 ```
 
 See `templates/db-http.ts` and `templates/db-websocket.ts` for complete examples.
@@ -203,21 +203,14 @@ Based on app type, create appropriate schema:
 **Todo App:**
 
 ```typescript
-import {
-  pgTable,
-  serial,
-  text,
-  boolean,
-  timestamp,
-  varchar,
-} from "drizzle-orm/pg-core"
+import { pgTable, serial, text, boolean, timestamp, varchar } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-})
+});
 
 export const todos = pgTable("todos", {
   id: serial("id").primaryKey(),
@@ -227,28 +220,21 @@ export const todos = pgTable("todos", {
   title: text("title").notNull(),
   completed: boolean("completed").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-})
+});
 ```
 
 **Blog App:**
 
 ```typescript
-import {
-  pgTable,
-  serial,
-  text,
-  timestamp,
-  varchar,
-  index,
-} from "drizzle-orm/pg-core"
-import { relations } from "drizzle-orm"
+import { pgTable, serial, text, timestamp, varchar, index } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-})
+});
 
 export const posts = pgTable(
   "posts",
@@ -263,19 +249,19 @@ export const posts = pgTable(
   },
   (table) => ({
     userIdIdx: index("posts_user_id_idx").on(table.userId),
-  })
-)
+  }),
+);
 
 export const usersRelations = relations(users, ({ many }) => ({
   posts: many(posts),
-}))
+}));
 
 export const postsRelations = relations(posts, ({ one }) => ({
   author: one(users, {
     fields: [posts.userId],
     references: [users.id],
   }),
-}))
+}));
 ```
 
 See `templates/schema-example.ts` for more complex examples.

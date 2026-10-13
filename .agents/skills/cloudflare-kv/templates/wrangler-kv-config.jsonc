@@ -4,7 +4,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2025-10-11",
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
 
   // KV Namespace Bindings
@@ -18,22 +18,22 @@
 
       // Preview/local namespace ID (from: wrangler kv namespace create CACHE --preview)
       // This is optional but recommended for local development
-      "preview_id": "<YOUR_PREVIEW_NAMESPACE_ID>"
+      "preview_id": "<YOUR_PREVIEW_NAMESPACE_ID>",
     },
 
     // Multiple namespaces example
     {
       "binding": "CONFIG",
       "id": "<CONFIG_PRODUCTION_ID>",
-      "preview_id": "<CONFIG_PREVIEW_ID>"
+      "preview_id": "<CONFIG_PREVIEW_ID>",
     },
 
     {
       "binding": "SESSIONS",
       "id": "<SESSIONS_PRODUCTION_ID>",
-      "preview_id": "<SESSIONS_PREVIEW_ID>"
-    }
-  ]
+      "preview_id": "<SESSIONS_PREVIEW_ID>",
+    },
+  ],
 
   // IMPORTANT NOTES:
   //

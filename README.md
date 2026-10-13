@@ -38,7 +38,7 @@ This repository is also included as the `api` Git submodule in the [KomikHQ web 
 
 Versioned application routes are mounted under `/v1`. Health checks and sitemap XML routes are also provided. See the route registrations in `src/index.ts` for the current service surface.
 
-The API root (`/`) serves Swagger UI, which loads the OpenAPI document from `/openapi.json`. The service health check is available at `/health`. Routes appear in the OpenAPI document as they are migrated to the OpenAPI route format.
+The API root (`/`) serves Swagger UI, which loads the OpenAPI document from `/openapi.json`. The service health check is available at `/health`. The OpenAPI document includes the mounted HTTP routes, request parameters, authentication requirements, and shared response schemas. See the [API contract guide](./docs/api-contract.md) for the documentation conventions and route maintenance requirements.
 
 ## Local development
 

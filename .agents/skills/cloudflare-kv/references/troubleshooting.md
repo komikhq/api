@@ -129,9 +129,9 @@ wrangler kv namespace list
 
 ```typescript
 try {
-  await env.KV.put("key", value)
+  await env.KV.put("key", value);
 } catch (error) {
-  console.error("KV Error:", error)
+  console.error("KV Error:", error);
   // Check error.message for details
   if (error.message.includes("too large")) {
     // Value >25MB
@@ -142,9 +142,9 @@ try {
 **2. Validate value size:**
 
 ```typescript
-const MAX_SIZE = 25 * 1024 * 1024 // 25MB
+const MAX_SIZE = 25 * 1024 * 1024; // 25MB
 if (value.length > MAX_SIZE) {
-  throw new Error(`Value too large: ${value.length} bytes`)
+  throw new Error(`Value too large: ${value.length} bytes`);
 }
 ```
 
@@ -154,10 +154,10 @@ if (value.length > MAX_SIZE) {
 async function putWithRetry(kv, key, value, retries = 3) {
   for (let i = 0; i < retries; i++) {
     try {
-      return await kv.put(key, value)
+      return await kv.put(key, value);
     } catch (err) {
-      if (i === retries - 1) throw err
-      await sleep(1000 * Math.pow(2, i)) // Exponential backoff
+      if (i === retries - 1) throw err;
+      await sleep(1000 * Math.pow(2, i)); // Exponential backoff
     }
   }
 }
@@ -179,15 +179,15 @@ async function putWithRetry(kv, key, value, retries = 3) {
 ```typescript
 // Add TypeScript types
 type Env = {
-  KV: KVNamespace // ← Ensures correct type
-}
+  KV: KVNamespace; // ← Ensures correct type
+};
 
 export default {
   async fetch(request: Request, env: Env) {
-    const value = await env.KV.get("key") // Now typed correctly
-    return new Response(value)
+    const value = await env.KV.get("key"); // Now typed correctly
+    return new Response(value);
   },
-}
+};
 ```
 
 ---
@@ -217,12 +217,12 @@ export default {
 ```typescript
 // ❌ Problem: Writing same key repeatedly
 for (let i = 0; i < 2000; i++) {
-  await env.KV.put("counter", String(i)) // Fails after 1000
+  await env.KV.put("counter", String(i)); // Fails after 1000
 }
 
 // ✅ Solution: Distribute across keys
 for (let i = 0; i < 2000; i++) {
-  await env.KV.put(`counter:${i}`, String(i))
+  await env.KV.put(`counter:${i}`, String(i));
 }
 
 // ✅ Solution: Use Durable Objects for high-frequency writes
@@ -234,17 +234,17 @@ for (let i = 0; i < 2000; i++) {
 async function putWithBackoff(kv, key, value, maxRetries = 5) {
   for (let i = 0; i < maxRetries; i++) {
     try {
-      return await kv.put(key, value)
+      return await kv.put(key, value);
     } catch (err) {
       if (err.message.includes("429")) {
-        const delay = Math.min(1000 * Math.pow(2, i), 10000)
-        await sleep(delay)
+        const delay = Math.min(1000 * Math.pow(2, i), 10000);
+        await sleep(delay);
       } else {
-        throw err
+        throw err;
       }
     }
   }
-  throw new Error("Max retries exceeded")
+  throw new Error("Max retries exceeded");
 }
 ```
 
@@ -254,10 +254,10 @@ async function putWithBackoff(kv, key, value, maxRetries = 5) {
 // Don't block response on rate-limited writes
 ctx.waitUntil(
   env.KV.put("analytics", data).catch((err) => {
-    console.error("Analytics write failed:", err)
-  })
-)
-return new Response("OK") // Returns immediately
+    console.error("Analytics write failed:", err);
+  }),
+);
+return new Response("OK"); // Returns immediately
 ```
 
 ---
@@ -288,12 +288,12 @@ return new Response("OK") // Returns immediately
 // Write with metadata
 await env.KV.put("config", JSON.stringify(config), {
   metadata: { updated: Date.now(), version: "1.0" },
-})
+});
 
 // Read with fallback
-let config = await env.KV.get("config", "json")
+let config = await env.KV.get("config", "json");
 if (!config) {
-  config = DEFAULT_CONFIG // Use default while propagating
+  config = DEFAULT_CONFIG; // Use default while propagating
 }
 ```
 
@@ -302,23 +302,23 @@ if (!config) {
 ```typescript
 // For data requiring immediate consistency:
 // ❌ Don't use KV for real-time data
-await env.KV.put("order", orderData) // Might not be visible immediately
+await env.KV.put("order", orderData); // Might not be visible immediately
 
 // ✅ Use D1 for transactions
-await env.DB.prepare("INSERT INTO orders VALUES (?)").bind(orderData).run()
+await env.DB.prepare("INSERT INTO orders VALUES (?)").bind(orderData).run();
 ```
 
 **3. Add version tracking:**
 
 ```typescript
 // Write with version
-const version = Date.now()
+const version = Date.now();
 await env.KV.put("data", value, {
   metadata: { version },
-})
+});
 
 // Read and check version
-const { value, metadata } = await env.KV.getWithMetadata("data")
+const { value, metadata } = await env.KV.getWithMetadata("data");
 if (!metadata || metadata.version < expectedVersion) {
   // Data not yet propagated, use fallback
 }
@@ -343,7 +343,7 @@ if (!metadata || metadata.version < expectedVersion) {
 // 2. Use lower cacheTtl
 const value = await env.KV.get("critical-config", {
   cacheTtl: 60, // Short cache for faster updates
-})
+});
 
 // 3. Or use D1 for strong consistency
 ```
@@ -367,26 +367,26 @@ const value = await env.KV.get("critical-config", {
 
 ```typescript
 // ❌ Slow: Every get() hits KV store
-const config = await env.KV.get("config") // ~50-200ms
+const config = await env.KV.get("config"); // ~50-200ms
 
 // ✅ Fast: Cached at edge
-const config = await env.KV.get("config", { cacheTtl: 300 }) // ~1-5ms after first read
+const config = await env.KV.get("config", { cacheTtl: 300 }); // ~1-5ms after first read
 ```
 
 **2. Parallelize independent operations:**
 
 ```typescript
 // ❌ Slow: Sequential (600ms total)
-const user = await env.KV.get("user:123") // 200ms
-const prefs = await env.KV.get("prefs:123") // 200ms
-const stats = await env.KV.get("stats:123") // 200ms
+const user = await env.KV.get("user:123"); // 200ms
+const prefs = await env.KV.get("prefs:123"); // 200ms
+const stats = await env.KV.get("stats:123"); // 200ms
 
 // ✅ Fast: Parallel (200ms total)
 const [user, prefs, stats] = await Promise.all([
   env.KV.get("user:123"),
   env.KV.get("prefs:123"),
   env.KV.get("stats:123"),
-]) // All execute simultaneously
+]); // All execute simultaneously
 ```
 
 **3. Reduce value sizes:**
@@ -399,8 +399,8 @@ await env.KV.put(
     id: user.id,
     name: user.name,
     // Don't store entire user object if only need ID and name
-  })
-)
+  }),
+);
 ```
 
 ---
@@ -419,14 +419,14 @@ await env.KV.put(
 
 // ✅ Correct: Access through Worker API
 // Frontend:
-const response = await fetch("/api/config")
-const config = await response.json()
+const response = await fetch("/api/config");
+const config = await response.json();
 
 // Worker:
 app.get("/api/config", async (c) => {
-  const config = await c.env.KV.get("config", "json")
-  return c.json(config)
-})
+  const config = await c.env.KV.get("config", "json");
+  return c.json(config);
+});
 ```
 
 ---
@@ -492,16 +492,16 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/test-kv-connection.sh MY_KV
 
 ```typescript
 try {
-  console.log("Attempting KV operation...")
-  const value = await env.KV.get("key")
-  console.log("Success:", value)
+  console.log("Attempting KV operation...");
+  const value = await env.KV.get("key");
+  console.log("Success:", value);
 } catch (err) {
   console.error("KV Error:", {
     message: err.message,
     stack: err.stack,
     name: err.name,
-  })
-  throw err
+  });
+  throw err;
 }
 ```
 

@@ -45,17 +45,17 @@ Add to `wrangler.jsonc`:
 export default {
   async fetch(request, env, ctx) {
     // Write
-    await env.MY_NAMESPACE.put("key", "value")
+    await env.MY_NAMESPACE.put("key", "value");
 
     // Read
-    const value = await env.MY_NAMESPACE.get("key")
+    const value = await env.MY_NAMESPACE.get("key");
 
     // Delete
-    await env.MY_NAMESPACE.delete("key")
+    await env.MY_NAMESPACE.delete("key");
 
-    return new Response(value)
+    return new Response(value);
   },
-}
+};
 ```
 
 ---
@@ -67,7 +67,7 @@ export default {
 ```typescript
 await env.MY_NAMESPACE.put("key", "value", {
   expirationTtl: 3600, // 1 hour
-})
+});
 ```
 
 ### With Metadata
@@ -75,9 +75,9 @@ await env.MY_NAMESPACE.put("key", "value", {
 ```typescript
 await env.MY_NAMESPACE.put("user:123", JSON.stringify({ name: "Alice" }), {
   metadata: { role: "admin", created: Date.now() },
-})
+});
 
-const { value, metadata } = await env.MY_NAMESPACE.getWithMetadata("user:123")
+const { value, metadata } = await env.MY_NAMESPACE.getWithMetadata("user:123");
 ```
 
 ### List Keys
@@ -86,7 +86,7 @@ const { value, metadata } = await env.MY_NAMESPACE.getWithMetadata("user:123")
 const { keys } = await env.MY_NAMESPACE.list({
   prefix: "user:",
   limit: 100,
-})
+});
 ```
 
 ---

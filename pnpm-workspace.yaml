@@ -1,5 +1,5 @@
 packages:
-  - '.'
+  - "."
 
 onlyBuiltDependencies:
   - esbuild
@@ -9,4 +9,3 @@ allowBuilds:
   workerd: true
 minimumReleaseAgeExclude:
   - hono@4.13.7
-

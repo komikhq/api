@@ -1,6 +1,6 @@
-import { pgTable, uuid, varchar, primaryKey } from "drizzle-orm/pg-core"
-import { comics } from "./comics"
-import { creators } from "./creators"
+import { pgTable, uuid, varchar, primaryKey } from "drizzle-orm/pg-core";
+import { comics } from "./comics";
+import { creators } from "./creators";
 
 export const comicCreators = pgTable(
   "comic_creators",
@@ -13,10 +13,8 @@ export const comicCreators = pgTable(
       .references(() => creators.id, { onDelete: "cascade" }),
     role: varchar("role", { length: 50 }).notNull().default("author"),
   },
-  (table) => [
-    primaryKey({ columns: [table.comicId, table.creatorId, table.role] }),
-  ]
-)
+  (table) => [primaryKey({ columns: [table.comicId, table.creatorId, table.role] })],
+);
 
-export type ComicCreator = typeof comicCreators.$inferSelect
-export type NewComicCreator = typeof comicCreators.$inferInsert
+export type ComicCreator = typeof comicCreators.$inferSelect;
+export type NewComicCreator = typeof comicCreators.$inferInsert;
