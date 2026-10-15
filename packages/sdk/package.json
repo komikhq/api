@@ -1,0 +1,40 @@
+{
+  "name": "@komikhq/sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for KomikHQ API",
+  "author": "KomikHQ",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/komikhq/api.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc && tsc -p tsconfig.esm.json",
+    "prepare": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

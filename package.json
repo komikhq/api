@@ -32,7 +32,9 @@
     "db:migrate-relative-urls": "tsx scripts/migrate-relative-urls.ts",
     "db:studio": "drizzle-kit studio",
     "format": "prettier . --write",
-    "format:check": "prettier . --check"
+    "format:check": "prettier . --check",
+    "openapi-generator": "openapi-generator-cli",
+    "sdk:generate": "openapi-generator-cli generate -i http://localhost:8787/openapi.json -g typescript-fetch -o ./packages/sdk --additional-properties=npmName=@komikhq/sdk,typescriptThreePlus=true,supportsES6=true"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.2",
@@ -47,6 +49,7 @@
     "zod": "^4.6.6"
   },
   "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.41.0",
     "@types/node": "^26.4.1",
     "@types/react": "^19.2.18",
     "drizzle-kit": "^0.31.10",

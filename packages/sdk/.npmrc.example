@@ -1,0 +1,5 @@
+# Template .npmrc untuk proyek konsumen (misal: frontend web)
+# Letakkan file ini sebagai .npmrc di root proyek aplikasi konsumen Anda.
+
+@komikhq:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}

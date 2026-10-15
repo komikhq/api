@@ -1,10 +1,9 @@
 packages:
   - "."
+  - "packages/*"
 
-onlyBuiltDependencies:
-  - esbuild
-  - workerd
 allowBuilds:
+  '@openapitools/openapi-generator-cli': true
   esbuild: true
   workerd: true
 minimumReleaseAgeExclude:

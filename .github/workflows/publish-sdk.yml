@@ -1,0 +1,53 @@
+name: Publish SDK to GitHub Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version (optional, e.g. 1.0.1). Leave empty to use version in package.json'
+        required: false
+        default: ''
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'sdk-v*.*.*'
+
+jobs:
+  publish:
+    name: Build & Publish @komikhq/sdk
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@komikhq'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Set custom version (if provided via workflow_dispatch)
+        if: ${{ github.event.inputs.version != '' }}
+        run: |
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version --workspace-root=false
+        working-directory: packages/sdk
+
+      - name: Build SDK
+        run: pnpm --filter @komikhq/sdk build
+
+      - name: Publish to GitHub Packages
+        run: pnpm --filter @komikhq/sdk publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
