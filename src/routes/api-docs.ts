@@ -25,6 +25,16 @@ export function registerApiDocs(app: OpenAPIHono<AppEnv>) {
       description:
         "The KomikHQ platform API. Request and response contracts are defined alongside their route handlers.",
     },
+    servers: [
+      {
+        url: "https://api.komikhq.com",
+        description: "Production Server",
+      },
+      {
+        url: "http://localhost:8787",
+        description: "Local Development Server",
+      },
+    ],
     tags: [
       { name: "Authentication", description: "Account authentication and session management." },
       { name: "Administration", description: "Administrative platform management." },

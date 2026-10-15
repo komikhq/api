@@ -1,6 +1,6 @@
 # ModerationApi
 
-All URIs are relative to *http://localhost*
+All URIs are relative to *https://api.komikhq.com*
 
 | Method | HTTP request | Description |
 |------------- | ------------- | -------------|

@@ -1,6 +1,5 @@
 .gitignore
 .npmignore
-.openapi-generator-ignore
 README.md
 docs/AdminCreateComic201Response.md
 docs/AdminCreateComicRequestAlternateTitles.md
@@ -62,7 +61,6 @@ docs/SubmitComicRatingRequest.md
 docs/UploadUserAvatar200Response.md
 docs/UsersApi.md
 docs/ViewsApi.md
-package.json
 src/apis/AdministrationApi.ts
 src/apis/AuthenticationApi.ts
 src/apis/BookmarksApi.ts

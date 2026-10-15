@@ -1,6 +1,6 @@
 # @komikhq/sdk@1.0.0
 
-A TypeScript SDK client for the localhost API.
+A TypeScript SDK client for the api.komikhq.com API.
 
 ## Usage
 
@@ -62,7 +62,7 @@ example().catch(console.error);
 
 ### API Endpoints
 
-All URIs are relative to *http://localhost*
+All URIs are relative to *https://api.komikhq.com*
 
 | Class | Method | HTTP request | Description
 | ----- | ------ | ------------ | -------------
