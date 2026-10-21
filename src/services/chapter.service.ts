@@ -1,6 +1,6 @@
 import { ChapterRepository } from "@/repositories/chapter.repository";
 import { ComicRepository } from "@/repositories/comic.repository";
-import { uploadToR2, deleteFromR2, toPublicUrl, toObjectKey, type StorageEnv } from "@/lib/storage";
+import { uploadToR2, deleteFromR2, toPublicUrl, toSignedMediaUrl, toObjectKey, type StorageEnv } from "@/lib/storage";
 
 export interface CreateChapterDto {
   comicId: string;
@@ -29,12 +29,14 @@ export class ChapterService {
     this.env = env;
   }
 
-  /** Resolve page image URLs to full public URLs */
-  private resolvePageUrls(pages: any[]): any[] {
-    return pages.map((p) => ({
-      ...p,
-      imageUrl: toPublicUrl(p.imageUrl, "media", this.env) ?? p.imageUrl,
-    }));
+  /** Resolve page image URLs to full signed CDN URLs */
+  private async resolvePageUrls(pages: any[]): Promise<any[]> {
+    return Promise.all(
+      pages.map(async (p) => ({
+        ...p,
+        imageUrl: (await toSignedMediaUrl(p.imageUrl, this.env)) ?? p.imageUrl,
+      })),
+    );
   }
 
   async getChaptersByComicId(comicId: string) {
@@ -48,7 +50,7 @@ export class ChapterService {
     }
     return {
       ...data,
-      pages: data.pages ? this.resolvePageUrls(data.pages) : [],
+      pages: data.pages ? await this.resolvePageUrls(data.pages) : [],
     };
   }
 
@@ -59,7 +61,7 @@ export class ChapterService {
     }
     return {
       ...data,
-      pages: data.pages ? this.resolvePageUrls(data.pages) : [],
+      pages: data.pages ? await this.resolvePageUrls(data.pages) : [],
     };
   }
 

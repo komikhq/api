@@ -1,3 +1,5 @@
+import { createFlaredClient, type FlaredClient } from "@ceefex/flared-object-client";
+
 export type BucketKey = "users" | "media";
 
 export interface StorageEnv {
@@ -11,6 +13,22 @@ export interface StorageEnv {
   // Legacy fallback
   USERS_BUCKET_URL?: string;
   MEDIA_BUCKET_URL?: string;
+  // Flared gateway HMAC secret
+  FLARED_HMAC_SECRET?: string;
+}
+
+// Singleton client instance for URL signing
+let flaredClient: FlaredClient | null = null;
+
+function getFlaredClient(baseUrl: string, secret: string): FlaredClient {
+  if (!flaredClient) {
+    flaredClient = createFlaredClient({
+      baseUrl,
+      hmacSecret: secret,
+      defaultTtlSeconds: 7200, // 2 hours
+    });
+  }
+  return flaredClient;
 }
 
 /**
@@ -56,6 +74,35 @@ export function toPublicUrl(
   if (!pathOrUrl) return null;
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl; // Already absolute (legacy data)
   return getPublicStorageUrl(bucketKey, pathOrUrl, env);
+}
+
+/**
+ * Convert a relative object key into a signed CDN URL via flared-object.
+ * Throws an explicit error if BUCKET_URL_MEDIA or FLARED_HMAC_SECRET is missing.
+ */
+export async function toSignedMediaUrl(
+  pathOrUrl: string | null | undefined,
+  env: Partial<StorageEnv>,
+): Promise<string | null> {
+  if (!pathOrUrl) return null;
+
+  const baseUrl = getBucketBaseUrl("media", env);
+  if (!baseUrl) {
+    throw new Error(
+      "Public domain URL for media bucket is missing. Ensure BUCKET_URL_MEDIA is configured in environment variables.",
+    );
+  }
+
+  if (!env.FLARED_HMAC_SECRET) {
+    throw new Error(
+      "FLARED_HMAC_SECRET is missing. Ensure FLARED_HMAC_SECRET is configured in environment variables.",
+    );
+  }
+
+  // Extract clean object key if it's already a full URL
+  const objectKey = toObjectKey(pathOrUrl);
+  const client = getFlaredClient(baseUrl, env.FLARED_HMAC_SECRET);
+  return client.signUrl(`/${objectKey}`, { ttlSeconds: 7200 });
 }
 
 /**

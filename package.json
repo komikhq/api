@@ -15,7 +15,7 @@
     "packageManager": {
       "name": "pnpm",
       "version": "12.3.4",
-      "onFail": "error"
+      "onFail": "warn"
     }
   },
   "scripts": {
@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.2",
+    "@ceefex/flared-object-client": "^0.1.0",
     "@hono/swagger-ui": "^0.6.1",
     "@hono/zod-openapi": "^1.6.3",
     "@neondatabase/serverless": "^1.1.0",

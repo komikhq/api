@@ -10,6 +10,7 @@ GOOGLE_CLIENT_SECRET="GOCSPX-your-google-client-secret"
 # R2 Public Storage Domains (CDN URLs)
 BUCKET_URL_USERS="https://cdn-01.komikhq.com"
 BUCKET_URL_MEDIA="https://cdn-02.komikhq.com"
+FLARED_HMAC_SECRET="your-64-character-hex-hmac-secret-key"
 
 # Email Configuration (resend | brevo | cloudflare)
 EMAIL_PROVIDER="resend"

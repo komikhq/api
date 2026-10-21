@@ -12,5 +12,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "exclude": ["node_modules", "dist", "revanced-api"]
+  "exclude": ["node_modules", "dist", "packages", "revanced-api"]
 }
