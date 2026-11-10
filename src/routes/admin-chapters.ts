@@ -75,10 +75,10 @@ const UploadChapterPageRoute = createRoute({
       content: {
         "multipart/form-data": {
           schema: z.object({
-            pageNumber: z.number().int().optional(),
+            pageNumber: z.coerce.number().int().optional(),
             file: z.file().openapi({ type: "string", format: "binary" }),
-            width: z.number().int().optional(),
-            height: z.number().int().optional(),
+            width: z.coerce.number().int().optional(),
+            height: z.coerce.number().int().optional(),
           }),
         },
       },
@@ -129,7 +129,9 @@ const CreateChapterRoute = createRoute({
             chapterNumber: z.string(),
             title: z.string().optional(),
             accessTier: z.string().optional(),
-            isEarlyAccess: z.boolean().optional(),
+            isEarlyAccess: z
+              .preprocess((val) => val === "true" || val === true, z.boolean())
+              .optional(),
             pages: z
               .array(z.file())
               .openapi({ type: "array", items: { type: "string", format: "binary" } }),

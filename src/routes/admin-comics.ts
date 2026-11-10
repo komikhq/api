@@ -43,12 +43,18 @@ const ComicFormSchema = z
     type: z.string().optional(),
     status: z.string().optional(),
     accessTier: z.string().optional(),
-    alternateTitles: z.union([z.string(), z.array(z.string())]).optional(),
+    alternateTitles: z.any().optional(),
     genreIds: z.string().optional(),
     creator: z.string().optional(),
-    cover: z.file().optional().openapi({ type: "string", format: "binary" }),
+    cover: z
+      .union([z.file(), z.string()])
+      .optional()
+      .openapi({ type: "string", format: "binary" }),
     coverUrlSource: z.string().optional(),
-    banner: z.file().optional().openapi({ type: "string", format: "binary" }),
+    banner: z
+      .union([z.file(), z.string()])
+      .optional()
+      .openapi({ type: "string", format: "binary" }),
     bannerUrlSource: z.string().optional(),
   })
   .passthrough();
@@ -188,6 +194,11 @@ adminComicRoutes.openapi(CreateComicRoute, async (c) => {
     const formData = await c.req.formData();
     const service = new ComicService(c.env.DATABASE_URL, c.env);
 
+    const coverVal = formData.get("cover");
+    const coverFile = coverVal instanceof File && coverVal.size > 0 ? coverVal : null;
+    const bannerVal = formData.get("banner");
+    const bannerFile = bannerVal instanceof File && bannerVal.size > 0 ? bannerVal : null;
+
     const comic = await service.createComic({
       title: formData.get("title")?.toString().trim() || "",
       synopsis: formData.get("synopsis")?.toString().trim() || "",
@@ -200,9 +211,9 @@ adminComicRoutes.openapi(CreateComicRoute, async (c) => {
         .filter(Boolean),
       genreIdsRaw: formData.get("genreIds")?.toString(),
       creatorName: formData.get("creator")?.toString().trim(),
-      coverFile: formData.get("cover") as File | null,
+      coverFile,
       coverUrlSource: formData.get("coverUrlSource")?.toString().trim() || null,
-      bannerFile: formData.get("banner") as File | null,
+      bannerFile,
       bannerUrlSource: formData.get("bannerUrlSource")?.toString().trim() || null,
     });
 
@@ -232,6 +243,11 @@ adminComicRoutes.openapi(UpdateComicRoute, async (c) => {
     const formData = await c.req.formData();
     const service = new ComicService(c.env.DATABASE_URL, c.env);
 
+    const coverVal = formData.get("cover");
+    const coverFile = coverVal instanceof File && coverVal.size > 0 ? coverVal : null;
+    const bannerVal = formData.get("banner");
+    const bannerFile = bannerVal instanceof File && bannerVal.size > 0 ? bannerVal : null;
+
     const updatedComic = await service.updateComic(comicId, {
       title: formData.get("title")?.toString().trim(),
       synopsis: formData.get("synopsis")?.toString().trim(),
@@ -248,9 +264,9 @@ adminComicRoutes.openapi(UpdateComicRoute, async (c) => {
         : {}),
       genreIdsRaw: formData.get("genreIds")?.toString(),
       creatorName: formData.get("creator")?.toString().trim(),
-      coverFile: formData.get("cover") as File | null,
+      coverFile,
       coverUrlSource: formData.get("coverUrlSource")?.toString().trim() || null,
-      bannerFile: formData.get("banner") as File | null,
+      bannerFile,
       bannerUrlSource: formData.get("bannerUrlSource")?.toString().trim() || null,
     });
 
