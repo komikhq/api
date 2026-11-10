@@ -12,7 +12,7 @@ export function successResponse<
   E extends Env = Env,
   P extends string = string,
   I extends Input = Input,
-  S extends 200 | 201 = 200 | 201,
+  S extends 200 | 201 = 200,
 >(c: Context<E, P, I>, data: T, status: S = 200 as S) {
   return c.json(data, status);
 }
@@ -33,7 +33,7 @@ export function errorResponse<
   E extends Env = Env,
   P extends string = string,
   I extends Input = Input,
-  S extends 400 | 401 | 403 | 404 | 409 | 500 = 400 | 401 | 403 | 404 | 409 | 500,
+  S extends 400 | 401 | 403 | 404 | 409 | 500 = 500,
 >(c: Context<E, P, I>, message: string, status: S = 500 as S, details?: any) {
   return c.json(
     {

@@ -12,5 +12,6 @@
       "@/*": ["./src/*"]
     }
   },
+  "include": ["src/**/*", "tests/**/*", "scripts/**/*", "worker-configuration.d.ts"],
   "exclude": ["node_modules", "dist", "revanced-api", "packages"]
 }
