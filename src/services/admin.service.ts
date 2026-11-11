@@ -1,5 +1,6 @@
 import { UserRepository, type ListUsersParams } from "@/repositories/user.repository";
 import { getAuth } from "@/lib/auth";
+import { hashPassword } from "better-auth/crypto";
 import type { UserSessionPayload } from "@/middleware/auth";
 import { toPublicUrl, deleteFromR2 } from "@/lib/storage";
 
@@ -91,18 +92,12 @@ export class AdminService {
     }
 
     if (data.password && data.password.trim().length > 0) {
-      const auth = getAuth(this.env);
-      try {
-        const hasCred = await this.userRepo.hasCredentialPassword(userId);
-        if (hasCred) {
-          await auth.api.setPassword({
-            body: { newPassword: data.password },
-            headers: rawHeaders,
-          });
-        }
-      } catch (e) {
-        console.error("[AdminService] Failed to reset password:", e);
+      if (data.password.trim().length < 8) {
+        throw new Error("Password must be at least 8 characters long.");
       }
+      const hashedPassword = await hashPassword(data.password.trim());
+      await this.userRepo.setUserPassword(userId, hashedPassword);
+      await this.userRepo.deleteUserSessions(userId);
     }
 
     return this.userRepo.findById(userId);

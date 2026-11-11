@@ -89,6 +89,41 @@ const DeleteProfileRoute = createRoute({
     500: CommonErrorResponses[500],
   },
 });
+const ChangePasswordRoute = createRoute({
+  method: "post",
+  path: "/password",
+  tags: ["Users"],
+  operationId: "changeUserPassword",
+  summary: "Change or set user password",
+  description: "Changes the authenticated user's password, or sets a password for social login users.",
+  security: UserSecurity,
+  request: {
+    body: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: z.object({
+            currentPassword: z.string().optional(),
+            newPassword: z.string().min(8),
+            revokeOtherSessions: z.boolean().optional(),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Password updated successfully.",
+      content: {
+        "application/json": { schema: z.object({ success: z.boolean(), message: z.string() }) },
+      },
+    },
+    400: CommonErrorResponses[400],
+    401: CommonErrorResponses[401],
+    403: CommonErrorResponses[403],
+    500: CommonErrorResponses[500],
+  },
+});
 
 export const userRoutes = new OpenAPIHono<AppEnv>();
 userRoutes.use("*", requireSession);
@@ -147,5 +182,20 @@ userRoutes.openapi(DeleteProfileRoute, async (c) => {
     });
   } catch (err: any) {
     return errorResponse(c, err.message || "Failed to delete account.", 400);
+  }
+});
+
+userRoutes.openapi(ChangePasswordRoute, async (c) => {
+  try {
+    const user = c.get("user");
+    if (!user) return errorResponse(c, "Unauthorized", 401);
+
+    const body = c.req.valid("json");
+    const service = new UserService(c.env.DATABASE_URL, c.env);
+    const result = await service.changeOrSetPassword(user.userId, body);
+
+    return successResponse(c, result);
+  } catch (err: any) {
+    return errorResponse(c, err.message || "Failed to update password", 400);
   }
 });

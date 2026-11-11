@@ -1,4 +1,4 @@
-import { createDbClient, users, accounts, comics, chapters, comments } from "@/db";
+import { createDbClient, users, accounts, sessions, comics, chapters, comments } from "@/db";
 import type { DbClient } from "@/db";
 import { eq, like, or, count, desc, and, isNotNull, sum } from "drizzle-orm";
 
@@ -66,6 +66,43 @@ export class UserRepository {
         ),
       );
     return Boolean(credAccount);
+  }
+
+  async getCredentialAccount(userId: string) {
+    const [credAccount] = await this.db
+      .select()
+      .from(accounts)
+      .where(
+        and(
+          eq(accounts.userId, userId),
+          eq(accounts.providerId, "credential"),
+        ),
+      );
+    return credAccount || null;
+  }
+
+  async setUserPassword(userId: string, passwordHash: string) {
+    const existing = await this.getCredentialAccount(userId);
+    if (existing) {
+      await this.db
+        .update(accounts)
+        .set({ password: passwordHash, updatedAt: new Date() })
+        .where(eq(accounts.id, existing.id));
+    } else {
+      await this.db.insert(accounts).values({
+        id: crypto.randomUUID(),
+        userId,
+        accountId: userId,
+        providerId: "credential",
+        password: passwordHash,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+  }
+
+  async deleteUserSessions(userId: string) {
+    await this.db.delete(sessions).where(eq(sessions.userId, userId));
   }
 
   async updateUser(id: string, data: Partial<typeof users.$inferInsert>) {
