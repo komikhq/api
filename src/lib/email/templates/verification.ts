@@ -1,3 +1,5 @@
+import { renderBaseEmailLayout } from "./base-layout";
+
 export interface VerificationEmailProps {
   userName: string;
   verificationUrl: string;
@@ -7,32 +9,64 @@ export function renderVerificationEmailTemplate({
   userName,
   verificationUrl,
 }: VerificationEmailProps) {
-  const subject = "Verify Your Email Address - KomikHQ";
+  const subject = "Verifikasi Alamat Email Anda - KomikHQ";
+  const previewText = `Halo ${userName}, silakan verifikasi alamat email Anda untuk mengaktifkan akun KomikHQ.`;
 
-  const html = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Verify Your Email - KomikHQ</title>
-</head>
-<body style="font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 24px;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: #1e293b; padding: 32px; border-radius: 12px; border: 1px solid #334155;">
-    <h2 style="color: #38bdf8; margin-top: 0;">Welcome to KomikHQ, ${userName}!</h2>
-    <p style="font-size: 16px; line-height: 1.6;">Thank you for signing up. Please click the button below to verify your email address and activate your account:</p>
-    <div style="text-align: center; margin: 32px 0;">
-      <a href="${verificationUrl}" style="background-color: #0284c7; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Verify Email</a>
+  const contentHtml = `
+    <h1 style="color: #f4f4f5; font-size: 22px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.35; letter-spacing: -0.02em;">
+      Verifikasi Akun KomikHQ
+    </h1>
+    <p style="color: #d4d4d8; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
+      Halo <strong style="color: #fafafa;">${userName}</strong>,
+    </p>
+    <p style="color: #a1a1aa; font-size: 15px; line-height: 1.6; margin: 0 0 28px 0;">
+      Terima kasih telah bergabung dengan KomikHQ! Untuk mengamankan akun dan menikmati seluruh fitur membaca komik, silakan klik tombol di bawah ini untuk memverifikasi alamat email Anda:
+    </p>
+
+    <!-- Bulletproof CTA Button -->
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 28px 0 32px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center" style="border-radius: 8px; background-color: #ea580c;">
+                <!--[if mso]>
+                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${verificationUrl}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="18%" stroke="f" fillcolor="#ea580c">
+                  <w:anchorlock/>
+                  <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">Verifikasi Email</center>
+                </v:roundrect>
+                <![endif]-->
+                <a href="${verificationUrl}" target="_blank" style="background-color: #ea580c; border: 1px solid #ea580c; border-radius: 8px; color: #ffffff; display: inline-block; font-size: 15px; font-weight: 600; padding: 14px 32px; text-decoration: none; text-align: center; mso-hide: all;">
+                  Verifikasi Email
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <hr style="border: none; border-top: 1px solid #27272a; margin: 28px 0;" />
+
+    <p style="font-size: 13px; color: #71717a; margin: 0 0 8px 0; line-height: 1.5;">
+      Jika tombol di atas tidak berfungsi, salin dan buka tautan berikut di browser Anda:
+    </p>
+    <div style="background-color: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 12px 14px; margin: 0 0 20px 0; word-break: break-all;">
+      <a href="${verificationUrl}" target="_blank" style="color: #ea580c; font-size: 13px; text-decoration: none; line-height: 1.4;">${verificationUrl}</a>
     </div>
-    <p style="font-size: 14px; color: #94a3b8;">Or copy and paste the following link into your browser:</p>
-    <p style="font-size: 12px; word-break: break-all; color: #38bdf8;">${verificationUrl}</p>
-    <hr style="border: none; border-top: 1px solid #334155; margin: 32px 0;" />
-    <p style="font-size: 12px; color: #64748b; text-align: center;">If you did not create an account at KomikHQ, please ignore this email.</p>
-  </div>
-</body>
-</html>
+
+    <p style="font-size: 12px; color: #71717a; margin: 0; line-height: 1.5;">
+      Tautan verifikasi ini bersifat sementara. Jika Anda tidak merasa mendaftar di KomikHQ, Anda dapat mengabaikan email ini dengan aman.
+    </p>
   `.trim();
 
-  const text = `Hello ${userName},\n\nThank you for signing up for KomikHQ. Please verify your email via the following link:\n${verificationUrl}\n\nIf you did not register, please ignore this email.`;
+  const html = renderBaseEmailLayout({
+    title: subject,
+    previewText,
+    contentHtml,
+  });
+
+  const text = `Halo ${userName},\n\nTerima kasih telah mendaftar di KomikHQ.\nSilakan klik tautan berikut untuk memverifikasi alamat email Anda:\n${verificationUrl}\n\nJika Anda tidak merasa mendaftar di KomikHQ, Anda dapat mengabaikan email ini.`;
 
   return { subject, html, text };
 }
