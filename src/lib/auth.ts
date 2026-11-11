@@ -49,6 +49,7 @@ export function getAuth(env: AuthEnv) {
     trustedOrigins: [
       "https://komikhq.com",
       "https://www.komikhq.com",
+      "http://localhost:5173",
       "http://localhost:4321",
       "http://localhost:3000",
     ],
