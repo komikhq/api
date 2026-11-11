@@ -177,14 +177,7 @@ adminComicRoutes.openapi(ComicListRoute, async (c) => {
     return successResponse(c, result);
   } catch (err: any) {
     console.error("[Admin API] Failed to list comics:", err);
-    return c.json(
-      {
-        error: err.message || "Failed to fetch comic catalog from database.",
-        comics: [],
-        pagination: { page: 1, limit: 15, total: 0, totalPages: 1 },
-      },
-      500,
-    );
+    return errorResponse(c, err.message || "Failed to fetch comic catalog from database.", 500);
   }
 });
 

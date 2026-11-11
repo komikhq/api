@@ -1,4 +1,4 @@
-import type { Context, Env, Input } from "hono";
+import type { Context, Env, Input, TypedResponse } from "hono";
 
 export interface PaginationMeta {
   page: number;
@@ -12,29 +12,69 @@ export function successResponse<
   E extends Env = Env,
   P extends string = string,
   I extends Input = Input,
-  S extends 200 | 201 = 200,
->(c: Context<E, P, I>, data: T, status: S = 200 as S) {
+>(
+  c: Context<E, P, I>,
+  data: T,
+): Response & TypedResponse<any, 200, "json">;
+export function successResponse<
+  T,
+  S extends 200 | 201,
+  E extends Env = Env,
+  P extends string = string,
+  I extends Input = Input,
+>(
+  c: Context<E, P, I>,
+  data: T,
+  status: S,
+): Response & TypedResponse<any, S, "json">;
+export function successResponse(
+  c: Context,
+  data: any,
+  status: 200 | 201 = 200,
+): any {
   return c.json(data, status);
 }
 
-export function paginatedResponse<T>(
+export function paginatedResponse(
   c: Context,
   dataKey: string,
-  items: T[],
+  items: any[],
   pagination: PaginationMeta,
-) {
-  return c.json({
-    [dataKey]: items,
-    pagination,
-  });
+): Response & TypedResponse<any, 200, "json"> {
+  return c.json(
+    {
+      [dataKey]: items,
+      pagination,
+    },
+    200,
+  );
 }
 
 export function errorResponse<
   E extends Env = Env,
   P extends string = string,
   I extends Input = Input,
-  S extends 400 | 401 | 403 | 404 | 409 | 500 = 500,
->(c: Context<E, P, I>, message: string, status: S = 500 as S, details?: any) {
+>(
+  c: Context<E, P, I>,
+  message: string,
+): Response & TypedResponse<any, 500, "json">;
+export function errorResponse<
+  S extends 400 | 401 | 403 | 404 | 409 | 500,
+  E extends Env = Env,
+  P extends string = string,
+  I extends Input = Input,
+>(
+  c: Context<E, P, I>,
+  message: string,
+  status: S,
+  details?: any,
+): Response & TypedResponse<any, S, "json">;
+export function errorResponse(
+  c: Context,
+  message: string,
+  status: any = 500,
+  details?: any,
+): any {
   return c.json(
     {
       error: message,
