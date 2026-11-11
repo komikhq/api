@@ -1,7 +1,6 @@
 import { UserRepository } from "@/repositories/user.repository";
 import { uploadToR2, toPublicUrl, type StorageEnv } from "@/lib/storage";
 import { getAuth } from "@/lib/auth";
-import { hashPassword, verifyPassword } from "better-auth/crypto";
 
 export class UserService {
   private userRepo: UserRepository;
@@ -80,58 +79,5 @@ export class UserService {
     }
 
     await this.userRepo.deleteUser(userId);
-  }
-
-  async changeOrSetPassword(
-    userId: string,
-    input: { currentPassword?: string; newPassword: string; revokeOtherSessions?: boolean },
-  ) {
-    if (!input.newPassword || input.newPassword.length < 8) {
-      throw new Error("New password must be at least 8 characters long.");
-    }
-
-    const credAccount = await this.userRepo.getCredentialAccount(userId);
-
-    // If user already has a credential password, verify current password
-    if (credAccount && credAccount.password) {
-      if (!input.currentPassword) {
-        throw new Error("Current password is required.");
-      }
-
-      const isValid = await verifyPassword({
-        hash: credAccount.password,
-        password: input.currentPassword,
-      });
-
-      if (!isValid) {
-        throw new Error("Incorrect current password. Please try again.");
-      }
-    }
-
-    // Hash and store the new password
-    const hashedPassword = await hashPassword(input.newPassword);
-    await this.userRepo.setUserPassword(userId, hashedPassword);
-
-    // Purge other sessions if requested
-    if (input.revokeOtherSessions) {
-      try {
-        if (this.env.KV_KOMIKHQ) {
-          const list = await this.env.KV_KOMIKHQ.list({ prefix: "session:" });
-          for (const key of list.keys) {
-            const sess = (await this.env.KV_KOMIKHQ.get(
-              key.name,
-              "json",
-            )) as any;
-            if (sess && sess.userId === userId) {
-              await this.env.KV_KOMIKHQ.delete(key.name);
-            }
-          }
-        }
-      } catch (e) {
-        console.error("[UserService] Failed to purge KV sessions:", e);
-      }
-    }
-
-    return { success: true, message: "Password updated successfully." };
   }
 }
