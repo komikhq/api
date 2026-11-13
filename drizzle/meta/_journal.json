@@ -57,6 +57,13 @@
       "when": 1791443818091,
       "tag": "0007_opposite_archangel",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794545656396,
+      "tag": "0008_clean_jigsaw",
+      "breakpoints": true
     }
   ]
 }
