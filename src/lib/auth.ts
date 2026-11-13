@@ -129,7 +129,7 @@ export function getAuth(env: AuthEnv) {
         url: string;
       }) => {
         const { subject, html, text } = renderResetPasswordEmailTemplate({
-          userName: user.name || "Pembaca KomikHQ",
+          userName: user.name || "KomikHQ User",
           resetUrl: url,
         });
         await sendEmail(env, {
@@ -152,7 +152,7 @@ export function getAuth(env: AuthEnv) {
       }) => {
         try {
           const { subject, html, text } = renderVerificationEmailTemplate({
-            userName: user.name || "Pembaca KomikHQ",
+            userName: user.name || "KomikHQ User",
             verificationUrl: url,
           });
           await sendEmail(env, {
