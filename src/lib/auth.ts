@@ -119,6 +119,8 @@ export function getAuth(env: AuthEnv) {
     },
     emailAndPassword: {
       enabled: true,
+      requireEmailVerification: true,
+      autoSignIn: false,
       sendResetPassword: async ({
         user,
         url,
